@@ -1,19 +1,42 @@
 import React from 'react';
-import { Routes, Route, Link } from 'react-router-dom';
+import { Routes, Route, Link, useLocation } from 'react-router-dom';
+import { Avatar, Menu, MenuItem } from '@mui/material'; // For profile icon and dropdown
 
 // Import the logo image
-import logo from './assets/Images/logo.png';  // Adjust path if necessary
+import logo from './assets/Images/logo.png';
 
 // Import pages/components
-import Home from './pages/Home';
+import Home from './pages/home';
 import RegistrationForm from './pages/Registration';
 import LoginForm from './pages/login';
 import Login2FA from './Pages/login2fa';
-import ForgotPassword from './Pages/forgotpassword';  // Import ForgotPassword component
+import ForgotPassword from './Pages/forgotpassword';
+import ProfileManagement from './Pages/profilemanagement';
 
 function App() {
+  const [anchorEl, setAnchorEl] = React.useState(null); // State for profile dropdown menu
+  const open = Boolean(anchorEl);
+
+  // Get the current route
+  const location = useLocation();
+
+  const handleMenuOpen = (event) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleMenuClose = () => {
+    setAnchorEl(null);
+  };
+
+  const handleLogout = () => {
+    // Clear user session or authentication data
+    localStorage.removeItem('userToken');
+    sessionStorage.removeItem('userToken');
+    window.location.href = "/";  // Redirect to homepage
+  };
+
   return (
-    <div>
+    <div style={styles.appContainer}>
       {/* Header Section */}
       <header style={styles.header}>
         {/* Logo Section */}
@@ -33,10 +56,30 @@ function App() {
         {/* Search Bar */}
         <input type="text" placeholder="Search..." style={styles.searchBar} />
 
-        {/* Login/Sign Up Button */}
-        <Link to="/login" style={styles.loginButton}>
-          <button style={styles.button}>SignUp/Login</button>
-        </Link>
+        {/* Profile Icon or Login/Signup Button */}
+        <div style={styles.profileContainer}>
+          {/* Only show Profile Icon if we are on Profile Management page */}
+          {location.pathname === '/profilemanagement' ? (
+            <Avatar
+              onClick={handleMenuOpen}
+              style={styles.avatar}
+            />
+          ) : (
+            <Link to="/login" style={styles.loginButton}>
+              <button style={styles.button}>Login/Signup</button>
+            </Link>
+          )}
+
+          {/* Profile Dropdown Menu */}
+          <Menu
+            anchorEl={anchorEl}
+            open={open}
+            onClose={handleMenuClose}
+          >
+            <MenuItem onClick={() => window.location.href = '/profilemanagement'}>Edit Profile</MenuItem>
+            <MenuItem onClick={handleLogout}>Logout</MenuItem>
+          </Menu>
+        </div>
       </header>
 
       {/* Navigation Links */}
@@ -46,6 +89,7 @@ function App() {
         <Link to="/login" style={styles.navLink}>Login</Link>
         <Link to="/login2fa" style={styles.navLink}>Login 2FA</Link>
         <Link to="/forgotpassword" style={styles.navLink}>Forgot Password</Link>
+        <Link to="/profilemanagement" style={styles.navLink}>Profile Management</Link>
       </nav>
 
       {/* Routes */}
@@ -55,18 +99,36 @@ function App() {
         <Route path="/login" element={<LoginForm />} />
         <Route path="/login2fa" element={<Login2FA />} />
         <Route path="/forgotpassword" element={<ForgotPassword />} />
+        <Route path="/profilemanagement" element={<ProfileManagement />} />
       </Routes>
+
+      {/* Footer Section */}
+      <footer style={styles.footer}>
+        <div style={styles.footerLinks}>
+          <Link to="/about" style={styles.footerLink}>About</Link>
+          <Link to="/contact" style={styles.footerLink}>Contact Us</Link>
+          <Link to="/terms" style={styles.footerLink}>Terms & Conditions</Link>
+        </div>
+        <div style={styles.footerText}>
+          <p>&copy; {new Date().getFullYear()} BrainWave. All rights reserved.</p>
+        </div>
+      </footer>
     </div>
   );
 }
 
 const styles = {
+  appContainer: {
+    display: 'flex',
+    flexDirection: 'column',
+    minHeight: '100vh', // Ensure footer sticks at bottom
+  },
   header: {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: '5px 10px', // Reduced the padding for a smaller header
-    backgroundColor: '#4CAF50', // Green background for header
+    padding: '5px 10px',
+    backgroundColor: '#4CAF50',
     color: '#fff',
   },
   logoContainer: {
@@ -76,7 +138,7 @@ const styles = {
     fontWeight: 'bold',
   },
   logoImage: {
-    width: '200px', // Increased logo size to fill the header and make it more readable
+    width: '200px',
     height: 'auto',
     marginRight: '10px',
   },
@@ -94,8 +156,20 @@ const styles = {
     fontSize: '16px',
     borderRadius: '4px',
     border: '1px solid #ddd',
-    width: '40%', // Making search bar bigger
-    margin: '0 auto', // Centering the search bar
+    width: '40%',
+    margin: '0 auto',
+  },
+  profileContainer: {
+    display: 'flex',
+    alignItems: 'center',
+    cursor: 'pointer',
+  },
+  avatar: {
+    cursor: 'pointer',
+    width: '40px',
+    height: '40px',
+    backgroundColor: '#fff',
+    border: '1px solid #ddd',
   },
   loginButton: {
     marginLeft: '20px',
@@ -103,7 +177,7 @@ const styles = {
   button: {
     padding: '10px 20px',
     fontSize: '16px',
-    backgroundColor: '#db4437', // Red color for Login button
+    backgroundColor: '#db4437',
     color: 'white',
     border: 'none',
     borderRadius: '5px',
@@ -114,7 +188,7 @@ const styles = {
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: '#333',
-    padding: '2px 0', // Reduced padding to make the nav bar smaller
+    padding: '2px 0',
   },
   navLink: {
     color: '#fff',
@@ -124,6 +198,28 @@ const styles = {
     fontSize: '16px',
     fontWeight: 'bold',
     borderRadius: '4px',
+  },
+  footer: {
+    backgroundColor: "#333",
+    color: "#fff",
+    padding: "20px 0",
+    textAlign: "center",
+    marginTop: "auto", // Ensure footer stays at the bottom
+  },
+  footerLinks: {
+    display: "flex",
+    justifyContent: "center",
+    gap: "20px",
+  },
+  footerLink: {
+    color: "#fff",
+    textDecoration: "none",
+    fontSize: "16px",
+  },
+  footerText: {
+    marginTop: "10px",
+    fontSize: "14px",
+    color: "#ccc",
   },
 };
 

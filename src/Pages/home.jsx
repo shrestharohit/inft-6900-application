@@ -128,7 +128,7 @@ function Home() {
                                 >
                                     <div style={styles.pathwayHeader}>
                                         <h3 style={{ margin: 0 }}>{pathway.name}</h3>
-                                        <span style={styles.pathwayBadge}>Pathway</span> {/* was "Path" */}
+
                                     </div>
                                     <p style={styles.pathwayDesc}>{pathway.description}</p>
                                 </Link>
@@ -158,7 +158,6 @@ function Home() {
                         { name: "John", text: "The user experience is smooth and motivating." },
                     ].map((review, idx) => (
                         <div key={idx} style={styles.reviewCard}>
-                            <img src={review.img} alt={review.name} style={styles.avatar} />
                             <p style={styles.reviewText}>"{review.text}"</p>
                             <span style={styles.reviewer}>– {review.name}</span>
                             <div style={styles.stars} aria-label="5 out of 5 stars">⭐⭐⭐⭐⭐</div>
