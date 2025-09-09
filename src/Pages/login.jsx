@@ -79,7 +79,7 @@ function LoginForm() {
                             </button>
                         </div>
                         {/* Forgot Password Link above the login button */}
-                        <Link to="/forgot-password" style={styles.forgotPasswordLink}>
+                        <Link to="/forgotpassword" style={styles.forgotPasswordLink}>
                             Forgot Password?
                         </Link>
                     </div>
