@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom';
 
 // Importing images
 import registration_image from '../assets/Images/registration_image.png'; // Registration image
-import google_image from '../assets/Images/google_image.png'; // Google image
 
 function RegistrationForm() {
     const [formData, setFormData] = useState({
@@ -132,7 +131,7 @@ function RegistrationForm() {
                     <button type="submit" style={styles.submitButton}>Create Account</button>
                     <button type="button" onClick={() => console.log('Google Login')} style={styles.googleButton}>
                         Continue with Google
-                        <img src={google_image} alt="Google" style={{ width: '20px', height: '20px', marginLeft: '10px', verticalAlign: 'middle' }} />
+                       
                     </button>
                     <p style={styles.alreadyAccountText}>
                         Already have an account? <Link to="/login">Login</Link>

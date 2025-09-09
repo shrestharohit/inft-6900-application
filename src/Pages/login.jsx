@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 
 // Importing images
 import registration_image from '../assets/Images/registration_image.png'; // Registration image
-import google_image from '../assets/Images/google_image.png'; // Google image
+
 
 function LoginForm() {
     const [formData, setFormData] = useState({
@@ -90,7 +90,7 @@ function LoginForm() {
                         
                     <button type="button" onClick={() => console.log('Google Login')} style={styles.googleButton}>
                         Continue with Google
-                        <img src={google_image} alt="Google" style={{ width: '20px', height: '20px', marginLeft: '10px', verticalAlign: 'middle' }} />
+                       
                     </button>
                     </div>
 
@@ -151,7 +151,7 @@ const styles = {
         fontSize: '16px',
         borderRadius: '5px',
         border: '1px solid #ddd',
-        width: '100%',
+        width: '95%',
     },
     passwordWrapper: {
         position: 'relative',
