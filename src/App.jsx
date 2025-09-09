@@ -2,10 +2,11 @@ import React from 'react';
 import { Routes, Route, Link } from 'react-router-dom';
 
 // Import the logo image (you can replace this with the logo image or icon if needed)
-import logo from './assets/Images/logo.jpeg';  // Adjust path if necessary
+import logo from './assets/Images/logo.png';  // Adjust path if necessary
 
 import Home from './pages/Home';
 import RegistrationForm from './pages/Registration';
+import LoginForm from './pages/Login';
 
 function App() {
   return (
@@ -14,7 +15,7 @@ function App() {
         {/* Logo Section */}
         <div style={styles.logo}>
           <img src={logo} alt="BrainWave Logo" style={styles.logoImage} />
-          BrainWave
+          {/* BrainWave */}
         </div>
 
         {/* Categories Dropdown and Search Bar */}
@@ -26,12 +27,14 @@ function App() {
 
       <nav>
         <Link to="/">Home</Link> |{" "}
-        <Link to="/registration">Registration</Link>
+        <Link to="/registration">Registration</Link> |{" "}
+        < Link to="/login">Login</Link>
       </nav>
 
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/registration" element={<RegistrationForm />} />
+        <Route path="/login" element={<LoginForm />} />
       </Routes>
     </div>
   );

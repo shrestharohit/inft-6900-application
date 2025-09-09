@@ -5,41 +5,34 @@ import { Link } from 'react-router-dom';
 import registration_image from '../assets/Images/registration_image.png'; // Registration image
 import google_image from '../assets/Images/google_image.png'; // Google image
 
-function RegistrationForm() {
+function LoginForm() {
     const [formData, setFormData] = useState({
-        fullName: '',
         email: '',
         password: '',
-        confirmPassword: '',
-        termsAgreed: false,
     });
 
     const [showPassword, setShowPassword] = useState(false); // State for toggling password visibility
-    const [showTerms, setShowTerms] = useState(false); // State for showing Terms Modal
 
     const handleChange = (e) => {
-        const { name, value, type, checked } = e.target;
+        const { name, value } = e.target;
         setFormData((prevData) => ({
             ...prevData,
-            [name]: type === 'checkbox' ? checked : value,
+            [name]: value,
         }));
     };
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        console.log(formData);
+        console.log(formData); // You can integrate login logic here
     };
 
     const togglePasswordVisibility = () => {
         setShowPassword(!showPassword); // Toggle the state
     };
 
-    const toggleTermsModal = () => {
-        setShowTerms(!showTerms); // Toggle modal visibility
-    };
-
     return (
-        <div className="registration-form-container" style={styles.formContainer}>
+        <div className="login-form-container" style={styles.formContainer}>
+            {/* Image on the left side */}
             <div style={styles.imageContainer}>
                 <img
                     src={registration_image}
@@ -47,21 +40,11 @@ function RegistrationForm() {
                     style={styles.image}
                 />
             </div>
+
+            {/* Login form on the right side */}
             <div style={styles.formWrapper}>
-                <h1>Sign Up</h1>
+                <h1>Login</h1>
                 <form onSubmit={handleSubmit} style={styles.form}>
-                    <div className="form-group" style={styles.formGroup}>
-                        <label htmlFor="fullName" style={styles.label}>Full Name</label>
-                        <input
-                            type="text"
-                            id="fullName"
-                            name="fullName"
-                            value={formData.fullName}
-                            onChange={handleChange}
-                            required
-                            style={styles.input}
-                        />
-                    </div>
                     <div className="form-group" style={styles.formGroup}>
                         <label htmlFor="email" style={styles.label}>Email</label>
                         <input
@@ -74,6 +57,7 @@ function RegistrationForm() {
                             style={styles.input}
                         />
                     </div>
+
                     <div className="form-group" style={styles.formGroup}>
                         <label htmlFor="password" style={styles.label}>Password</label>
                         <div style={styles.passwordWrapper}>
@@ -94,67 +78,28 @@ function RegistrationForm() {
                                 {showPassword ? 'Hide' : 'Show'}
                             </button>
                         </div>
+                        {/* Forgot Password Link above the login button */}
+                        <Link to="/forgot-password" style={styles.forgotPasswordLink}>
+                            Forgot Password?
+                        </Link>
                     </div>
-                    <div className="form-group" style={styles.formGroup}>
-                        <label htmlFor="confirmPassword" style={styles.label}>Confirm Password</label>
-                        <div style={styles.passwordWrapper}>
-                            <input
-                                type={showPassword ? 'text' : 'password'}
-                                id="confirmPassword"
-                                name="confirmPassword"
-                                value={formData.confirmPassword}
-                                onChange={handleChange}
-                                required
-                                style={styles.input}
-                            />
-                            <button
-                                type="button"
-                                onClick={togglePasswordVisibility}
-                                style={styles.showPasswordButton}
-                            >
-                                {showPassword ? 'Hide' : 'Show'}
-                            </button>
-                        </div>
-                    </div>
-                    <div className="form-group" style={styles.checkboxContainer}>
-                        <label>
-                            <input
-                                type="checkbox"
-                                name="termsAgreed"
-                                checked={formData.termsAgreed}
-                                onChange={handleChange}
-                                required
-                                style={styles.checkbox}
-                            />
-                            I agree to the <span onClick={toggleTermsModal} style={styles.termsLink}>terms and conditions</span>
-                        </label>
-                    </div>
-                    <button type="submit" style={styles.submitButton}>Create Account</button>
+
+                    <button type="submit" style={styles.submitButton}>Login</button>
+
+                    <div style={styles.googleButtonContainer}>
+                        
                     <button type="button" onClick={() => console.log('Google Login')} style={styles.googleButton}>
                         Continue with Google
                         <img src={google_image} alt="Google" style={{ width: '20px', height: '20px', marginLeft: '10px', verticalAlign: 'middle' }} />
                     </button>
-                    <p style={styles.alreadyAccountText}>
-                        Already have an account? <Link to="/login">Login</Link>
+                    </div>
+
+                    {/* Don't have an account? */}
+                    <p style={styles.noAccountText}>
+                        Don't have an account? <Link to="/registration">Sign Up</Link>
                     </p>
                 </form>
             </div>
-
-            {/* Terms Modal */}
-            {showTerms && (
-                <div style={styles.modalOverlay}>
-                    <div style={styles.modal}>
-                        <h2>Terms and Conditions</h2>
-                        <p>
-                            These are the sample terms and conditions. Please read them carefully.
-                            By using this site, you agree to these terms.
-                        </p>
-                        <button onClick={toggleTermsModal} style={styles.closeModalButton}>
-                            Close
-                        </button>
-                    </div>
-                </div>
-            )}
         </div>
     );
 }
@@ -163,7 +108,7 @@ const styles = {
     formContainer: {
         display: 'flex',
         flexDirection: 'row',
-        justifyContent: 'space-between',
+        justifyContent: 'center',
         alignItems: 'center',
         padding: '20px',
         backgroundColor: '#fff',
@@ -177,7 +122,7 @@ const styles = {
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
-        marginRight: '30px',
+        marginRight: '30px', // Space between image and form
     },
     image: {
         maxWidth: '100%',
@@ -186,6 +131,7 @@ const styles = {
     },
     formWrapper: {
         flex: 1,
+        padding: '20px',
     },
     form: {
         display: 'flex',
@@ -200,13 +146,12 @@ const styles = {
         fontWeight: 'bold',
     },
     input: {
-        flex: 1,
         padding: '10px',
         marginBottom: '10px',
         fontSize: '16px',
         borderRadius: '5px',
         border: '1px solid #ddd',
-        width: '95%',
+        width: '100%',
     },
     passwordWrapper: {
         position: 'relative',
@@ -215,25 +160,12 @@ const styles = {
         position: 'absolute',
         right: '10px',
         top: '50%',
-        transform: 'translateY(-70%)',
+        transform: 'translateY(-50%)',
         background: 'none',
         border: 'none',
         color: '#4CAF50',
         cursor: 'pointer',
         fontSize: '14px',
-    },
-    checkboxContainer: {
-        display: 'flex',
-        alignItems: 'center',
-        marginBottom: '20px',
-    },
-    checkbox: {
-        marginRight: '10px',
-    },
-    termsLink: {
-        color: '#007BFF',
-        cursor: 'pointer',
-        textDecoration: 'underline',
     },
     submitButton: {
         padding: '10px',
@@ -244,7 +176,22 @@ const styles = {
         borderRadius: '5px',
         cursor: 'pointer',
     },
+    googleButtonContainer: {
+        display: 'flex',
+        alignItems: 'center',
+        marginTop: '10px',
+        marginBottom: '20px',
+    },
+    googleImage: {
+        width: '20px',  // Adjust the size of the Google logo
+        height: '20px', // Adjust the size of the Google logo
+        marginRight: '10px',  // Add space between the logo and the button text
+    },
     googleButton: {
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        width: '100%',
         padding: '10px',
         fontSize: '16px',
         backgroundColor: '#db4437',
@@ -254,39 +201,18 @@ const styles = {
         cursor: 'pointer',
         marginTop: '10px',
     },
-    alreadyAccountText: {
+    forgotPasswordLink: {
+        fontSize: '14px',
+        color: '#007BFF',
+        textDecoration: 'underline',
+        cursor: 'pointer',
+        marginTop: '5px',
+    },
+    noAccountText: {
         textAlign: 'center',
         fontSize: '14px',
         marginTop: '20px',
     },
-    modalOverlay: {
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    modal: {
-        backgroundColor: '#fff',
-        padding: '20px',
-        borderRadius: '8px',
-        maxWidth: '600px',
-        width: '100%',
-    },
-    closeModalButton: {
-        padding: '10px',
-        fontSize: '16px',
-        backgroundColor: '#4CAF50',
-        color: 'white',
-        border: 'none',
-        borderRadius: '5px',
-        cursor: 'pointer',
-        marginTop: '20px',
-    },
 };
 
-export default RegistrationForm;
+export default LoginForm;
