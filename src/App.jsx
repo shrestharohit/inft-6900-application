@@ -1,5 +1,5 @@
 import React from 'react';
-import { Routes, Route, Link, useLocation } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
 import { Avatar, Menu, MenuItem } from '@mui/material'; // For profile icon and dropdown
 
 // Import the logo image
@@ -12,6 +12,7 @@ import LoginForm from './pages/login';
 import Login2FA from './Pages/login2fa';
 import ForgotPassword from './Pages/forgotpassword';
 import ProfileManagement from './Pages/profilemanagement';
+
 
 function App() {
   const [anchorEl, setAnchorEl] = React.useState(null); // State for profile dropdown menu
@@ -41,7 +42,9 @@ function App() {
       <header style={styles.header}>
         {/* Logo Section */}
         <div style={styles.logoContainer}>
-          <img src={logo} alt="BrainWave Logo" style={styles.logoImage} />
+          <Link to="/">
+            <img src={logo} alt="BrainWave Logo" style={styles.logoImage} />
+          </Link>
         </div>
 
         {/* Categories Dropdown */}
@@ -130,6 +133,7 @@ const styles = {
     padding: '5px 10px',
     backgroundColor: '#4CAF50',
     color: '#fff',
+    height: "80px"
   },
   logoContainer: {
     display: 'flex',
@@ -139,8 +143,9 @@ const styles = {
   },
   logoImage: {
     width: '200px',
-    height: 'auto',
+    height: '140px',
     marginRight: '10px',
+    cursor: 'pointer',
   },
   dropdownContainer: {
     marginLeft: '20px',
@@ -188,7 +193,7 @@ const styles = {
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: '#333',
-    padding: '2px 0',
+    padding: '0px',
   },
   navLink: {
     color: '#fff',
@@ -204,7 +209,7 @@ const styles = {
     color: "#fff",
     padding: "20px 0",
     textAlign: "center",
-    marginTop: "auto", // Ensure footer stays at the bottom
+    marginTop: "auto",
   },
   footerLinks: {
     display: "flex",
