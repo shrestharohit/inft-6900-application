@@ -1,11 +1,11 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
-import { Avatar, Menu, MenuItem } from '@mui/material'; // For profile icon and dropdown
+import { Routes, Route, Link, useLocation } from 'react-router-dom';
+import { Avatar, Menu, MenuItem } from '@mui/material';
 
 // Import the logo image
 import logo from './assets/Images/logo.png';
 
-// Import pages/components
+// Import pages/components (public)
 import Home from './pages/home';
 import RegistrationForm from './pages/Registration';
 import LoginForm from './pages/login';
@@ -13,109 +13,124 @@ import Login2FA from './Pages/login2fa';
 import ForgotPassword from './Pages/forgotpassword';
 import ProfileManagement from './Pages/profilemanagement';
 
+// Admin imports
+import AdminLayout from "./Pages/Admin/adminlayout";
+import AdminUserManagement from "./Pages/Admin/adminUserManagement";
+import {
+  DashboardPage,
+  PathwaysPage,
+  CoursesPage,
+  EnrollmentsPage,
+  ReportsPage,
+  MessagesPage,
+  SettingsPage
+} from "./Pages/Admin/pagesPlaceholders";
 
 function App() {
-  const [anchorEl, setAnchorEl] = React.useState(null); // State for profile dropdown menu
+  const [anchorEl, setAnchorEl] = React.useState(null);
   const open = Boolean(anchorEl);
-
-  // Get the current route
   const location = useLocation();
 
-  const handleMenuOpen = (event) => {
-    setAnchorEl(event.currentTarget);
-  };
-
-  const handleMenuClose = () => {
-    setAnchorEl(null);
-  };
+  const handleMenuOpen = (event) => setAnchorEl(event.currentTarget);
+  const handleMenuClose = () => setAnchorEl(null);
 
   const handleLogout = () => {
-    // Clear user session or authentication data
     localStorage.removeItem('userToken');
     sessionStorage.removeItem('userToken');
-    window.location.href = "/";  // Redirect to homepage
+    window.location.href = "/";
   };
+
+  // Check if we are in admin area
+  const isAdminRoute = location.pathname.startsWith("/admin");
 
   return (
     <div style={styles.appContainer}>
-      {/* Header Section */}
-      <header style={styles.header}>
-        {/* Logo Section */}
-        <div style={styles.logoContainer}>
-          <Link to="/">
-            <img src={logo} alt="BrainWave Logo" style={styles.logoImage} />
-          </Link>
-        </div>
+      {/* Show Header only on non-admin routes */}
+      {!isAdminRoute && (
+        <>
+          <header style={styles.header}>
+            <div style={styles.logoContainer}>
+              <Link to="/">
+                <img src={logo} alt="BrainWave Logo" style={styles.logoImage} />
+              </Link>
+            </div>
 
-        {/* Categories Dropdown */}
-        <div style={styles.dropdownContainer}>
-          <select style={styles.dropdown}>
-            <option value="categories">Categories</option>
-            <option value="tech">Tech</option>
-            <option value="business">Business</option>
-          </select>
-        </div>
+            <div style={styles.dropdownContainer}>
+              <select style={styles.dropdown}>
+                <option value="categories">Categories</option>
+                <option value="tech">Tech</option>
+                <option value="business">Business</option>
+              </select>
+            </div>
 
-        {/* Search Bar */}
-        <input type="text" placeholder="Search..." style={styles.searchBar} />
+            <input type="text" placeholder="Search..." style={styles.searchBar} />
 
-        {/* Profile Icon or Login/Signup Button */}
-        <div style={styles.profileContainer}>
-          {/* Only show Profile Icon if we are on Profile Management page */}
-          {location.pathname === '/profilemanagement' ? (
-            <Avatar
-              onClick={handleMenuOpen}
-              style={styles.avatar}
-            />
-          ) : (
-            <Link to="/login" style={styles.loginButton}>
-              <button style={styles.button}>Login/Signup</button>
-            </Link>
-          )}
+            <div style={styles.profileContainer}>
+              {location.pathname === '/profilemanagement' ? (
+                <Avatar onClick={handleMenuOpen} style={styles.avatar} />
+              ) : (
+                <Link to="/login" style={styles.loginButton}>
+                  <button style={styles.button}>Login/Signup</button>
+                </Link>
+              )}
 
-          {/* Profile Dropdown Menu */}
-          <Menu
-            anchorEl={anchorEl}
-            open={open}
-            onClose={handleMenuClose}
-          >
-            <MenuItem onClick={() => window.location.href = '/profilemanagement'}>Edit Profile</MenuItem>
-            <MenuItem onClick={handleLogout}>Logout</MenuItem>
-          </Menu>
-        </div>
-      </header>
+              <Menu anchorEl={anchorEl} open={open} onClose={handleMenuClose}>
+                <MenuItem onClick={() => (window.location.href = '/profilemanagement')}>
+                  Edit Profile
+                </MenuItem>
+                <MenuItem onClick={handleLogout}>Logout</MenuItem>
+              </Menu>
+            </div>
+          </header>
 
-      {/* Navigation Links */}
-      <nav style={styles.navBar}>
-        <Link to="/" style={styles.navLink}>Home</Link>
-        <Link to="/registration" style={styles.navLink}>Registration</Link>
-        <Link to="/login" style={styles.navLink}>Login</Link>
-        <Link to="/login2fa" style={styles.navLink}>Login 2FA</Link>
-        <Link to="/forgotpassword" style={styles.navLink}>Forgot Password</Link>
-        <Link to="/profilemanagement" style={styles.navLink}>Profile Management</Link>
-      </nav>
+          <nav style={styles.navBar}>
+            <Link to="/" style={styles.navLink}>Home</Link>
+            <Link to="/registration" style={styles.navLink}>Registration</Link>
+            <Link to="/login" style={styles.navLink}>Login</Link>
+            <Link to="/login2fa" style={styles.navLink}>Login 2FA</Link>
+            <Link to="/forgotpassword" style={styles.navLink}>Forgot Password</Link>
+            <Link to="/profilemanagement" style={styles.navLink}>Profile Management</Link>
+            <Link to="/admin" style={styles.navLink}>Admin</Link>
+          </nav>
+        </>
+      )}
 
       {/* Routes */}
       <Routes>
+        {/* Public */}
         <Route path="/" element={<Home />} />
         <Route path="/registration" element={<RegistrationForm />} />
         <Route path="/login" element={<LoginForm />} />
         <Route path="/login2fa" element={<Login2FA />} />
         <Route path="/forgotpassword" element={<ForgotPassword />} />
         <Route path="/profilemanagement" element={<ProfileManagement />} />
+
+        {/* Admin */}
+        <Route path="/admin" element={<AdminLayout />}>
+          <Route index element={<DashboardPage />} />
+          <Route path="pathways" element={<PathwaysPage />} />
+          <Route path="courses" element={<CoursesPage />} />
+          <Route path="enrollments" element={<EnrollmentsPage />} />
+          <Route path="reports" element={<ReportsPage />} />
+          <Route path="users" element={<AdminUserManagement />} />
+          <Route path="messages" element={<MessagesPage />} />
+          <Route path="settings" element={<SettingsPage />} />
+        </Route>
       </Routes>
 
-      {/* Footer Section */}
-      <footer style={styles.footer}>
-        <div style={styles.footerLinks}>
-          <Link to="/about" style={styles.footerLink}>About</Link>
-          <Link to="/contact" style={styles.footerLink}>Contact Us</Link>
-          <Link to="/terms" style={styles.footerLink}>Terms & Conditions</Link>
-        </div>
-        <div style={styles.footerText}>
-          <p>&copy; {new Date().getFullYear()} BrainWave. All rights reserved.</p>
-        </div>
-      </footer>
+      {/* Footer only on non-admin routes */}
+      {!isAdminRoute && (
+        <footer style={styles.footer}>
+          <div style={styles.footerLinks}>
+            <Link to="/about" style={styles.footerLink}>About</Link>
+            <Link to="/contact" style={styles.footerLink}>Contact Us</Link>
+            <Link to="/terms" style={styles.footerLink}>Terms & Conditions</Link>
+          </div>
+          <div style={styles.footerText}>
+            <p>&copy; {new Date().getFullYear()} BrainWave. All rights reserved.</p>
+          </div>
+        </footer>
+      )}
     </div>
   );
 }
@@ -124,7 +139,7 @@ const styles = {
   appContainer: {
     display: 'flex',
     flexDirection: 'column',
-    minHeight: '100vh', // Ensure footer sticks at bottom
+    minHeight: '100vh',
   },
   header: {
     display: 'flex',
@@ -147,9 +162,7 @@ const styles = {
     marginRight: '10px',
     cursor: 'pointer',
   },
-  dropdownContainer: {
-    marginLeft: '20px',
-  },
+  dropdownContainer: { marginLeft: '20px' },
   dropdown: {
     padding: '8px',
     fontSize: '14px',
@@ -176,9 +189,7 @@ const styles = {
     backgroundColor: '#fff',
     border: '1px solid #ddd',
   },
-  loginButton: {
-    marginLeft: '20px',
-  },
+  loginButton: { marginLeft: '20px' },
   button: {
     padding: '10px 20px',
     fontSize: '16px',
