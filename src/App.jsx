@@ -1,6 +1,7 @@
 import React from 'react';
-import { Routes, Route, Link, useLocation } from 'react-router-dom';
-import { Avatar, Menu, MenuItem } from '@mui/material';
+import { Routes, Route, Link, useLocation, useNavigate } from 'react-router-dom';
+import { Avatar, Menu, MenuItem, Button, Box, Typography } from '@mui/material';
+import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 
 // Import the logo image
 import logo from './assets/Images/logo.png';
@@ -26,10 +27,16 @@ import {
   SettingsPage
 } from "./Pages/Admin/pagesPlaceholders";
 
+// Placeholder for Courses & Pathways
+const CoursePage = ({ name }) => <h2 style={{ textAlign: "center", marginTop: "2rem" }}>Welcome to {name}</h2>;
+const PathwayPage = ({ name }) => <h2 style={{ textAlign: "center", marginTop: "2rem" }}>{name} Pathway Details</h2>;
+
 function App() {
   const [anchorEl, setAnchorEl] = React.useState(null);
+  const [categoryAnchor, setCategoryAnchor] = React.useState(null);
   const open = Boolean(anchorEl);
   const location = useLocation();
+  const navigate = useNavigate();
 
   const handleMenuOpen = (event) => setAnchorEl(event.currentTarget);
   const handleMenuClose = () => setAnchorEl(null);
@@ -38,6 +45,14 @@ function App() {
     localStorage.removeItem('userToken');
     sessionStorage.removeItem('userToken');
     window.location.href = "/";
+  };
+
+  // Category dropdown
+  const handleCategoryOpen = (event) => setCategoryAnchor(event.currentTarget);
+  const handleCategoryClose = () => setCategoryAnchor(null);
+  const goTo = (path) => {
+    navigate(path);
+    handleCategoryClose();
   };
 
   // Check if we are in admin area
@@ -55,12 +70,54 @@ function App() {
               </Link>
             </div>
 
-            <div style={styles.dropdownContainer}>
-              <select style={styles.dropdown}>
-                <option value="categories">Categories</option>
-                <option value="tech">Tech</option>
-                <option value="business">Business</option>
-              </select>
+            {/* Categories Dropdown */}
+            <div>
+              <Button
+                onClick={handleCategoryOpen}
+                endIcon={<ArrowDropDownIcon />}
+                style={{
+                  background: "#fff",
+                  color: "#333",
+                  padding: "8px 16px",
+                  borderRadius: "6px",
+                  fontWeight: "600",
+                  textTransform: "none",
+                }}
+              >
+                Categories
+              </Button>
+
+              <Menu
+                anchorEl={categoryAnchor}
+                open={Boolean(categoryAnchor)}
+                onClose={handleCategoryClose}
+                MenuListProps={{ style: { display: "flex", padding: "20px", gap: "40px" } }}
+              >
+                <Box display="flex" gap="40px">
+                  {/* Pathways Column */}
+                  <Box display="flex" flexDirection="column">
+                    <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
+                      Pathways
+                    </Typography>
+                    <MenuItem onClick={() => goTo("/pathway/tech-skills")}>Tech Skills</MenuItem>
+                    <MenuItem onClick={() => goTo("/pathway/analytical-skills")}>Analytical Skills</MenuItem>
+                    <MenuItem onClick={() => goTo("/pathway/business-skills")}>Business Skills</MenuItem>
+                  </Box>
+
+                  {/* Courses Column */}
+                  <Box display="flex" flexDirection="column">
+                    <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
+                      Individual Courses
+                    </Typography>
+                    <MenuItem onClick={() => goTo("/courses/coding")}>Coding</MenuItem>
+                    <MenuItem onClick={() => goTo("/courses/devops")}>DevOps</MenuItem>
+                    <MenuItem onClick={() => goTo("/courses/bigdata")}>Big Data</MenuItem>
+                    <MenuItem onClick={() => goTo("/courses/powerbi")}>Power BI</MenuItem>
+                    <MenuItem onClick={() => goTo("/courses/accounting")}>Accounting</MenuItem>
+                    <MenuItem onClick={() => goTo("/courses/finance")}>Finance</MenuItem>
+                  </Box>
+                </Box>
+              </Menu>
             </div>
 
             <input type="text" placeholder="Search..." style={styles.searchBar} />
@@ -104,6 +161,19 @@ function App() {
         <Route path="/login2fa" element={<Login2FA />} />
         <Route path="/forgotpassword" element={<ForgotPassword />} />
         <Route path="/profilemanagement" element={<ProfileManagement />} />
+
+        {/* Pathway Routes */}
+        <Route path="/pathway/tech-skills" element={<PathwayPage name="Tech Skills" />} />
+        <Route path="/pathway/analytical-skills" element={<PathwayPage name="Analytical Skills" />} />
+        <Route path="/pathway/business-skills" element={<PathwayPage name="Business Skills" />} />
+
+        {/* Course Routes */}
+        <Route path="/courses/coding" element={<CoursePage name="Coding" />} />
+        <Route path="/courses/devops" element={<CoursePage name="DevOps" />} />
+        <Route path="/courses/bigdata" element={<CoursePage name="Big Data" />} />
+        <Route path="/courses/powerbi" element={<CoursePage name="Power BI" />} />
+        <Route path="/courses/accounting" element={<CoursePage name="Accounting" />} />
+        <Route path="/courses/finance" element={<CoursePage name="Finance" />} />
 
         {/* Admin */}
         <Route path="/admin" element={<AdminLayout />}>
@@ -161,13 +231,6 @@ const styles = {
     height: '140px',
     marginRight: '10px',
     cursor: 'pointer',
-  },
-  dropdownContainer: { marginLeft: '20px' },
-  dropdown: {
-    padding: '8px',
-    fontSize: '14px',
-    borderRadius: '4px',
-    border: '1px solid #ddd',
   },
   searchBar: {
     padding: '8px',

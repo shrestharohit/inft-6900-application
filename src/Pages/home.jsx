@@ -103,43 +103,43 @@ function Home() {
             </section>
 
             {/* Trending Pathways */}
-            <section style={styles.pathwaySection}>
-                <h2 style={styles.sectionTitleCenter}>Trending Pathways</h2>
-                <div style={styles.pathwayGrid}>
+            <section style={styles.section}>
+                <h2 style={styles.sectionTitle}>Trending Pathways</h2>
+                <div style={styles.courseGrid}>
                     {trendingPathways.map((pathway, idx) => {
                         const isHover = hoveredPathway === idx;
                         return (
-                            <div
+                            <Link
                                 key={idx}
+                                to={pathway.link}
                                 style={{
-                                    ...styles.pathwayCard,
-                                    transform: isHover ? "translateY(-6px)" : "translateY(0)",
+                                    ...styles.courseCard,
+                                    transform: isHover ? "translateY(-8px)" : "translateY(0)",
                                     boxShadow: isHover
-                                        ? "0 14px 30px rgba(0,0,0,0.15)"
+                                        ? "0 12px 28px rgba(0,0,0,0.15)"
                                         : "0 6px 18px rgba(0,0,0,0.08)",
                                 }}
                                 onMouseEnter={() => setHoveredPathway(idx)}
                                 onMouseLeave={() => setHoveredPathway(null)}
                             >
-                                <Link
-                                    to={pathway.link}
-                                    style={{ textDecoration: "none", color: "inherit" }}
-                                >
-                                    <h3 style={styles.pathwayTitle}>{pathway.name}</h3>
-                                    <p style={styles.pathwayDesc}>{pathway.description}</p>
-                                </Link>
+                                {/* Centered pathway image */}
+                                <div style={styles.pathwayImg}>
+                                    <img
+                                        src={webDevImg} // Replace with pathway-specific image if you have
+                                        alt={pathway.name}
+                                        style={styles.pathwayImgInner}
+                                    />
+                                </div>
+                                <h3 style={styles.courseName}>{pathway.name}</h3>
+                                <p style={styles.courseDesc}>{pathway.description}</p>
                                 <div style={styles.pathwayCourses}>
                                     {pathway.courses.map((course, cIdx) => (
-                                        <Link
-                                            key={cIdx}
-                                            to={course.link}
-                                            style={styles.pathwayCourseBtn}
-                                        >
+                                        <Link key={cIdx} to={course.link} style={styles.pathwayCourseBtn}>
                                             {course.name}
                                         </Link>
                                     ))}
                                 </div>
-                            </div>
+                            </Link>
                         );
                     })}
                 </div>
@@ -231,15 +231,8 @@ const styles = {
         letterSpacing: "-0.01em",
         textAlign: "center",
     },
-    sectionTitleCenter: {
-        fontSize: "2rem",
-        fontWeight: 800,
-        color: "#1f2a60",
-        marginBottom: "2rem",
-        textAlign: "center",
-    },
 
-    // Popular Courses
+    // Popular Courses / Pathways
     courseGrid: {
         display: "grid",
         gridTemplateColumns: "repeat(auto-fit,minmax(260px,1fr))",
@@ -254,8 +247,12 @@ const styles = {
         textDecoration: "none",
         color: "#1f2a60",
         transition: "transform 0.3s ease, box-shadow 0.3s ease",
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "space-between",
+        alignItems: "center",
     },
-    courseIcon: { width: "90px", height: "90px", objectFit: "contain", marginBottom: "1rem" },
+    courseIcon: { width: "90px", height: "90px", objectFit: "contain", marginBottom: "1rem"},
     courseName: { fontWeight: 700, marginBottom: "0.5rem" },
     courseDesc: { fontSize: "0.95rem", color: "#49526e" },
     viewAllBtn: {
@@ -270,31 +267,25 @@ const styles = {
         transition: "all 0.2s ease",
     },
 
-    // Trending Pathways
-    pathwaySection: { padding: "3rem 1rem", background: "#f5f7fe" },
-    pathwayGrid: {
-        display: "grid",
-        gridTemplateColumns: "repeat(auto-fit, minmax(280px,1fr))",
-        gap: "2rem",
-        maxWidth: "1150px",
-        margin: "0 auto",
-    },
-    pathwayCard: {
-        borderRadius: "16px",
-        padding: "2rem 1.5rem",
-        textAlign: "center",
-        textDecoration: "none",
-        color: "#1f2a60",
-        cursor: "pointer",
-        transition: "transform 0.3s ease, box-shadow 0.3s ease",
-        background: "#fff",
+    // Pathway images and courses
+    pathwayImg: {
         display: "flex",
-        flexDirection: "column",
-        justifyContent: "space-between",
+        justifyContent: "center",
+        alignItems: "center",
+        marginBottom: "1rem",
     },
-    pathwayTitle: { fontWeight: 800, fontSize: "1.3rem", marginBottom: "0.75rem" },
-    pathwayDesc: { fontSize: "0.95rem", color: "#4b5577", marginBottom: "1rem" },
-    pathwayCourses: { display: "flex", flexWrap: "wrap", gap: "0.5rem", justifyContent: "center" },
+    pathwayImgInner: {
+        width: "90px",
+        height: "90px",
+        objectFit: "contain",
+    },
+    pathwayCourses: {
+        display: "flex",
+        justifyContent: "center",
+        flexWrap: "wrap",
+        gap: "0.5rem",
+        marginTop: "1rem",
+    },
     pathwayCourseBtn: {
         padding: "8px 16px",
         borderRadius: "999px",

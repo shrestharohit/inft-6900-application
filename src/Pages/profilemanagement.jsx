@@ -1,140 +1,237 @@
-import React, { useState } from "react";
-import { Box, Button, TextField, Stack, CircularProgress, Typography } from "@mui/material";
-import { useNavigate } from "react-router-dom"; // For navigation
+import React, { useState } from 'react';
 
-const ProfileManagement = () => {
-    const [fullName, setFullName] = useState("");
-    const [email, setEmail] = useState("");
-    const [password, setPassword] = useState("");
-    const [confirmPassword, setConfirmPassword] = useState("");
-    const [isSubmitting, setIsSubmitting] = useState(false);
-    const [notification, setNotification] = useState("");
+function ProfileManagement() {
+  const [formData, setFormData] = useState({
+    fullName: '',
+    email: '',
+    password: '',
+    confirmPassword: '',
+  });
 
-    const navigate = useNavigate(); // Hook for navigation after logout
+  const [showPassword, setShowPassword] = useState(false);
 
-    // Handle input changes
-    const handleInputChange = (e) => {
-        const { name, value } = e.target;
-        if (name === "fullName") setFullName(value);
-        if (name === "email") setEmail(value);
-        if (name === "password") setPassword(value);
-        if (name === "confirmPassword") setConfirmPassword(value);
-    };
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
 
-    // Handle form submission
-    const handleSubmit = (e) => {
-        e.preventDefault();
-        if (password !== confirmPassword) {
-            alert("Passwords do not match!");
-            return;
-        }
+  const handleSave = () => {
+    if (formData.password !== formData.confirmPassword) {
+      alert("Passwords do not match!");
+      return;
+    }
+    alert("Profile updated successfully!");
+  };
 
-        setIsSubmitting(true);
-        setNotification("");
+  const handleLogout = () => {
+    localStorage.removeItem("userToken");
+    sessionStorage.removeItem("userToken");
+    window.location.href = "/";
+  };
 
-        // Simulate form submission (you can connect with API/backend later)
-        setTimeout(() => {
-            setIsSubmitting(false);
-            setNotification("Your profile has been updated successfully. A confirmation email has been sent.");
-            // Simulate sending email notification
-            console.log("Email notification sent to", email);
-        }, 2000);
-    };
+  const togglePasswordVisibility = () => setShowPassword(!showPassword);
 
-    // Handle Logout
-    const handleLogout = () => {
-        // Clear user session data (localStorage/sessionStorage)
-        localStorage.removeItem('userToken');
-        sessionStorage.removeItem('userToken');
+  const isFormComplete =
+    formData.fullName &&
+    formData.email &&
+    formData.password &&
+    formData.confirmPassword;
 
-        // Redirect to homepage
-        navigate('/'); // This will take the user back to the homepage
-    };
+  return (
+    <div style={styles.pageContainer}>
+      <div style={styles.card}>
+        <h1 style={styles.heading}>Edit Profile</h1>
+        <form style={styles.form} onSubmit={(e) => e.preventDefault()}>
+          {/* Full Name */}
+          <div style={styles.formGroup}>
+            <label htmlFor="fullName" style={styles.label}>* Full Name</label>
+            <input
+              type="text"
+              id="fullName"
+              name="fullName"
+              value={formData.fullName}
+              onChange={handleChange}
+              required
+              style={styles.input}
+            />
+          </div>
 
-    return (
-        <Box sx={styles.container}>
-            <Typography variant="h4" gutterBottom>
-                Edit Profile
-            </Typography>
+          {/* Email */}
+          <div style={styles.formGroup}>
+            <label htmlFor="email" style={styles.label}>* Email</label>
+            <input
+              type="email"
+              id="email"
+              name="email"
+              value={formData.email}
+              onChange={handleChange}
+              required
+              style={styles.input}
+            />
+          </div>
 
-            <form onSubmit={handleSubmit}>
-                <Stack spacing={2}>
-                    <TextField
-                        label="Full Name"
-                        name="fullName"
-                        value={fullName}
-                        onChange={handleInputChange}
-                        variant="outlined"
-                        fullWidth
-                        required
-                    />
-                    <TextField
-                        label="Email"
-                        name="email"
-                        type="email"
-                        value={email}
-                        onChange={handleInputChange}
-                        variant="outlined"
-                        fullWidth
-                        required
-                    />
-                    <TextField
-                        label="New Password"
-                        name="password"
-                        type="password"
-                        value={password}
-                        onChange={handleInputChange}
-                        variant="outlined"
-                        fullWidth
-                        required
-                    />
-                    <TextField
-                        label="Confirm Password"
-                        name="confirmPassword"
-                        type="password"
-                        value={confirmPassword}
-                        onChange={handleInputChange}
-                        variant="outlined"
-                        fullWidth
-                        required
-                    />
+          {/* Password */}
+          <div style={styles.formGroup}>
+            <label htmlFor="password" style={styles.label}>* Password</label>
+            <div style={styles.passwordWrapper}>
+              <input
+                type={showPassword ? 'text' : 'password'}
+                id="password"
+                name="password"
+                value={formData.password}
+                onChange={handleChange}
+                required
+                style={styles.input}
+              />
+              <button
+                type="button"
+                onClick={togglePasswordVisibility}
+                style={styles.showPasswordButton}
+              >
+                {showPassword ? 'Hide' : 'Show'}
+              </button>
+            </div>
+          </div>
 
-                    <Stack direction="row" spacing={2} justifyContent="space-between">
-                        <Button
-                            variant="contained"
-                            color="primary"
-                            type="submit"
-                            disabled={isSubmitting || !fullName || !email || !password || !confirmPassword || password !== confirmPassword}
-                        >
-                            {isSubmitting ? <CircularProgress size={24} /> : "Update Profile"}
-                        </Button>
-                    </Stack>
+          {/* Confirm Password */}
+          <div style={styles.formGroup}>
+            <label htmlFor="confirmPassword" style={styles.label}>* Confirm Password</label>
+            <div style={styles.passwordWrapper}>
+              <input
+                type={showPassword ? 'text' : 'password'}
+                id="confirmPassword"
+                name="confirmPassword"
+                value={formData.confirmPassword}
+                onChange={handleChange}
+                required
+                style={styles.input}
+              />
+              <button
+                type="button"
+                onClick={togglePasswordVisibility}
+                style={styles.showPasswordButton}
+              >
+                {showPassword ? 'Hide' : 'Show'}
+              </button>
+            </div>
+          </div>
 
-                    {notification && (
-                        <Typography variant="body1" color="success.main" style={{ marginTop: "20px" }}>
-                            {notification}
-                        </Typography>
-                    )}
-                </Stack>
-            </form>
+          {/* Buttons */}
+          <div style={styles.buttonGroup}>
+            <button
+              type="button"
+              onClick={handleSave}
+              disabled={!isFormComplete}
+              style={{
+                ...styles.saveButton,
+                backgroundColor: isFormComplete ? '#4CAF50' : '#a5d6a7',
+                cursor: isFormComplete ? 'pointer' : 'not-allowed',
+              }}
+            >
+              Save Changes
+            </button>
 
-            {/* Logout Button */}
-            <Button variant="contained" color="error" onClick={handleLogout} style={{ marginTop: "20px" }}>
-                Logout
-            </Button>
-        </Box>
-    );
-};
+            <button
+              type="button"
+              onClick={handleLogout}
+              style={styles.logoutButton}
+            >
+              Logout
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
 
 const styles = {
-    container: {
-        maxWidth: "800px",
-        margin: "30px ",
-        padding: "20px",
-        backgroundColor: "#fff",
-        borderRadius: "8px",
-        boxShadow: "0 2px 6px rgba(0,0,0,0.1)",
-    },
+  pageContainer: {
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: '50px 20px',
+    minHeight: '80vh',
+    backgroundColor: '#f4f6f8',
+  },
+  card: {
+    width: '100%',
+    maxWidth: '500px',
+    backgroundColor: '#fff',
+    borderRadius: '12px',
+    padding: '40px 30px',
+    boxShadow: '0 8px 25px rgba(0,0,0,0.1)',
+  },
+  heading: {
+    textAlign: 'center',
+    marginBottom: '30px',
+    fontSize: '28px',
+    color: '#333',
+  },
+  form: {
+    display: 'flex',
+    flexDirection: 'column',
+  },
+  formGroup: {
+    marginBottom: '20px',
+    position: 'relative',
+  },
+  label: {
+    display: 'block',
+    marginBottom: '8px',
+    fontWeight: '600',
+    color: '#555',
+  },
+  input: {
+    width: '95%',
+    padding: '12px 15px',
+    fontSize: '16px',
+    borderRadius: '8px',
+    border: '1px solid #ccc',
+    outline: 'none',
+    transition: '0.3s',
+    backgroundColor: '#fff',
+  },
+  passwordWrapper: {
+    position: 'relative',
+  },
+  showPasswordButton: {
+    position: 'absolute',
+    right: '12px',
+    top: '50%',
+    transform: 'translateY(-50%)',
+    background: 'none',
+    border: 'none',
+    color: '#4CAF50',
+    fontWeight: '600',
+    cursor: 'pointer',
+  },
+  buttonGroup: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '12px',
+    marginTop: '20px',
+  },
+  saveButton: {
+    padding: '14px',
+    fontSize: '16px',
+    color: '#fff',
+    border: 'none',
+    borderRadius: '8px',
+    fontWeight: '600',
+    transition: '0.3s',
+  },
+  logoutButton: {
+    padding: '14px',
+    fontSize: '16px',
+    color: '#fff',
+    backgroundColor: '#db4437',
+    border: 'none',
+    borderRadius: '8px',
+    fontWeight: '600',
+    cursor: 'pointer',
+    transition: '0.3s',
+  },
 };
 
 export default ProfileManagement;
