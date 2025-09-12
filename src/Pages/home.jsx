@@ -6,6 +6,11 @@ import webDevImg from '../assets/Images/webdevremovebg.png';
 import dataAnalyticsImg from '../assets/Images/dataanaremovebg.png';
 import aiMlImg from '../assets/Images/aimlremovebg.png';
 
+// Pathway-specific images
+import techSkillsImg from '../assets/Images/techskills.png';
+import analyticalSkillsImg from '../assets/Images/analyticalskills.png';
+import businessSkillsImg from '../assets/Images/businessskills.png';
+
 function Home() {
     const [hoveredCourse, setHoveredCourse] = useState(null);
     const [hoveredPathway, setHoveredPathway] = useState(null);
@@ -21,6 +26,7 @@ function Home() {
             name: "Tech Skills",
             link: "/pathway/tech-skills",
             description: "Master coding and DevOps skills.",
+            img: techSkillsImg,
             courses: [
                 { name: "Coding", link: "/courses/coding" },
                 { name: "DevOps", link: "/courses/devops" },
@@ -30,6 +36,7 @@ function Home() {
             name: "Analytical Skills",
             link: "/pathway/analytical-skills",
             description: "Learn Big Data and Power BI.",
+            img: analyticalSkillsImg,
             courses: [
                 { name: "Big Data", link: "/courses/bigdata" },
                 { name: "Power BI", link: "/courses/powerbi" },
@@ -39,6 +46,7 @@ function Home() {
             name: "Business Skills",
             link: "/pathway/business-skills",
             description: "Build Accounting and Finance expertise.",
+            img: businessSkillsImg,
             courses: [
                 { name: "Accounting", link: "/courses/accounting" },
                 { name: "Finance", link: "/courses/finance" },
@@ -122,10 +130,10 @@ function Home() {
                                 onMouseEnter={() => setHoveredPathway(idx)}
                                 onMouseLeave={() => setHoveredPathway(null)}
                             >
-                                {/* Centered pathway image */}
+                                {/* Pathway-specific image */}
                                 <div style={styles.pathwayImg}>
                                     <img
-                                        src={webDevImg} // Replace with pathway-specific image if you have
+                                        src={pathway.img}
                                         alt={pathway.name}
                                         style={styles.pathwayImgInner}
                                     />

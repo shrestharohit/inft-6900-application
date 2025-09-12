@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
-function ProfileManagement() {
+function ProfileManagement({ setIsLoggedIn }) {
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
@@ -9,6 +10,7 @@ function ProfileManagement() {
   });
 
   const [showPassword, setShowPassword] = useState(false);
+  const navigate = useNavigate();
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -26,7 +28,8 @@ function ProfileManagement() {
   const handleLogout = () => {
     localStorage.removeItem("userToken");
     sessionStorage.removeItem("userToken");
-    window.location.href = "/";
+    setIsLoggedIn(false);
+    navigate("/");
   };
 
   const togglePasswordVisibility = () => setShowPassword(!showPassword);

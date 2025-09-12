@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Routes, Route, Link, useLocation, useNavigate } from 'react-router-dom';
 import { Avatar, Menu, MenuItem, Button, Box, Typography } from '@mui/material';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
@@ -32,11 +32,18 @@ const CoursePage = ({ name }) => <h2 style={{ textAlign: "center", marginTop: "2
 const PathwayPage = ({ name }) => <h2 style={{ textAlign: "center", marginTop: "2rem" }}>{name} Pathway Details</h2>;
 
 function App() {
-  const [anchorEl, setAnchorEl] = React.useState(null);
-  const [categoryAnchor, setCategoryAnchor] = React.useState(null);
+  const [anchorEl, setAnchorEl] = useState(null);
+  const [categoryAnchor, setCategoryAnchor] = useState(null);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const open = Boolean(anchorEl);
   const location = useLocation();
   const navigate = useNavigate();
+
+  // Check authentication status on component mount and route changes
+  useEffect(() => {
+    const token = localStorage.getItem('userToken') || sessionStorage.getItem('userToken');
+    setIsLoggedIn(!!token);
+  }, [location]);
 
   const handleMenuOpen = (event) => setAnchorEl(event.currentTarget);
   const handleMenuClose = () => setAnchorEl(null);
@@ -44,7 +51,9 @@ function App() {
   const handleLogout = () => {
     localStorage.removeItem('userToken');
     sessionStorage.removeItem('userToken');
-    window.location.href = "/";
+    setIsLoggedIn(false);
+    setAnchorEl(null);
+    navigate('/');
   };
 
   // Category dropdown
@@ -123,30 +132,31 @@ function App() {
             <input type="text" placeholder="Search..." style={styles.searchBar} />
 
             <div style={styles.profileContainer}>
-              {location.pathname === '/profilemanagement' ? (
-                <Avatar onClick={handleMenuOpen} style={styles.avatar} />
+              {isLoggedIn ? (
+                <>
+                  <Avatar onClick={handleMenuOpen} style={styles.avatar} />
+                  <Menu anchorEl={anchorEl} open={open} onClose={handleMenuClose}>
+                    <MenuItem onClick={() => navigate('/profilemanagement')}>
+                      Edit Profile
+                    </MenuItem>
+                    <MenuItem onClick={handleLogout}>Logout</MenuItem>
+                  </Menu>
+                </>
               ) : (
                 <Link to="/login" style={styles.loginButton}>
                   <button style={styles.button}>Login/Signup</button>
                 </Link>
               )}
-
-              <Menu anchorEl={anchorEl} open={open} onClose={handleMenuClose}>
-                <MenuItem onClick={() => (window.location.href = '/profilemanagement')}>
-                  Edit Profile
-                </MenuItem>
-                <MenuItem onClick={handleLogout}>Logout</MenuItem>
-              </Menu>
             </div>
           </header>
 
           <nav style={styles.navBar}>
             <Link to="/" style={styles.navLink}>Home</Link>
-            <Link to="/registration" style={styles.navLink}>Registration</Link>
-            <Link to="/login" style={styles.navLink}>Login</Link>
+            {!isLoggedIn && <Link to="/registration" style={styles.navLink}>Registration</Link>}
+            {!isLoggedIn && <Link to="/login" style={styles.navLink}>Login</Link>}
             <Link to="/login2fa" style={styles.navLink}>Login 2FA</Link>
             <Link to="/forgotpassword" style={styles.navLink}>Forgot Password</Link>
-            <Link to="/profilemanagement" style={styles.navLink}>Profile Management</Link>
+            {isLoggedIn && <Link to="/profilemanagement" style={styles.navLink}>Profile Management</Link>}
             <Link to="/admin" style={styles.navLink}>Admin</Link>
           </nav>
         </>
@@ -160,7 +170,7 @@ function App() {
         <Route path="/login" element={<LoginForm />} />
         <Route path="/login2fa" element={<Login2FA />} />
         <Route path="/forgotpassword" element={<ForgotPassword />} />
-        <Route path="/profilemanagement" element={<ProfileManagement />} />
+        <Route path="/profilemanagement" element={<ProfileManagement setIsLoggedIn={setIsLoggedIn} />} />
 
         {/* Pathway Routes */}
         <Route path="/pathway/tech-skills" element={<PathwayPage name="Tech Skills" />} />
