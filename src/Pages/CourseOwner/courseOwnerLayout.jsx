@@ -2,25 +2,27 @@ import React from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { Avatar, Menu, MenuItem, Tooltip } from "@mui/material";
 import {
-    Dashboard, School, LibraryBooks, People, BarChart, Mail,
-    Settings, Class as ClassIcon, ExitToApp
+    Dashboard,
+    LibraryBooks,
+    ViewModule,
+    Quiz,
+    BarChart,
+    Settings,
+    ExitToApp
 } from "@mui/icons-material";
 
 const NAV_ITEMS = [
-    { label: "Dashboard", to: "/admin", icon: <Dashboard /> },
-    { label: "Pathways", to: "/admin/pathways", icon: <ClassIcon /> },
-    { label: "Courses", to: "/admin/courses", icon: <LibraryBooks /> },
-    { label: "Enrollments", to: "/admin/enrollments", icon: <School /> },
-    { label: "Reports", to: "/admin/reports", icon: <BarChart /> },
-    { label: "Users", to: "/admin/users", icon: <People /> },
-    { label: "Messages", to: "/admin/messages", icon: <Mail /> },
-    { label: "Settings", to: "/admin/settings", icon: <Settings /> },
-    { label: "Course Approvals", to: "/admin/course-approvals", icon: <LibraryBooks /> },
+    { label: "Dashboard", to: "/courseowner", icon: <Dashboard /> },
+    { label: "Courses", to: "/courseowner/courses", icon: <LibraryBooks /> },
+    { label: "Modules", to: "/courseowner/modules", icon: <ViewModule /> },
+    { label: "Quizzes", to: "/courseowner/quizzes", icon: <Quiz /> },
+    { label: "Reports", to: "/courseowner/reports", icon: <BarChart /> },
+    { label: "Settings", to: "/courseowner/settings", icon: <Settings /> },
 ];
 
 const SIDEBAR_WIDTH = 240;
 
-export default function AdminLayout() {
+export default function CourseOwnerLayout() {
     const [anchorEl, setAnchorEl] = React.useState(null);
     const open = Boolean(anchorEl);
     const navigate = useNavigate();
@@ -45,7 +47,7 @@ export default function AdminLayout() {
             {/* Sticky / fixed sidebar */}
             <aside style={styles.sidebar}>
                 <div style={styles.brand}>
-                    <div style={styles.brandText}>BrainWave Admin</div>
+                    <div style={styles.brandText}>BrainWave Course Owner</div>
                 </div>
 
                 <nav style={styles.nav}>
@@ -64,7 +66,6 @@ export default function AdminLayout() {
                         </NavLink>
                     ))}
                 </nav>
-
             </aside>
 
             {/* Main content (shifted right to account for fixed sidebar) */}
@@ -93,7 +94,7 @@ export default function AdminLayout() {
                     </Menu>
                 </div>
 
-                {/* Routed admin pages go here */}
+                {/* Routed course owner pages go here */}
                 <Outlet />
             </main>
         </div>
@@ -124,16 +125,6 @@ const styles = {
         padding: "18px 16px",
         borderBottom: "1px solid rgba(255,255,255,0.06)",
     },
-    brandLogo: {
-        width: 36,
-        height: 36,
-        borderRadius: 8,
-        background: "linear-gradient(135deg,#48bb78,#38a169)",
-        display: "grid",
-        placeItems: "center",
-        fontWeight: 800,
-        color: "#0f172a",
-    },
     brandText: {
         fontWeight: 700,
         letterSpacing: "0.2px",
@@ -161,18 +152,14 @@ const styles = {
         color: "#a0aec0",
         width: 22,
     },
-    sidebarFooter: {
-        padding: "10px 14px",
-        borderTop: "1px solid rgba(255,255,255,0.06)",
-    },
     content: {
-        marginLeft: SIDEBAR_WIDTH,  // account for fixed sidebar
+        marginLeft: SIDEBAR_WIDTH,
         padding: "24px",
         minHeight: "100vh",
     },
     topRightControls: {
         position: "sticky",
-        top: 16, // sticks 16px from top on scroll
+        top: 16,
         display: "flex",
         justifyContent: "flex-end",
         zIndex: 2,

@@ -17,6 +17,7 @@ import ProfileManagement from './Pages/profilemanagement';
 // Admin imports
 import AdminLayout from "./Pages/Admin/adminlayout";
 import AdminUserManagement from "./Pages/Admin/adminUserManagement";
+import AdminCourseApproval from "./Pages/Admin/adminCourseApproval";
 import {
   DashboardPage,
   PathwaysPage,
@@ -27,9 +28,18 @@ import {
   SettingsPage
 } from "./Pages/Admin/pagesPlaceholders";
 
+// Course Owner imports
+import CourseManagement from "./Pages/CourseOwner/courseManagement";
+import CourseOwnerLayout from "./Pages/CourseOwner/courseOwnerLayout";
+
 // Placeholder for Courses & Pathways
 const CoursePage = ({ name }) => <h2 style={{ textAlign: "center", marginTop: "2rem" }}>Welcome to {name}</h2>;
 const PathwayPage = ({ name }) => <h2 style={{ textAlign: "center", marginTop: "2rem" }}>{name} Pathway Details</h2>;
+
+// Placeholder for Course Owner pages
+const Placeholder = ({ title }) => (
+  <h2 style={{ textAlign: "center", marginTop: "2rem" }}>{title}</h2>
+);
 
 function App() {
   const [anchorEl, setAnchorEl] = useState(null);
@@ -64,13 +74,14 @@ function App() {
     handleCategoryClose();
   };
 
-  // Check if we are in admin area
+  // Check if we are in admin or courseOwner area
   const isAdminRoute = location.pathname.startsWith("/admin");
+  const isCourseOwnerRoute = location.pathname.startsWith("/courseowner");
 
   return (
     <div style={styles.appContainer}>
-      {/* Show Header only on non-admin routes */}
-      {!isAdminRoute && (
+      {/* Show Header only on non-admin & non-courseOwner routes */}
+      {!isAdminRoute && !isCourseOwnerRoute && (
         <>
           <header style={styles.header}>
             <div style={styles.logoContainer}>
@@ -158,6 +169,7 @@ function App() {
             <Link to="/forgotpassword" style={styles.navLink}>Forgot Password</Link>
             {isLoggedIn && <Link to="/profilemanagement" style={styles.navLink}>Profile Management</Link>}
             <Link to="/admin" style={styles.navLink}>Admin</Link>
+            <Link to="/courseowner" style={styles.navLink}>Course Owner</Link>
           </nav>
         </>
       )}
@@ -195,11 +207,20 @@ function App() {
           <Route path="users" element={<AdminUserManagement />} />
           <Route path="messages" element={<MessagesPage />} />
           <Route path="settings" element={<SettingsPage />} />
+          <Route path="course-approvals" element={<AdminCourseApproval />} />
+        </Route>
+
+        {/* Course Owner */}
+        <Route path="/courseowner" element={<CourseOwnerLayout />}>
+          <Route index element={<CourseManagement />} />
+          <Route path="courses" element={<CourseManagement />} />
+          <Route path="modules" element={<Placeholder title="Modules Page" />} />
+          <Route path="quizzes" element={<Placeholder title="Quizzes Page" />} />
         </Route>
       </Routes>
 
-      {/* Footer only on non-admin routes */}
-      {!isAdminRoute && (
+      {/* Footer only on non-admin & non-courseOwner routes */}
+      {!isAdminRoute && !isCourseOwnerRoute && (
         <footer style={styles.footer}>
           <div style={styles.footerLinks}>
             <Link to="/about" style={styles.footerLink}>About</Link>
