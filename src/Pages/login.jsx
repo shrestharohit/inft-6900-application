@@ -1,17 +1,19 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
-
-// Importing images
-import registration_image from '../assets/Images/registration_image.png'; // Registration image
-
+import { Link, useNavigate } from 'react-router-dom';
+import { loginUser } from '../api/user'; // ✅ must exist
+import registration_image from '../assets/Images/registration_image.png';
 
 function LoginForm() {
+    const navigate = useNavigate();
+
     const [formData, setFormData] = useState({
         email: '',
         password: '',
     });
 
-    const [showPassword, setShowPassword] = useState(false); // State for toggling password visibility
+    const [showPassword, setShowPassword] = useState(false);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState('');
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -21,27 +23,42 @@ function LoginForm() {
         }));
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        console.log(formData); // You can integrate login logic here
+        setError('');
+        setLoading(true);
+
+        try {
+            const response = await loginUser(formData);
+            console.log("✅ Login API response:", response);
+
+            // Always go straight to dashboard (skip 2FA at login)
+            navigate('/dashboard');
+        } catch (err) {
+            console.error("❌ Login error:", err);
+            if (err?.error) {
+                setError(err.error);
+            } else if (err?.response?.data?.error) {
+                setError(err.response.data.error);
+            } else {
+                setError(err?.message || 'Login failed. Please try again.');
+            }
+        } finally {
+            setLoading(false);
+        }
     };
 
+
     const togglePasswordVisibility = () => {
-        setShowPassword(!showPassword); // Toggle the state
+        setShowPassword(!showPassword);
     };
 
     return (
         <div className="login-form-container" style={styles.formContainer}>
-            {/* Image on the left side */}
             <div style={styles.imageContainer}>
-                <img
-                    src={registration_image}
-                    alt="Registration"
-                    style={styles.image}
-                />
+                <img src={registration_image} alt="Registration" style={styles.image} />
             </div>
 
-            {/* Login form on the right side */}
             <div style={styles.formWrapper}>
                 <h1>Login</h1>
                 <form onSubmit={handleSubmit} style={styles.form}>
@@ -78,23 +95,27 @@ function LoginForm() {
                                 {showPassword ? 'Hide' : 'Show'}
                             </button>
                         </div>
-                        {/* Forgot Password Link above the login button */}
                         <Link to="/forgotpassword" style={styles.forgotPasswordLink}>
                             Forgot Password?
                         </Link>
                     </div>
 
-                    <button type="submit" style={styles.submitButton}>Login</button>
+                    <button type="submit" style={styles.submitButton} disabled={loading}>
+                        {loading ? 'Logging in...' : 'Login'}
+                    </button>
 
                     <div style={styles.googleButtonContainer}>
-                        
-                    <button type="button" onClick={() => console.log('Google Login')} style={styles.googleButton}>
-                        Continue with Google
-                       
-                    </button>
+                        <button
+                            type="button"
+                            onClick={() => console.log('Google Login')}
+                            style={styles.googleButton}
+                        >
+                            Continue with Google
+                        </button>
                     </div>
 
-                    {/* Don't have an account? */}
+                    {error && <p style={{ color: 'red' }}>{error}</p>}
+
                     <p style={styles.noAccountText}>
                         Don't have an account? <Link to="/registration">Sign Up</Link>
                     </p>
@@ -122,7 +143,7 @@ const styles = {
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
-        marginRight: '30px', // Space between image and form
+        marginRight: '30px',
     },
     image: {
         maxWidth: '100%',
@@ -181,11 +202,6 @@ const styles = {
         alignItems: 'center',
         marginTop: '10px',
         marginBottom: '20px',
-    },
-    googleImage: {
-        width: '20px',  // Adjust the size of the Google logo
-        height: '20px', // Adjust the size of the Google logo
-        marginRight: '10px',  // Add space between the logo and the button text
     },
     googleButton: {
         display: 'flex',

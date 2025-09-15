@@ -1,20 +1,25 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
-
-// Importing images
-import registration_image from '../assets/Images/registration_image.png'; // Registration image
+import { Link, useNavigate } from 'react-router-dom';
+import { registerUser } from '../api/user'; 
+import registration_image from '../assets/Images/registration_image.png';
 
 function RegistrationForm() {
+    const navigate = useNavigate();
+
     const [formData, setFormData] = useState({
-        fullName: '',
+        firstName: '',
+        lastName: '',
         email: '',
         password: '',
         confirmPassword: '',
         termsAgreed: false,
     });
 
-    const [showPassword, setShowPassword] = useState(false); // State for toggling password visibility
-    const [showTerms, setShowTerms] = useState(false); // State for showing Terms Modal
+    const [showPassword, setShowPassword] = useState(false);
+    const [showTerms, setShowTerms] = useState(false);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState('');
+    const [success, setSuccess] = useState('');
 
     const handleChange = (e) => {
         const { name, value, type, checked } = e.target;
@@ -24,43 +29,94 @@ function RegistrationForm() {
         }));
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        console.log(formData);
+        setError('');
+        setSuccess('');
+
+        if (formData.password !== formData.confirmPassword) {
+            setError('Passwords do not match!');
+            return;
+        }
+
+        if (!formData.termsAgreed) {
+            setError('You must agree to the terms and conditions.');
+            return;
+        }
+
+        try {
+            setLoading(true);
+            const response = await registerUser({
+                firstName: formData.firstName,
+                lastName: formData.lastName,
+                email: formData.email,
+                password: formData.password,
+                role: 'student', // ✅ backend expects this
+            });
+
+            console.log("✅ Registration API response:", response);
+            setSuccess(response.message || 'Registration successful! Redirecting...');
+
+
+            // Redirect to 2FA page with email in state
+            if (response.requiresVerification) {
+                // new student must verify email first
+                navigate('/login2fa', { state: { email: formData.email } });
+            } else {
+                // admin or instructor -> go straight to login
+                navigate('/login');
+            }
+
+        } catch (err) {
+            console.error("❌ Registration error:", err);
+            if (err?.response?.data) {
+                setError(`Server error: ${JSON.stringify(err.response.data)}`);
+            } else {
+                setError(err?.message || 'Registration failed. Please try again.');
+            }
+        } finally {
+            setLoading(false);
+        }
     };
 
-    const togglePasswordVisibility = () => {
-        setShowPassword(!showPassword); // Toggle the state
-    };
-
-    const toggleTermsModal = () => {
-        setShowTerms(!showTerms); // Toggle modal visibility
-    };
 
     return (
         <div className="registration-form-container" style={styles.formContainer}>
             <div style={styles.imageContainer}>
-                <img
-                    src={registration_image}
-                    alt="Registration"
-                    style={styles.image}
-                />
+                <img src={registration_image} alt="Registration" style={styles.image} />
             </div>
             <div style={styles.formWrapper}>
                 <h1>Sign Up</h1>
                 <form onSubmit={handleSubmit} style={styles.form}>
+                    {/* First Name */}
                     <div className="form-group" style={styles.formGroup}>
-                        <label htmlFor="fullName" style={styles.label}>Full Name</label>
+                        <label htmlFor="firstName" style={styles.label}>First Name</label>
                         <input
                             type="text"
-                            id="fullName"
-                            name="fullName"
-                            value={formData.fullName}
+                            id="firstName"
+                            name="firstName"
+                            value={formData.firstName}
                             onChange={handleChange}
                             required
                             style={styles.input}
                         />
                     </div>
+
+                    {/* Last Name */}
+                    <div className="form-group" style={styles.formGroup}>
+                        <label htmlFor="lastName" style={styles.label}>Last Name</label>
+                        <input
+                            type="text"
+                            id="lastName"
+                            name="lastName"
+                            value={formData.lastName}
+                            onChange={handleChange}
+                            required
+                            style={styles.input}
+                        />
+                    </div>
+
+                    {/* Email */}
                     <div className="form-group" style={styles.formGroup}>
                         <label htmlFor="email" style={styles.label}>Email</label>
                         <input
@@ -73,6 +129,8 @@ function RegistrationForm() {
                             style={styles.input}
                         />
                     </div>
+
+                    {/* Password */}
                     <div className="form-group" style={styles.formGroup}>
                         <label htmlFor="password" style={styles.label}>Password</label>
                         <div style={styles.passwordWrapper}>
@@ -87,13 +145,15 @@ function RegistrationForm() {
                             />
                             <button
                                 type="button"
-                                onClick={togglePasswordVisibility}
+                                onClick={() => setShowPassword(!showPassword)}
                                 style={styles.showPasswordButton}
                             >
                                 {showPassword ? 'Hide' : 'Show'}
                             </button>
                         </div>
                     </div>
+
+                    {/* Confirm Password */}
                     <div className="form-group" style={styles.formGroup}>
                         <label htmlFor="confirmPassword" style={styles.label}>Confirm Password</label>
                         <div style={styles.passwordWrapper}>
@@ -108,13 +168,15 @@ function RegistrationForm() {
                             />
                             <button
                                 type="button"
-                                onClick={togglePasswordVisibility}
+                                onClick={() => setShowPassword(!showPassword)}
                                 style={styles.showPasswordButton}
                             >
                                 {showPassword ? 'Hide' : 'Show'}
                             </button>
                         </div>
                     </div>
+
+                    {/* Terms Checkbox */}
                     <div className="form-group" style={styles.checkboxContainer}>
                         <label>
                             <input
@@ -125,14 +187,24 @@ function RegistrationForm() {
                                 required
                                 style={styles.checkbox}
                             />
-                            I agree to the <span onClick={toggleTermsModal} style={styles.termsLink}>terms and conditions</span>
+                            I agree to the <span onClick={() => setShowTerms(!showTerms)} style={styles.termsLink}>terms and conditions</span>
                         </label>
                     </div>
-                    <button type="submit" style={styles.submitButton}>Create Account</button>
+
+                    {/* Submit Button */}
+                    <button type="submit" style={styles.submitButton} disabled={loading}>
+                        {loading ? 'Registering...' : 'Create Account'}
+                    </button>
+
+                    {/* Google Login (placeholder) */}
                     <button type="button" onClick={() => console.log('Google Login')} style={styles.googleButton}>
                         Continue with Google
-                       
                     </button>
+
+                    {/* Messages */}
+                    {error && <p style={{ color: 'red' }}>{error}</p>}
+                    {success && <p style={{ color: 'green' }}>{success}</p>}
+
                     <p style={styles.alreadyAccountText}>
                         Already have an account? <Link to="/login">Login</Link>
                     </p>
@@ -148,7 +220,7 @@ function RegistrationForm() {
                             These are the sample terms and conditions. Please read them carefully.
                             By using this site, you agree to these terms.
                         </p>
-                        <button onClick={toggleTermsModal} style={styles.closeModalButton}>
+                        <button onClick={() => setShowTerms(false)} style={styles.closeModalButton}>
                             Close
                         </button>
                     </div>
@@ -157,6 +229,8 @@ function RegistrationForm() {
         </div>
     );
 }
+
+
 
 const styles = {
     formContainer: {

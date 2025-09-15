@@ -1,46 +1,67 @@
 import React, { useState, useEffect } from 'react';
 import { Box, Button, Typography, TextField, Stack, CircularProgress } from '@mui/material';
-import { Link } from 'react-router-dom';
-import registration_image from '../assets/Images/registration_image.png'; // Update this with the correct path
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import axios from 'axios';
+import { API_BASE_URL } from '../api/config';
+import registration_image from '../assets/Images/registration_image.png';
 
 const Login2FA = () => {
-    // State for managing OTP input and Timer
-    const [otp, setOtp] = useState('');
-    const [timer, setTimer] = useState(60); // 60 seconds for OTP expiry
-    const [isSubmitting, setIsSubmitting] = useState(false); // For controlling the button during submission
+    const location = useLocation();
+    const navigate = useNavigate();
+    const email = location.state?.email || ""; // passed from Registration
 
-    // Start countdown when the OTP is sent
+    const [otp, setOtp] = useState('');
+    const [timer, setTimer] = useState(60);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    // Countdown for OTP expiry
     useEffect(() => {
         if (timer > 0) {
             const interval = setInterval(() => {
                 setTimer(prev => prev - 1);
             }, 1000);
-
-            return () => clearInterval(interval); // Clean up interval on unmount
+            return () => clearInterval(interval);
         }
     }, [timer]);
 
-    // Handle OTP input change
+    // Handle OTP input
     const handleOtpChange = (e) => {
         setOtp(e.target.value);
     };
 
-    // Handle OTP submission (simulated)
-    const handleLoginSubmit = (e) => {
+    // Submit OTP to backend
+    const handleLoginSubmit = async (e) => {
         e.preventDefault();
         setIsSubmitting(true);
 
-        // Simulate an API call or validation
-        setTimeout(() => {
+        try {
+            const res = await axios.post(`${API_BASE_URL}/api/auth/verify-otp`, {
+                email,
+                otpCode: otp
+            });
+
+            console.log("✅ OTP verified:", res.data);
+
+            // Redirect to login or dashboard
+            navigate("/login", { replace: true });
+        } catch (error) {
+            console.error("❌ OTP verification failed:", error.response?.data || error.message);
+            alert(error.response?.data?.error || "Invalid OTP. Please try again.");
+        } finally {
             setIsSubmitting(false);
-            alert('OTP submitted');
-        }, 1500);
+        }
     };
 
-    // Resend OTP functionality
-    const handleResendCode = () => {
-        setTimer(60); // Reset timer to 60 seconds
-        alert('OTP resent');
+    // Resend OTP
+    const handleResendCode = async () => {
+        try {
+            await axios.post(`${API_BASE_URL}/api/auth/resend-otp`, { email });
+            setTimer(60);
+            alert("A new OTP has been sent to your email.");
+        } catch (error) {
+            console.error("❌ Failed to resend OTP:", error.response?.data || error.message);
+            alert(error.response?.data?.error || "Failed to resend OTP. Please try again.");
+        }
     };
 
     return (
@@ -48,11 +69,11 @@ const Login2FA = () => {
             display="flex"
             justifyContent="center"
             alignItems="center"
-            flexDirection="row"  // Align image and form side by side
+            flexDirection="row"
             minHeight="100vh"
             padding={2}
         >
-            {/* Image on the left side */}
+            {/* Left image */}
             <div style={styles.imageContainer}>
                 <img
                     src={registration_image}
@@ -61,11 +82,11 @@ const Login2FA = () => {
                 />
             </div>
 
-            {/* OTP Form on the right side */}
+            {/* OTP Form */}
             <div style={styles.formWrapper}>
                 <Typography variant="h5" gutterBottom>Check your inbox</Typography>
                 <Typography variant="body1" paragraph>
-                    Enter the 6-digit code we sent you on your email.
+                    Enter the 6-digit code we sent to <strong>{email}</strong>.
                 </Typography>
 
                 <form onSubmit={handleLoginSubmit}>
@@ -77,7 +98,7 @@ const Login2FA = () => {
                             value={otp}
                             onChange={handleOtpChange}
                             disabled={isSubmitting}
-                            inputProps={{ maxLength: 6 }} // OTP length is 6 digits
+                            inputProps={{ maxLength: 6 }}
                         />
 
                         <Typography variant="body2" color="textSecondary">
@@ -89,18 +110,18 @@ const Login2FA = () => {
                                 variant="outlined"
                                 color="primary"
                                 onClick={handleResendCode}
-                                disabled={timer > 0 || isSubmitting} // Disable if timer > 0 or submitting
+                                disabled={timer > 0 || isSubmitting}
                             >
                                 Resend Code
                             </Button>
 
                             <Button
                                 variant="contained"
-                                color="success"  // Green color for the login button
+                                color="success"
                                 type="submit"
-                                disabled={isSubmitting || otp.length !== 6} // Disable submit if OTP is not 6 digits
+                                disabled={isSubmitting || otp.length !== 6}
                             >
-                                {isSubmitting ? <CircularProgress size={24} /> : 'Login'}
+                                {isSubmitting ? <CircularProgress size={24} /> : 'Verify'}
                             </Button>
                         </Stack>
 
@@ -124,7 +145,7 @@ const styles = {
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
-        marginRight: '30px', // Space between image and form
+        marginRight: '30px',
     },
     image: {
         maxWidth: '100%',
