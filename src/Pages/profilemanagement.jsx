@@ -1,89 +1,131 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { getCurrentUser, updateUser } from '../api/user'; // ✅ API helpers
 
 function ProfileManagement({ setIsLoggedIn }) {
+  const navigate = useNavigate();
+
   const [formData, setFormData] = useState({
-    fullName: '',
+    firstName: '',
+    lastName: '',
     email: '',
     password: '',
     confirmPassword: '',
   });
 
   const [showPassword, setShowPassword] = useState(false);
-  const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
+
+  // ✅ Load current user on mount
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const userId = localStorage.getItem("userId"); // or from token/session
+        const user = await getCurrentUser(userId);
+        setFormData({
+          firstName: user.firstName || '',
+          lastName: user.lastName || '',
+          email: user.email || '',
+          password: '',
+          confirmPassword: '',
+        });
+      } catch (err) {
+        console.error("❌ Failed to fetch user:", err);
+      }
+    };
+    fetchUser();
+  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSave = () => {
-    if (formData.password !== formData.confirmPassword) {
+  const handleSave = async () => {
+    if (formData.password && formData.password !== formData.confirmPassword) {
       alert("Passwords do not match!");
       return;
     }
-    alert("Profile updated successfully!");
+
+    try {
+      setLoading(true);
+      const userId = localStorage.getItem("userId"); // or from session
+      const updateData = {
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        // password is optional – only send if entered
+        ...(formData.password ? { password: formData.password } : {}),
+      };
+      const updated = await updateUser(userId, updateData);
+      alert("Profile updated successfully!");
+      console.log("✅ Updated user:", updated);
+    } catch (err) {
+      console.error("❌ Update error:", err);
+      alert("Failed to update profile");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleLogout = () => {
     localStorage.removeItem("userToken");
-    sessionStorage.removeItem("userToken");
+    localStorage.removeItem("userId");
+    sessionStorage.clear();
     setIsLoggedIn(false);
     navigate("/");
   };
 
   const togglePasswordVisibility = () => setShowPassword(!showPassword);
 
-  const isFormComplete =
-    formData.fullName &&
-    formData.email &&
-    formData.password &&
-    formData.confirmPassword;
-
   return (
     <div style={styles.pageContainer}>
       <div style={styles.card}>
         <h1 style={styles.heading}>Edit Profile</h1>
         <form style={styles.form} onSubmit={(e) => e.preventDefault()}>
-          {/* Full Name */}
+          {/* First Name */}
           <div style={styles.formGroup}>
-            <label htmlFor="fullName" style={styles.label}>* Full Name</label>
+            <label style={styles.label}>* First Name</label>
             <input
               type="text"
-              id="fullName"
-              name="fullName"
-              value={formData.fullName}
+              name="firstName"
+              value={formData.firstName}
               onChange={handleChange}
-              required
+              style={styles.input}
+            />
+          </div>
+
+          {/* Last Name */}
+          <div style={styles.formGroup}>
+            <label style={styles.label}>* Last Name</label>
+            <input
+              type="text"
+              name="lastName"
+              value={formData.lastName}
+              onChange={handleChange}
               style={styles.input}
             />
           </div>
 
           {/* Email */}
           <div style={styles.formGroup}>
-            <label htmlFor="email" style={styles.label}>* Email</label>
+            <label style={styles.label}>Email</label>
             <input
               type="email"
-              id="email"
-              name="email"
               value={formData.email}
-              onChange={handleChange}
-              required
-              style={styles.input}
+              disabled
+              style={{ ...styles.input, backgroundColor: "#f5f5f5" }}
             />
           </div>
 
           {/* Password */}
           <div style={styles.formGroup}>
-            <label htmlFor="password" style={styles.label}>* Password</label>
+            <label style={styles.label}>New Password</label>
             <div style={styles.passwordWrapper}>
               <input
-                type={showPassword ? 'text' : 'password'}
-                id="password"
+                type={showPassword ? "text" : "password"}
                 name="password"
                 value={formData.password}
                 onChange={handleChange}
-                required
                 style={styles.input}
               />
               <button
@@ -91,32 +133,21 @@ function ProfileManagement({ setIsLoggedIn }) {
                 onClick={togglePasswordVisibility}
                 style={styles.showPasswordButton}
               >
-                {showPassword ? 'Hide' : 'Show'}
+                {showPassword ? "Hide" : "Show"}
               </button>
             </div>
           </div>
 
           {/* Confirm Password */}
           <div style={styles.formGroup}>
-            <label htmlFor="confirmPassword" style={styles.label}>* Confirm Password</label>
-            <div style={styles.passwordWrapper}>
-              <input
-                type={showPassword ? 'text' : 'password'}
-                id="confirmPassword"
-                name="confirmPassword"
-                value={formData.confirmPassword}
-                onChange={handleChange}
-                required
-                style={styles.input}
-              />
-              <button
-                type="button"
-                onClick={togglePasswordVisibility}
-                style={styles.showPasswordButton}
-              >
-                {showPassword ? 'Hide' : 'Show'}
-              </button>
-            </div>
+            <label style={styles.label}>Confirm Password</label>
+            <input
+              type={showPassword ? "text" : "password"}
+              name="confirmPassword"
+              value={formData.confirmPassword}
+              onChange={handleChange}
+              style={styles.input}
+            />
           </div>
 
           {/* Buttons */}
@@ -124,21 +155,16 @@ function ProfileManagement({ setIsLoggedIn }) {
             <button
               type="button"
               onClick={handleSave}
-              disabled={!isFormComplete}
+              disabled={loading}
               style={{
                 ...styles.saveButton,
-                backgroundColor: isFormComplete ? '#4CAF50' : '#a5d6a7',
-                cursor: isFormComplete ? 'pointer' : 'not-allowed',
+                backgroundColor: !loading ? "#4CAF50" : "#a5d6a7",
               }}
             >
-              Save Changes
+              {loading ? "Saving..." : "Save Changes"}
             </button>
 
-            <button
-              type="button"
-              onClick={handleLogout}
-              style={styles.logoutButton}
-            >
+            <button type="button" onClick={handleLogout} style={styles.logoutButton}>
               Logout
             </button>
           </div>
@@ -147,6 +173,7 @@ function ProfileManagement({ setIsLoggedIn }) {
     </div>
   );
 }
+
 
 const styles = {
   pageContainer: {

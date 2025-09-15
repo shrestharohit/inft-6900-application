@@ -1,39 +1,43 @@
 import React, { useState } from 'react';
 import { Box, Button, Typography, TextField, Stack, CircularProgress } from '@mui/material';
-import { Link } from 'react-router-dom';
-import registration_image from '../assets/Images/registration_image.png'; // Update this with the correct path
+import { Link, useNavigate } from 'react-router-dom';
+import { resetPassword } from '../api/user'; // ✅ backend API call
+import registration_image from '../assets/Images/registration_image.png';
 
 const ForgotPassword = () => {
+    const navigate = useNavigate();
+
     const [email, setEmail] = useState('');
     const [newPassword, setNewPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
-    const [isSubmitting, setIsSubmitting] = useState(false); // For controlling the button during submission
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
 
-    const [showPassword, setShowPassword] = useState(false); // To toggle both new password and confirm password visibility
-
-    // Handle input change
-    const handleChange = (e) => {
-        const { name, value } = e.target;
-        if (name === 'email') setEmail(value);
-        if (name === 'newPassword') setNewPassword(value);
-        if (name === 'confirmPassword') setConfirmPassword(value);
-    };
-
-    // Handle form submission (simulated)
-    const handleResetSubmit = (e) => {
+    // Handle form submission
+    const handleResetSubmit = async (e) => {
         e.preventDefault();
         setIsSubmitting(true);
 
-        // Simulate an API call for resetting the password
-        setTimeout(() => {
+        if (newPassword !== confirmPassword) {
+            alert("Passwords do not match!");
             setIsSubmitting(false);
-            alert('Password has been reset successfully');
-        }, 1500);
+            return;
+        }
+
+        try {
+            const result = await resetPassword({ email, newPassword, confirmPassword });
+            alert(result.message || "Password reset successfully!");
+            navigate('/login'); // ✅ go back to login after success
+        } catch (err) {
+            console.error("❌ Reset password error:", err);
+            alert(err.error || "Failed to reset password");
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
-    // Toggle both password visibility (New and Confirm)
     const togglePasswordVisibility = () => {
-        setShowPassword(prevState => !prevState);
+        setShowPassword((prev) => !prev);
     };
 
     return (
@@ -41,20 +45,16 @@ const ForgotPassword = () => {
             display="flex"
             justifyContent="center"
             alignItems="center"
-            flexDirection="row"  // Align image and form side by side
+            flexDirection="row"
             minHeight="100vh"
             padding={2}
         >
-            {/* Image on the left side */}
+            {/* Left-side image */}
             <div style={styles.imageContainer}>
-                <img
-                    src={registration_image}
-                    alt="Registration"
-                    style={styles.image}
-                />
+                <img src={registration_image} alt="Registration" style={styles.image} />
             </div>
 
-            {/* Reset Password Form on the right side */}
+            {/* Reset form */}
             <div style={styles.formWrapper}>
                 <Typography variant="h5" gutterBottom>Reset Your Password</Typography>
                 <Typography variant="body1" paragraph>
@@ -69,7 +69,7 @@ const ForgotPassword = () => {
                             fullWidth
                             name="email"
                             value={email}
-                            onChange={handleChange}
+                            onChange={(e) => setEmail(e.target.value)}
                             disabled={isSubmitting}
                             required
                         />
@@ -78,11 +78,11 @@ const ForgotPassword = () => {
                             <TextField
                                 label="New Password"
                                 variant="outlined"
-                                type={showPassword ? 'text' : 'password'} // Toggle password visibility for both fields
+                                type={showPassword ? 'text' : 'password'}
                                 fullWidth
                                 name="newPassword"
                                 value={newPassword}
-                                onChange={handleChange}
+                                onChange={(e) => setNewPassword(e.target.value)}
                                 disabled={isSubmitting}
                                 required
                                 style={styles.passwordInput}
@@ -100,11 +100,11 @@ const ForgotPassword = () => {
                             <TextField
                                 label="Confirm Password"
                                 variant="outlined"
-                                type={showPassword ? 'text' : 'password'} // Same toggle for Confirm Password
+                                type={showPassword ? 'text' : 'password'}
                                 fullWidth
                                 name="confirmPassword"
                                 value={confirmPassword}
-                                onChange={handleChange}
+                                onChange={(e) => setConfirmPassword(e.target.value)}
                                 disabled={isSubmitting}
                                 required
                                 style={styles.passwordInput}
@@ -121,9 +121,9 @@ const ForgotPassword = () => {
                         <Stack direction="row" spacing={2} justifyContent="space-between">
                             <Button
                                 variant="contained"
-                                color="success" // Green color for the reset button
+                                color="success"
                                 type="submit"
-                                disabled={isSubmitting || newPassword !== confirmPassword} // Disable if passwords do not match
+                                disabled={isSubmitting || newPassword !== confirmPassword}
                             >
                                 {isSubmitting ? <CircularProgress size={24} /> : 'Reset Password'}
                             </Button>
@@ -149,7 +149,7 @@ const styles = {
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
-        marginRight: '30px', // Space between image and form
+        marginRight: '30px',
     },
     image: {
         maxWidth: '100%',
@@ -179,4 +179,4 @@ const styles = {
     },
 };
 
-export default ForgotPassword;  // Updated export to match the component name
+export default ForgotPassword;

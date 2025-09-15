@@ -49,10 +49,11 @@ function App() {
   const location = useLocation();
   const navigate = useNavigate();
 
-  // Check authentication status on component mount and route changes
+  // Check authentication status on mount and route change
   useEffect(() => {
     const token = localStorage.getItem('userToken') || sessionStorage.getItem('userToken');
     setIsLoggedIn(!!token);
+    console.log("🔑 Login state:", !!token);
   }, [location]);
 
   const handleMenuOpen = (event) => setAnchorEl(event.currentTarget);
@@ -80,7 +81,7 @@ function App() {
 
   return (
     <div style={styles.appContainer}>
-      {/* Show Header only on non-admin & non-courseOwner routes */}
+      {/* Header */}
       {!isAdminRoute && !isCourseOwnerRoute && (
         <>
           <header style={styles.header}>
@@ -147,9 +148,7 @@ function App() {
                 <>
                   <Avatar onClick={handleMenuOpen} style={styles.avatar} />
                   <Menu anchorEl={anchorEl} open={open} onClose={handleMenuClose}>
-                    <MenuItem onClick={() => navigate('/profilemanagement')}>
-                      Edit Profile
-                    </MenuItem>
+                    <MenuItem onClick={() => navigate('/profilemanagement')}>Edit Profile</MenuItem>
                     <MenuItem onClick={handleLogout}>Logout</MenuItem>
                   </Menu>
                 </>
@@ -161,6 +160,7 @@ function App() {
             </div>
           </header>
 
+          {/* Navigation */}
           <nav style={styles.navBar}>
             <Link to="/" style={styles.navLink}>Home</Link>
             {!isLoggedIn && <Link to="/registration" style={styles.navLink}>Registration</Link>}
@@ -179,17 +179,17 @@ function App() {
         {/* Public */}
         <Route path="/" element={<Home />} />
         <Route path="/registration" element={<RegistrationForm />} />
-        <Route path="/login" element={<LoginForm />} />
+        <Route path="/login" element={<LoginForm setIsLoggedIn={setIsLoggedIn} />} />
         <Route path="/login2fa" element={<Login2FA />} />
         <Route path="/forgotpassword" element={<ForgotPassword />} />
         <Route path="/profilemanagement" element={<ProfileManagement setIsLoggedIn={setIsLoggedIn} />} />
 
-        {/* Pathway Routes */}
+        {/* Pathways */}
         <Route path="/pathway/tech-skills" element={<PathwayPage name="Tech Skills" />} />
         <Route path="/pathway/analytical-skills" element={<PathwayPage name="Analytical Skills" />} />
         <Route path="/pathway/business-skills" element={<PathwayPage name="Business Skills" />} />
 
-        {/* Course Routes */}
+        {/* Courses */}
         <Route path="/courses/coding" element={<CoursePage name="Coding" />} />
         <Route path="/courses/devops" element={<CoursePage name="DevOps" />} />
         <Route path="/courses/bigdata" element={<CoursePage name="Big Data" />} />
@@ -219,7 +219,7 @@ function App() {
         </Route>
       </Routes>
 
-      {/* Footer only on non-admin & non-courseOwner routes */}
+      {/* Footer */}
       {!isAdminRoute && !isCourseOwnerRoute && (
         <footer style={styles.footer}>
           <div style={styles.footerLinks}>
@@ -237,100 +237,26 @@ function App() {
 }
 
 const styles = {
-  appContainer: {
-    display: 'flex',
-    flexDirection: 'column',
-    minHeight: '100vh',
-  },
+  appContainer: { display: 'flex', flexDirection: 'column', minHeight: '100vh' },
   header: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: '5px 10px',
-    backgroundColor: '#4CAF50',
-    color: '#fff',
-    height: "80px"
+    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+    padding: '5px 10px', backgroundColor: '#4CAF50', color: '#fff', height: "80px"
   },
-  logoContainer: {
-    display: 'flex',
-    alignItems: 'center',
-    fontSize: '30px',
-    fontWeight: 'bold',
-  },
-  logoImage: {
-    width: '200px',
-    height: '140px',
-    marginRight: '10px',
-    cursor: 'pointer',
-  },
-  searchBar: {
-    padding: '8px',
-    fontSize: '16px',
-    borderRadius: '4px',
-    border: '1px solid #ddd',
-    width: '40%',
-    margin: '0 auto',
-  },
-  profileContainer: {
-    display: 'flex',
-    alignItems: 'center',
-    cursor: 'pointer',
-  },
-  avatar: {
-    cursor: 'pointer',
-    width: '40px',
-    height: '40px',
-    backgroundColor: '#fff',
-    border: '1px solid #ddd',
-  },
+  logoContainer: { display: 'flex', alignItems: 'center', fontSize: '30px', fontWeight: 'bold' },
+  logoImage: { width: '200px', height: '140px', marginRight: '10px', cursor: 'pointer' },
+  searchBar: { padding: '8px', fontSize: '16px', borderRadius: '4px', border: '1px solid #ddd', width: '40%', margin: '0 auto' },
+  profileContainer: { display: 'flex', alignItems: 'center', cursor: 'pointer' },
+  avatar: { cursor: 'pointer', width: '40px', height: '40px', backgroundColor: '#fff', border: '1px solid #ddd' },
   loginButton: { marginLeft: '20px' },
-  button: {
-    padding: '10px 20px',
-    fontSize: '16px',
-    backgroundColor: '#db4437',
-    color: 'white',
-    border: 'none',
-    borderRadius: '5px',
-    cursor: 'pointer',
-  },
-  navBar: {
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#333',
-    padding: '0px',
-  },
-  navLink: {
-    color: '#fff',
-    textDecoration: 'none',
-    padding: '8px 20px',
-    margin: '0 10px',
-    fontSize: '16px',
-    fontWeight: 'bold',
-    borderRadius: '4px',
-  },
-  footer: {
-    backgroundColor: "#333",
-    color: "#fff",
-    padding: "20px 0",
-    textAlign: "center",
-    marginTop: "auto",
-  },
-  footerLinks: {
-    display: "flex",
-    justifyContent: "center",
-    gap: "20px",
-  },
-  footerLink: {
-    color: "#fff",
-    textDecoration: "none",
-    fontSize: "16px",
-  },
-  footerText: {
-    marginTop: "10px",
-    fontSize: "14px",
-    color: "#ccc",
-  },
+  button: { padding: '10px 20px', fontSize: '16px', backgroundColor: '#db4437', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer' },
+  navBar: { display: 'flex', justifyContent: 'center', alignItems: 'center', backgroundColor: '#333', padding: '0px' },
+  navLink: { color: '#fff', textDecoration: 'none', padding: '8px 20px', margin: '0 10px', fontSize: '16px', fontWeight: 'bold', borderRadius: '4px' },
+  footer: { backgroundColor: "#333", color: "#fff", padding: "20px 0", textAlign: "center", marginTop: "auto" },
+  footerLinks: { display: "flex", justifyContent: "center", gap: "20px" },
+  footerLink: { color: "#fff", textDecoration: "none", fontSize: "16px" },
+  footerText: { marginTop: "10px", fontSize: "14px", color: "#ccc" },
 };
 
 export default App;
+
+

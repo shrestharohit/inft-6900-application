@@ -20,3 +20,31 @@ export const loginUser = async (credentials) => {
     throw error.response?.data || error.message;
   }
 };
+
+export const resetPassword = async ({ email, newPassword, confirmPassword }) => {
+  try {
+    const response = await axios.post(`${API_BASE_URL}/api/auth/reset-password`, {
+      email,
+      newPassword,
+      confirmPassword
+    });
+    return response.data;
+  } catch (error) {
+    console.error("❌ Error in resetPassword:", error.response?.data || error.message);
+    throw error.response?.data || error.message;
+  }
+};
+
+export const getCurrentUser = async (userId) => {
+  const response = await axios.get(`${API_BASE_URL}/api/auth/user`, {
+    headers: { userId } // backend expects userId header
+  });
+  return response.data.user;
+};
+
+export const updateUser = async (userId, updateData) => {
+  const response = await axios.put(`${API_BASE_URL}/api/auth/user`, updateData, {
+    headers: { userId }
+  });
+  return response.data.user;
+};
