@@ -16,6 +16,8 @@ const NAV_ITEMS = [
     { label: "Messages", to: "/admin/messages", icon: <Mail /> },
     { label: "Settings", to: "/admin/settings", icon: <Settings /> },
     { label: "Course Approvals", to: "/admin/course-approvals", icon: <LibraryBooks /> },
+    { label: "Module Approvals", to: "/admin/module-approvals", icon: <School /> }, 
+    
 ];
 
 const SIDEBAR_WIDTH = 240;

@@ -50,12 +50,18 @@ export default function CourseManagement() {
         e.preventDefault();
 
         if (editingIndex !== null) {
+            // If course was Active or Inactive → send for approval again
             const updated = [...courses];
-            updated[editingIndex] = { ...form, status: "Wait for Approval" }; // on edit -> wait for approval
+            const currentStatus = updated[editingIndex].status;
+            updated[editingIndex] = {
+                ...form,
+                status: currentStatus === "Draft" ? "Draft" : "Wait for Approval",
+            };
             setCourses(updated);
             setEditingIndex(null);
         } else {
-            setCourses([...courses, { ...form, status: "Draft" }]); // new course -> draft
+            // New course starts as Draft
+            setCourses([...courses, { ...form, status: "Draft" }]);
         }
 
         setForm({ name: "", category: "", outline: "", duration: "" });
@@ -70,6 +76,12 @@ export default function CourseManagement() {
     const handleRequestApproval = (index) => {
         const updated = [...courses];
         updated[index].status = "Wait for Approval";
+        setCourses(updated);
+    };
+
+    const handleInactivate = (index) => {
+        const updated = [...courses];
+        updated[index].status = "Inactive";
         setCourses(updated);
     };
 
@@ -154,24 +166,70 @@ export default function CourseManagement() {
                                 <TableCell>{course.duration}</TableCell>
                                 <TableCell>{course.status}</TableCell>
                                 <TableCell align="right">
+                                    {/* Draft → can request approval or edit */}
                                     {course.status === "Draft" && (
+                                        <>
+                                            <Button
+                                                variant="contained"
+                                                size="small"
+                                                color="secondary"
+                                                onClick={() => handleRequestApproval(index)}
+                                                sx={{ marginRight: "0.5rem" }}
+                                            >
+                                                Request Approval
+                                            </Button>
+                                            <Button
+                                                variant="outlined"
+                                                size="small"
+                                                onClick={() => handleEdit(index)}
+                                            >
+                                                Edit
+                                            </Button>
+                                        </>
+                                    )}
+
+                                    {/* Active → can edit (goes to Wait) or inactivate */}
+                                    {course.status === "Active" && (
+                                        <>
+                                            <Button
+                                                variant="outlined"
+                                                size="small"
+                                                onClick={() => handleEdit(index)}
+                                                sx={{ marginRight: "0.5rem" }}
+                                            >
+                                                Edit
+                                            </Button>
+                                            <Button
+                                                variant="outlined"
+                                                size="small"
+                                                color="error"
+                                                onClick={() => handleInactivate(index)}
+                                            >
+                                                Inactivate
+                                            </Button>
+                                        </>
+                                    )}
+
+                                    {/* Inactive → can edit (goes to Wait) */}
+                                    {course.status === "Inactive" && (
                                         <Button
-                                            variant="contained"
+                                            variant="outlined"
                                             size="small"
-                                            color="secondary"
-                                            onClick={() => handleRequestApproval(index)}
-                                            sx={{ marginRight: "0.5rem" }}
+                                            onClick={() => handleEdit(index)}
                                         >
-                                            Request Approval
+                                            Edit (Re-submit)
                                         </Button>
                                     )}
-                                    <Button
-                                        variant="outlined"
-                                        size="small"
-                                        onClick={() => handleEdit(index)}
-                                    >
-                                        Edit
-                                    </Button>
+
+                                    {/* Wait for Approval → no actions */}
+                                    {course.status === "Wait for Approval" && (
+                                        <Typography
+                                            variant="body2"
+                                            color="text.secondary"
+                                        >
+                                            Pending Admin Review
+                                        </Typography>
+                                    )}
                                 </TableCell>
                             </TableRow>
                         ))}

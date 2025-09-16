@@ -1,4 +1,4 @@
-// src/Pages/Admin/adminCourseApproval.jsx
+// src/Pages/Admin/adminModuleApproval.jsx
 import React, { useEffect, useState } from "react";
 import {
     Box,
@@ -11,39 +11,38 @@ import {
     Alert
 } from "@mui/material";
 
-const STORAGE_KEY = "course_owner_courses"; // same key used in CourseOwner page
+const STORAGE_KEY = "course_owner_modules"; // same key used in CourseOwner ModuleManagement
 
-const AdminCourseApproval = () => {
-    const [courses, setCourses] = useState([]);
+const AdminModuleApproval = () => {
+    const [modules, setModules] = useState([]);
     const [snack, setSnack] = useState({ open: false, severity: "success", msg: "" });
 
-    // Load courses from localStorage
+    // Load modules
     useEffect(() => {
         const raw = localStorage.getItem(STORAGE_KEY);
         if (raw) {
             try {
-                setCourses(JSON.parse(raw));
+                setModules(JSON.parse(raw));
             } catch {
-                setCourses([]);
+                setModules([]);
             }
         }
     }, []);
 
-    // Sync changes back to localStorage
+    // Sync back
     useEffect(() => {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(courses));
-    }, [courses]);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(modules));
+    }, [modules]);
 
     const updateStatus = (idx, status) => {
-        const next = [...courses];
+        const next = [...modules];
         next[idx].status = status;
-        setCourses(next);
+        setModules(next);
 
         let msg = "";
-        if (status === "Active") msg = "✅ Course approved and activated.";
-        if (status === "Draft") msg = "❌ Course declined and moved back to draft.";
-        if (status === "Inactive") msg = "⚠️ Course deactivated.";
-        if (status === "Wait for Approval") msg = "🔄 Course moved back to Course Owner for updates.";
+        if (status === "Active") msg = "Module approved and activated.";
+        if (status === "Draft") msg = "Module declined and moved to draft.";
+        if (status === "Inactive") msg = "Module deactivated.";
         setSnack({ open: true, severity: "info", msg });
     };
 
@@ -51,38 +50,36 @@ const AdminCourseApproval = () => {
         <Box sx={styles.page}>
             <Box sx={styles.card}>
                 <Typography variant="h5" fontWeight={700} mb={2}>
-                    Course Approval
+                    Module Approval
                 </Typography>
 
                 <Paper variant="outlined">
                     <Table>
                         <TableHead sx={{ background: "#f7f7f9" }}>
                             <TableRow>
-                                <TableCell>Course Name</TableCell>
-                                <TableCell>Category</TableCell>
-                                <TableCell>Outline</TableCell>
-                                <TableCell>Duration</TableCell>
+                                <TableCell>Course</TableCell>
+                                <TableCell>Module</TableCell>
+                                <TableCell>Pages</TableCell>
                                 <TableCell>Status</TableCell>
                                 <TableCell align="right">Actions</TableCell>
                             </TableRow>
                         </TableHead>
                         <TableBody>
-                            {courses.length === 0 ? (
+                            {modules.length === 0 ? (
                                 <TableRow>
-                                    <TableCell colSpan={6} align="center" sx={{ py: 4, color: "text.secondary" }}>
-                                        No courses submitted yet.
+                                    <TableCell colSpan={5} align="center" sx={{ py: 4, color: "text.secondary" }}>
+                                        No modules submitted yet.
                                     </TableCell>
                                 </TableRow>
                             ) : (
-                                courses.map((c, idx) => (
+                                modules.map((m, idx) => (
                                     <TableRow key={idx} hover>
-                                        <TableCell>{c.name}</TableCell>
-                                        <TableCell>{c.category}</TableCell>
-                                        <TableCell>{c.outline}</TableCell>
-                                        <TableCell>{c.duration}</TableCell>
-                                        <TableCell>{c.status}</TableCell>
+                                        <TableCell>{m.courseName}</TableCell>
+                                        <TableCell>{m.moduleTitle}</TableCell>
+                                        <TableCell>{m.pages.length}</TableCell>
+                                        <TableCell>{m.status}</TableCell>
                                         <TableCell align="right">
-                                            {c.status === "Wait for Approval" && (
+                                            {m.status === "Wait for Approval" && (
                                                 <>
                                                     <Tooltip title="Approve">
                                                         <Button
@@ -108,7 +105,7 @@ const AdminCourseApproval = () => {
                                                 </>
                                             )}
 
-                                            {c.status === "Active" && (
+                                            {m.status === "Active" && (
                                                 <Tooltip title="Deactivate">
                                                     <Button
                                                         variant="outlined"
@@ -121,15 +118,15 @@ const AdminCourseApproval = () => {
                                                 </Tooltip>
                                             )}
 
-                                            {c.status === "Inactive" && (
-                                                <Tooltip title="Require Update Before Reactivation">
+                                            {m.status === "Inactive" && (
+                                                <Tooltip title="Reactivate">
                                                     <Button
-                                                        variant="outlined"
-                                                        color="secondary"
+                                                        variant="contained"
+                                                        color="primary"
                                                         size="small"
-                                                        onClick={() => updateStatus(idx, "Wait for Approval")}
+                                                        onClick={() => updateStatus(idx, "Active")}
                                                     >
-                                                        Request Update
+                                                        Reactivate
                                                     </Button>
                                                 </Tooltip>
                                             )}
@@ -170,4 +167,4 @@ const styles = {
     },
 };
 
-export default AdminCourseApproval;
+export default AdminModuleApproval;
