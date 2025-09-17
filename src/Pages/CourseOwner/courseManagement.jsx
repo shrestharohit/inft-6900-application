@@ -1,17 +1,19 @@
 // src/Pages/CourseOwner/courseManagement.jsx
 import React, { useState, useEffect } from "react";
 import {
-    Box, Button, TextField, MenuItem, Typography,
-    Stack, Paper, Table, TableHead, TableRow, TableCell, TableBody
+    Box,
+    Button,
+    TextField,
+    Typography,
+    Stack,
+    Paper,
+    Table,
+    TableHead,
+    TableRow,
+    TableCell,
+    TableBody,
+    Autocomplete
 } from "@mui/material";
-
-const categories = [
-    "Business Analysis",
-    "Data Analysis",
-    "Project Management",
-    "Programming",
-    "Finance",
-];
 
 const STORAGE_KEY = "course_owner_courses";
 
@@ -24,8 +26,14 @@ export default function CourseManagement() {
         duration: "",
     });
     const [editingIndex, setEditingIndex] = useState(null);
+    const [categories, setCategories] = useState([
+        "Business Analysis",
+        "Data Analysis",
+        "Project Management",
+        "Programming",
+        "Finance",
+    ]);
 
-    // Load saved courses
     useEffect(() => {
         const raw = localStorage.getItem(STORAGE_KEY);
         if (raw) {
@@ -37,7 +45,6 @@ export default function CourseManagement() {
         }
     }, []);
 
-    // Save whenever courses change
     useEffect(() => {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(courses));
     }, [courses]);
@@ -48,20 +55,19 @@ export default function CourseManagement() {
 
     const handleSubmit = (e) => {
         e.preventDefault();
-
         if (editingIndex !== null) {
-            // If course was Active or Inactive → send for approval again
             const updated = [...courses];
-            const currentStatus = updated[editingIndex].status;
-            updated[editingIndex] = {
-                ...form,
-                status: currentStatus === "Draft" ? "Draft" : "Wait for Approval",
-            };
+            // After editing, status is always Draft
+            updated[editingIndex] = { ...form, status: "Draft" };
             setCourses(updated);
             setEditingIndex(null);
         } else {
-            // New course starts as Draft
             setCourses([...courses, { ...form, status: "Draft" }]);
+        }
+
+        // Add category to list if new
+        if (form.category && !categories.includes(form.category)) {
+            setCategories([...categories, form.category]);
         }
 
         setForm({ name: "", category: "", outline: "", duration: "" });
@@ -102,22 +108,31 @@ export default function CourseManagement() {
                             onChange={handleChange}
                             required
                         />
-                        <TextField
-                            select
-                            label="Category"
-                            name="category"
+
+                        {/* Editable Category Dropdown */}
+                        <Autocomplete
+                            freeSolo
+                            options={categories}
                             value={form.category}
-                            onChange={handleChange}
-                            required
-                        >
-                            {categories.map((c) => (
-                                <MenuItem key={c} value={c}>
-                                    {c}
-                                </MenuItem>
-                            ))}
-                        </TextField>
+                            onChange={(event, newValue) => {
+                                if (typeof newValue === "string") {
+                                    setForm({ ...form, category: newValue });
+                                }
+                            }}
+                            onInputChange={(event, newInputValue) => {
+                                setForm({ ...form, category: newInputValue });
+                            }}
+                            renderInput={(params) => (
+                                <TextField
+                                    {...params}
+                                    label="Category"
+                                    required
+                                />
+                            )}
+                        />
+
                         <TextField
-                            label="Course Outline (modules/topics)"
+                            label="Course Outline"
                             name="outline"
                             value={form.outline}
                             onChange={handleChange}
@@ -158,47 +173,46 @@ export default function CourseManagement() {
                         </TableRow>
                     </TableHead>
                     <TableBody>
-                        {courses.map((course, index) => (
-                            <TableRow key={index}>
-                                <TableCell>{course.name}</TableCell>
-                                <TableCell>{course.category}</TableCell>
-                                <TableCell>{course.outline}</TableCell>
-                                <TableCell>{course.duration}</TableCell>
-                                <TableCell>{course.status}</TableCell>
-                                <TableCell align="right">
-                                    {/* Draft → can request approval or edit */}
-                                    {course.status === "Draft" && (
-                                        <>
+                        {courses.length === 0 ? (
+                            <TableRow>
+                                <TableCell colSpan={6} align="center" sx={{ py: 3 }}>
+                                    No courses added yet.
+                                </TableCell>
+                            </TableRow>
+                        ) : (
+                            courses.map((course, index) => (
+                                <TableRow key={index}>
+                                    <TableCell>{course.name}</TableCell>
+                                    <TableCell>{course.category}</TableCell>
+                                    <TableCell>{course.outline}</TableCell>
+                                    <TableCell>{course.duration}</TableCell>
+                                    <TableCell>{course.status}</TableCell>
+                                    <TableCell align="right" sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
+                                        {/* Edit button */}
+                                        {course.status !== "Wait for Approval" && (
+                                            <Button
+                                                variant="outlined"
+                                                size="small"
+                                                onClick={() => handleEdit(index)}
+                                            >
+                                                Edit
+                                            </Button>
+                                        )}
+
+                                        {/* Request Approval button for Draft or Inactive courses */}
+                                        {(course.status === "Draft" || course.status === "Inactive") && (
                                             <Button
                                                 variant="contained"
                                                 size="small"
-                                                color="secondary"
+                                                color="success"
                                                 onClick={() => handleRequestApproval(index)}
-                                                sx={{ marginRight: "0.5rem" }}
                                             >
                                                 Request Approval
                                             </Button>
-                                            <Button
-                                                variant="outlined"
-                                                size="small"
-                                                onClick={() => handleEdit(index)}
-                                            >
-                                                Edit
-                                            </Button>
-                                        </>
-                                    )}
+                                        )}
 
-                                    {/* Active → can edit (goes to Wait) or inactivate */}
-                                    {course.status === "Active" && (
-                                        <>
-                                            <Button
-                                                variant="outlined"
-                                                size="small"
-                                                onClick={() => handleEdit(index)}
-                                                sx={{ marginRight: "0.5rem" }}
-                                            >
-                                                Edit
-                                            </Button>
+                                        {/* Inactivate button for Active courses */}
+                                        {course.status === "Active" && (
                                             <Button
                                                 variant="outlined"
                                                 size="small"
@@ -207,38 +221,10 @@ export default function CourseManagement() {
                                             >
                                                 Inactivate
                                             </Button>
-                                        </>
-                                    )}
-
-                                    {/* Inactive → can edit (goes to Wait) */}
-                                    {course.status === "Inactive" && (
-                                        <Button
-                                            variant="outlined"
-                                            size="small"
-                                            onClick={() => handleEdit(index)}
-                                        >
-                                            Edit (Re-submit)
-                                        </Button>
-                                    )}
-
-                                    {/* Wait for Approval → no actions */}
-                                    {course.status === "Wait for Approval" && (
-                                        <Typography
-                                            variant="body2"
-                                            color="text.secondary"
-                                        >
-                                            Pending Admin Review
-                                        </Typography>
-                                    )}
-                                </TableCell>
-                            </TableRow>
-                        ))}
-                        {courses.length === 0 && (
-                            <TableRow>
-                                <TableCell colSpan={6} align="center">
-                                    No courses added yet.
-                                </TableCell>
-                            </TableRow>
+                                        )}
+                                    </TableCell>
+                                </TableRow>
+                            ))
                         )}
                     </TableBody>
                 </Table>

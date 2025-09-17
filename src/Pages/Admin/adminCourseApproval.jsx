@@ -11,13 +11,12 @@ import {
     Alert
 } from "@mui/material";
 
-const STORAGE_KEY = "course_owner_courses"; // same key used in CourseOwner page
+const STORAGE_KEY = "course_owner_courses";
 
 const AdminCourseApproval = () => {
     const [courses, setCourses] = useState([]);
     const [snack, setSnack] = useState({ open: false, severity: "success", msg: "" });
 
-    // Load courses from localStorage
     useEffect(() => {
         const raw = localStorage.getItem(STORAGE_KEY);
         if (raw) {
@@ -29,21 +28,19 @@ const AdminCourseApproval = () => {
         }
     }, []);
 
-    // Sync changes back to localStorage
     useEffect(() => {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(courses));
     }, [courses]);
 
     const updateStatus = (idx, status) => {
-        const next = [...courses];
-        next[idx].status = status;
-        setCourses(next);
+        const updated = [...courses];
+        updated[idx].status = status;
+        setCourses(updated);
 
         let msg = "";
-        if (status === "Active") msg = "✅ Course approved and activated.";
-        if (status === "Draft") msg = "❌ Course declined and moved back to draft.";
+        if (status === "Active") msg = "✅ Course approved and now Active.";
+        if (status === "Draft") msg = "❌ Course declined and moved back to Draft.";
         if (status === "Inactive") msg = "⚠️ Course deactivated.";
-        if (status === "Wait for Approval") msg = "🔄 Course moved back to Course Owner for updates.";
         setSnack({ open: true, severity: "info", msg });
     };
 
@@ -74,15 +71,16 @@ const AdminCourseApproval = () => {
                                     </TableCell>
                                 </TableRow>
                             ) : (
-                                courses.map((c, idx) => (
+                                courses.map((course, idx) => (
                                     <TableRow key={idx} hover>
-                                        <TableCell>{c.name}</TableCell>
-                                        <TableCell>{c.category}</TableCell>
-                                        <TableCell>{c.outline}</TableCell>
-                                        <TableCell>{c.duration}</TableCell>
-                                        <TableCell>{c.status}</TableCell>
+                                        <TableCell>{course.name}</TableCell>
+                                        <TableCell>{course.category}</TableCell>
+                                        <TableCell>{course.outline}</TableCell>
+                                        <TableCell>{course.duration}</TableCell>
+                                        <TableCell>{course.status}</TableCell>
                                         <TableCell align="right">
-                                            {c.status === "Wait for Approval" && (
+                                            {/* Wait for Approval → Approve / Decline */}
+                                            {course.status === "Wait for Approval" && (
                                                 <>
                                                     <Tooltip title="Approve">
                                                         <Button
@@ -108,7 +106,8 @@ const AdminCourseApproval = () => {
                                                 </>
                                             )}
 
-                                            {c.status === "Active" && (
+                                            {/* Active → can Inactivate */}
+                                            {course.status === "Active" && (
                                                 <Tooltip title="Deactivate">
                                                     <Button
                                                         variant="outlined"
@@ -116,22 +115,23 @@ const AdminCourseApproval = () => {
                                                         size="small"
                                                         onClick={() => updateStatus(idx, "Inactive")}
                                                     >
-                                                        Deactivate
+                                                        Inactivate
                                                     </Button>
                                                 </Tooltip>
                                             )}
 
-                                            {c.status === "Inactive" && (
-                                                <Tooltip title="Require Update Before Reactivation">
-                                                    <Button
-                                                        variant="outlined"
-                                                        color="secondary"
-                                                        size="small"
-                                                        onClick={() => updateStatus(idx, "Wait for Approval")}
-                                                    >
-                                                        Request Update
-                                                    </Button>
-                                                </Tooltip>
+                                            {/* Inactive → show info only, owner edits in their page */}
+                                            {course.status === "Inactive" && (
+                                                <Typography variant="body2" color="text.secondary">
+                                                    Course is inactive. Owner can edit & request approval.
+                                                </Typography>
+                                            )}
+
+                                            {/* Draft → info only */}
+                                            {course.status === "Draft" && (
+                                                <Typography variant="body2" color="text.secondary">
+                                                    Pending owner submission
+                                                </Typography>
                                             )}
                                         </TableCell>
                                     </TableRow>

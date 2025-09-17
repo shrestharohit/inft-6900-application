@@ -18,7 +18,9 @@ import ProfileManagement from './Pages/profilemanagement';
 import AdminLayout from "./Pages/Admin/adminlayout";
 import AdminUserManagement from "./Pages/Admin/adminUserManagement";
 import AdminCourseApproval from "./Pages/Admin/adminCourseApproval";
-import AdminModuleApproval from './Pages/Admin/adminModuleApproval';
+import AdminModuleApproval from "./Pages/Admin/adminModuleApproval";
+import AdminQuizApproval from "./Pages/Admin/adminQuizApproval";  // ✅ NEW
+
 import {
   DashboardPage,
   PathwaysPage,
@@ -33,6 +35,7 @@ import {
 import CourseManagement from "./Pages/CourseOwner/courseManagement";
 import CourseOwnerLayout from "./Pages/CourseOwner/courseOwnerLayout";
 import ModuleManagement from "./Pages/CourseOwner/moduleManagement";
+import QuizManagement from "./Pages/CourseOwner/quizManagement"; // ✅ NEW Quiz Management
 
 // Placeholder for Courses & Pathways
 const CoursePage = ({ name }) => <h2 style={{ textAlign: "center", marginTop: "2rem" }}>Welcome to {name}</h2>;
@@ -211,6 +214,7 @@ function App() {
           <Route path="settings" element={<SettingsPage />} />
           <Route path="course-approvals" element={<AdminCourseApproval />} />
           <Route path="module-approvals" element={<AdminModuleApproval />} />
+          <Route path="quiz-approvals" element={<AdminQuizApproval />} /> {/* ✅ NEW */}
         </Route>
 
         {/* Course Owner */}
@@ -218,14 +222,11 @@ function App() {
           <Route index element={<CourseManagement />} />
           <Route path="courses" element={<CourseManagement />} />
           <Route path="modules" element={<ModuleManagement />} />
-          <Route path="quizzes" element={<Placeholder title="Quizzes Page" />} />
-          {/* you can keep or remove this one, depends if you want a sub-route */}
-          {/* <Route path="modules/manage" element={<ModuleManagement />} /> */}
+          <Route path="quizzes" element={<QuizManagement />} /> {/* ✅ Replaced Placeholder */}
           <Route path="reports" element={<Placeholder title="Reports Page" />} />
           <Route path="settings" element={<Placeholder title="Settings Page" />} />
         </Route>
       </Routes>
-
 
       {/* Footer */}
       {!isAdminRoute && !isCourseOwnerRoute && (
@@ -266,5 +267,3 @@ const styles = {
 };
 
 export default App;
-
-

@@ -2,7 +2,8 @@
 import React, { useState, useEffect } from "react";
 import {
     Box, Button, TextField, Typography, Stack, Paper,
-    Table, TableHead, TableRow, TableCell, TableBody, IconButton
+    Table, TableHead, TableRow, TableCell, TableBody,
+    IconButton, Divider, Card, CardContent
 } from "@mui/material";
 import { Add, Delete } from "@mui/icons-material";
 
@@ -66,13 +67,15 @@ export default function ModuleManagement() {
         e.preventDefault();
         if (editingIndex !== null) {
             const updated = [...modules];
-            updated[editingIndex] = { ...form, status: "Wait for Approval" }; // edits go to approval
+            // Reset to Draft after edit, so user can request approval again
+            updated[editingIndex] = { ...form, status: "Draft" };
             setModules(updated);
             setEditingIndex(null);
         } else {
-            setModules([...modules, { ...form, status: "Draft" }]); // new = Draft
+            setModules([...modules, { ...form, status: "Draft" }]);
         }
         setForm({ courseName: "", moduleTitle: "", pages: [] });
+        setPageForm({ title: "", content: "", mediaUrl: "" });
     };
 
     // Edit module
@@ -89,14 +92,21 @@ export default function ModuleManagement() {
         setModules(updated);
     };
 
+    // Discard changes
+    const handleDiscard = () => {
+        setForm({ courseName: "", moduleTitle: "", pages: [] });
+        setPageForm({ title: "", content: "", mediaUrl: "" });
+        setEditingIndex(null);
+    };
+
     return (
-        <Box sx={{ padding: "2rem" }}>
-            <Typography variant="h4" gutterBottom>
+        <Box sx={{ padding: "2rem", maxWidth: 1000, margin: "0 auto" }}>
+            <Typography variant="h4" gutterBottom fontWeight={700}>
                 Module Management
             </Typography>
 
             {/* Form */}
-            <Paper sx={{ padding: "1.5rem", marginBottom: "2rem" }}>
+            <Paper sx={{ padding: "1.5rem", marginBottom: "2rem", borderRadius: 3, boxShadow: "0 6px 16px rgba(0,0,0,0.08)" }}>
                 <form onSubmit={handleSubmit}>
                     <Stack spacing={2}>
                         <TextField
@@ -105,6 +115,7 @@ export default function ModuleManagement() {
                             value={form.courseName}
                             onChange={handleChange}
                             required
+                            fullWidth
                         />
                         <TextField
                             label="Module Title"
@@ -112,68 +123,104 @@ export default function ModuleManagement() {
                             value={form.moduleTitle}
                             onChange={handleChange}
                             required
+                            fullWidth
                         />
 
                         {/* Add Pages */}
-                        <Typography variant="h6">Pages</Typography>
-                        <Stack direction="row" spacing={2}>
+                        <Typography variant="h6" mt={2}>
+                            Add Pages
+                        </Typography>
+                        <Stack spacing={2}>
                             <TextField
                                 label="Page Title"
                                 name="title"
                                 value={pageForm.title}
                                 onChange={handlePageChange}
+                                fullWidth
                             />
                             <TextField
-                                label="Content"
+                                label="Page Content"
                                 name="content"
                                 value={pageForm.content}
                                 onChange={handlePageChange}
+                                multiline
+                                rows={4}
+                                fullWidth
                             />
                             <TextField
                                 label="Media URL"
                                 name="mediaUrl"
                                 value={pageForm.mediaUrl}
                                 onChange={handlePageChange}
+                                fullWidth
                             />
-                            <Button variant="contained" onClick={handleAddPage}>
+                            <Button
+                                variant="contained"
+                                startIcon={<Add />}
+                                onClick={handleAddPage}
+                                sx={{ alignSelf: "flex-start" }}
+                            >
                                 Add Page
                             </Button>
                         </Stack>
 
+                        {/* Display Added Pages */}
                         {form.pages.length > 0 && (
-                            <Paper sx={{ padding: "1rem", marginTop: "1rem" }}>
-                                {form.pages.map((p, idx) => (
-                                    <Stack
-                                        key={idx}
-                                        direction="row"
-                                        justifyContent="space-between"
-                                        alignItems="center"
-                                        sx={{ marginBottom: "0.5rem" }}
-                                    >
-                                        <Typography>
-                                            {p.pageNumber}. {p.title} – {p.content} ({p.mediaUrl || "No media"})
-                                        </Typography>
-                                        <IconButton
-                                            size="small"
-                                            color="error"
-                                            onClick={() => handleRemovePage(idx)}
-                                        >
-                                            <Delete fontSize="small" />
-                                        </IconButton>
-                                    </Stack>
-                                ))}
-                            </Paper>
+                            <Box sx={{ mt: 3 }}>
+                                <Typography variant="h6" gutterBottom>
+                                    Pages in this Module
+                                </Typography>
+                                <Stack spacing={2}>
+                                    {form.pages.map((p, idx) => (
+                                        <Card key={idx} variant="outlined" sx={{ borderRadius: 2 }}>
+                                            <CardContent>
+                                                <Box display="flex" justifyContent="space-between" alignItems="center">
+                                                    <Typography variant="subtitle1" fontWeight={600}>
+                                                        {p.pageNumber}. {p.title}
+                                                    </Typography>
+                                                    <IconButton
+                                                        size="small"
+                                                        color="error"
+                                                        onClick={() => handleRemovePage(idx)}
+                                                    >
+                                                        <Delete fontSize="small" />
+                                                    </IconButton>
+                                                </Box>
+                                                <Divider sx={{ my: 1 }} />
+                                                <Typography variant="body1" sx={{ mb: 1 }}>
+                                                    {p.content}
+                                                </Typography>
+                                                {p.mediaUrl && (
+                                                    <Typography variant="body2" color="primary">
+                                                        Media:{" "}
+                                                        <a href={p.mediaUrl} target="_blank" rel="noopener noreferrer">
+                                                            {p.mediaUrl}
+                                                        </a>
+                                                    </Typography>
+                                                )}
+                                            </CardContent>
+                                        </Card>
+                                    ))}
+                                </Stack>
+                            </Box>
                         )}
 
-                        <Button type="submit" variant="contained" color="primary">
-                            {editingIndex !== null ? "Update Module" : "Add Module"}
-                        </Button>
+                        <Stack direction="row" spacing={2}>
+                            <Button type="submit" variant="contained" color="primary">
+                                {editingIndex !== null ? "Update Module" : "Add Module"}
+                            </Button>
+                            {editingIndex !== null && (
+                                <Button variant="outlined" color="error" onClick={handleDiscard}>
+                                    Discard
+                                </Button>
+                            )}
+                        </Stack>
                     </Stack>
                 </form>
             </Paper>
 
             {/* Table */}
-            <Paper>
+            <Paper sx={{ borderRadius: 3, boxShadow: "0 6px 16px rgba(0,0,0,0.08)" }}>
                 <Typography variant="h6" sx={{ padding: "1rem" }}>
                     Existing Modules
                 </Typography>
@@ -189,7 +236,7 @@ export default function ModuleManagement() {
                     </TableHead>
                     <TableBody>
                         {modules.map((m, index) => (
-                            <TableRow key={index}>
+                            <TableRow key={index} hover>
                                 <TableCell>{m.courseName}</TableCell>
                                 <TableCell>{m.moduleTitle}</TableCell>
                                 <TableCell>{m.pages.length}</TableCell>
@@ -201,7 +248,7 @@ export default function ModuleManagement() {
                                             size="small"
                                             color="secondary"
                                             onClick={() => handleRequestApproval(index)}
-                                            sx={{ marginRight: "0.5rem" }}
+                                            sx={{ mr: 1 }}
                                         >
                                             Request Approval
                                         </Button>
@@ -218,7 +265,7 @@ export default function ModuleManagement() {
                         ))}
                         {modules.length === 0 && (
                             <TableRow>
-                                <TableCell colSpan={5} align="center">
+                                <TableCell colSpan={5} align="center" sx={{ py: 3 }}>
                                     No modules added yet.
                                 </TableCell>
                             </TableRow>

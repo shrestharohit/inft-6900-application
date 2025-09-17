@@ -3,7 +3,7 @@ import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { Avatar, Menu, MenuItem, Tooltip } from "@mui/material";
 import {
     Dashboard, School, LibraryBooks, People, BarChart, Mail,
-    Settings, Class as ClassIcon, ExitToApp
+    Settings, Class as ClassIcon, ExitToApp, Quiz // ✅ Added Quiz icon
 } from "@mui/icons-material";
 
 const NAV_ITEMS = [
@@ -16,8 +16,8 @@ const NAV_ITEMS = [
     { label: "Messages", to: "/admin/messages", icon: <Mail /> },
     { label: "Settings", to: "/admin/settings", icon: <Settings /> },
     { label: "Course Approvals", to: "/admin/course-approvals", icon: <LibraryBooks /> },
-    { label: "Module Approvals", to: "/admin/module-approvals", icon: <School /> }, 
-    
+    { label: "Module Approvals", to: "/admin/module-approvals", icon: <School /> },
+    { label: "Quiz Approvals", to: "/admin/quiz-approvals", icon: <Quiz /> }, // ✅ NEW
 ];
 
 const SIDEBAR_WIDTH = 240;
@@ -66,10 +66,9 @@ export default function AdminLayout() {
                         </NavLink>
                     ))}
                 </nav>
-
             </aside>
 
-            {/* Main content (shifted right to account for fixed sidebar) */}
+            {/* Main content */}
             <main style={styles.content}>
                 {/* Floating top-right profile avatar */}
                 <div style={styles.topRightControls}>
@@ -126,16 +125,6 @@ const styles = {
         padding: "18px 16px",
         borderBottom: "1px solid rgba(255,255,255,0.06)",
     },
-    brandLogo: {
-        width: 36,
-        height: 36,
-        borderRadius: 8,
-        background: "linear-gradient(135deg,#48bb78,#38a169)",
-        display: "grid",
-        placeItems: "center",
-        fontWeight: 800,
-        color: "#0f172a",
-    },
     brandText: {
         fontWeight: 700,
         letterSpacing: "0.2px",
@@ -163,18 +152,14 @@ const styles = {
         color: "#a0aec0",
         width: 22,
     },
-    sidebarFooter: {
-        padding: "10px 14px",
-        borderTop: "1px solid rgba(255,255,255,0.06)",
-    },
     content: {
-        marginLeft: SIDEBAR_WIDTH,  // account for fixed sidebar
+        marginLeft: SIDEBAR_WIDTH,
         padding: "24px",
         minHeight: "100vh",
     },
     topRightControls: {
         position: "sticky",
-        top: 16, // sticks 16px from top on scroll
+        top: 16,
         display: "flex",
         justifyContent: "flex-end",
         zIndex: 2,
