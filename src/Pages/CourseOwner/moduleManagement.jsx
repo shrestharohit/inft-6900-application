@@ -3,14 +3,18 @@ import React, { useState, useEffect } from "react";
 import {
     Box, Button, TextField, Typography, Stack, Paper,
     Table, TableHead, TableRow, TableCell, TableBody,
-    IconButton, Divider, Card, CardContent
+    IconButton, Divider, Card, CardContent, Select, MenuItem, FormControl, InputLabel,
+    Dialog, DialogTitle, DialogContent, DialogActions
 } from "@mui/material";
 import { Add, Delete } from "@mui/icons-material";
+import Autocomplete from "@mui/material/Autocomplete";
 
 const STORAGE_KEY = "course_owner_modules";
+const COURSES_KEY = "course_owner_courses";
 
 export default function ModuleManagement() {
     const [modules, setModules] = useState([]);
+    const [courses, setCourses] = useState([]);
     const [form, setForm] = useState({
         courseName: "",
         moduleTitle: "",
@@ -18,35 +22,39 @@ export default function ModuleManagement() {
     });
     const [pageForm, setPageForm] = useState({ title: "", content: "", mediaUrl: "" });
     const [editingIndex, setEditingIndex] = useState(null);
+    const [contentDialogOpen, setContentDialogOpen] = useState(false);
 
-    // Load saved modules
     useEffect(() => {
-        const raw = localStorage.getItem(STORAGE_KEY);
-        if (raw) {
+        const rawModules = localStorage.getItem(STORAGE_KEY);
+        if (rawModules) {
             try {
-                setModules(JSON.parse(raw));
+                setModules(JSON.parse(rawModules));
             } catch {
                 setModules([]);
             }
         }
+        const rawCourses = localStorage.getItem(COURSES_KEY);
+        if (rawCourses) {
+            try {
+                setCourses(JSON.parse(rawCourses));
+            } catch {
+                setCourses([]);
+            }
+        }
     }, []);
 
-    // Save whenever modules change
     useEffect(() => {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(modules));
     }, [modules]);
 
-    // Handle input change for module
     const handleChange = (e) => {
         setForm({ ...form, [e.target.name]: e.target.value });
     };
 
-    // Handle page input change
     const handlePageChange = (e) => {
         setPageForm({ ...pageForm, [e.target.name]: e.target.value });
     };
 
-    // Add page to current module
     const handleAddPage = () => {
         if (!pageForm.title.trim() || !pageForm.content.trim()) return;
         setForm({
@@ -56,18 +64,18 @@ export default function ModuleManagement() {
         setPageForm({ title: "", content: "", mediaUrl: "" });
     };
 
-    // Remove page from module
     const handleRemovePage = (pageIdx) => {
         const updated = form.pages.filter((_, i) => i !== pageIdx);
-        setForm({ ...form, pages: updated });
+        const renumbered = updated.map((p, idx) => ({ ...p, pageNumber: idx + 1 }));
+        setForm({ ...form, pages: renumbered });
     };
 
-    // Submit module
     const handleSubmit = (e) => {
         e.preventDefault();
+        if (!form.courseName || !form.moduleTitle) return;
+
         if (editingIndex !== null) {
             const updated = [...modules];
-            // Reset to Draft after edit, so user can request approval again
             updated[editingIndex] = { ...form, status: "Draft" };
             setModules(updated);
             setEditingIndex(null);
@@ -78,26 +86,27 @@ export default function ModuleManagement() {
         setPageForm({ title: "", content: "", mediaUrl: "" });
     };
 
-    // Edit module
     const handleEdit = (idx) => {
         const { courseName, moduleTitle, pages } = modules[idx];
         setForm({ courseName, moduleTitle, pages });
         setEditingIndex(idx);
     };
 
-    // Request approval
     const handleRequestApproval = (idx) => {
         const updated = [...modules];
-        updated[idx].status = "Wait for Approval";
+        updated[idx].status = "Request for Approval";
         setModules(updated);
     };
 
-    // Discard changes
     const handleDiscard = () => {
         setForm({ courseName: "", moduleTitle: "", pages: [] });
         setPageForm({ title: "", content: "", mediaUrl: "" });
         setEditingIndex(null);
     };
+
+    const moduleTitlesForCourse = modules
+        .filter((m) => m.courseName === form.courseName)
+        .map((m) => m.moduleTitle);
 
     return (
         <Box sx={{ padding: "2rem", maxWidth: 1000, margin: "0 auto" }}>
@@ -105,31 +114,34 @@ export default function ModuleManagement() {
                 Module Management
             </Typography>
 
-            {/* Form */}
             <Paper sx={{ padding: "1.5rem", marginBottom: "2rem", borderRadius: 3, boxShadow: "0 6px 16px rgba(0,0,0,0.08)" }}>
                 <form onSubmit={handleSubmit}>
                     <Stack spacing={2}>
-                        <TextField
-                            label="Course Name"
-                            name="courseName"
-                            value={form.courseName}
-                            onChange={handleChange}
-                            required
-                            fullWidth
-                        />
-                        <TextField
-                            label="Module Title"
-                            name="moduleTitle"
+                        <FormControl fullWidth>
+                            <InputLabel>Course Name</InputLabel>
+                            <Select
+                                name="courseName"
+                                value={form.courseName}
+                                label="Course Name"
+                                onChange={handleChange}
+                                required
+                            >
+                                {courses.map((c, idx) => (
+                                    <MenuItem key={idx} value={c.name}>{c.name}</MenuItem>
+                                ))}
+                            </Select>
+                        </FormControl>
+
+                        <Autocomplete
+                            freeSolo
+                            options={moduleTitlesForCourse}
                             value={form.moduleTitle}
-                            onChange={handleChange}
-                            required
-                            fullWidth
+                            onChange={(_, newValue) => setForm({ ...form, moduleTitle: newValue || "" })}
+                            onInputChange={(_, newInput) => setForm({ ...form, moduleTitle: newInput })}
+                            renderInput={(params) => <TextField {...params} label="Module Title" required />}
                         />
 
-                        {/* Add Pages */}
-                        <Typography variant="h6" mt={2}>
-                            Add Pages
-                        </Typography>
+                        <Typography variant="h6" mt={2}>Add Pages</Typography>
                         <Stack spacing={2}>
                             <TextField
                                 label="Page Title"
@@ -138,13 +150,15 @@ export default function ModuleManagement() {
                                 onChange={handlePageChange}
                                 fullWidth
                             />
+                            {/* Page Content opens a scrollable Dialog */}
                             <TextField
                                 label="Page Content"
                                 name="content"
                                 value={pageForm.content}
-                                onChange={handlePageChange}
+                                onClick={() => setContentDialogOpen(true)}
+                                readOnly
                                 multiline
-                                rows={4}
+                                rows={2}
                                 fullWidth
                             />
                             <TextField
@@ -154,22 +168,14 @@ export default function ModuleManagement() {
                                 onChange={handlePageChange}
                                 fullWidth
                             />
-                            <Button
-                                variant="contained"
-                                startIcon={<Add />}
-                                onClick={handleAddPage}
-                                sx={{ alignSelf: "flex-start" }}
-                            >
+                            <Button variant="contained" startIcon={<Add />} onClick={handleAddPage} sx={{ alignSelf: "flex-start" }}>
                                 Add Page
                             </Button>
                         </Stack>
 
-                        {/* Display Added Pages */}
                         {form.pages.length > 0 && (
                             <Box sx={{ mt: 3 }}>
-                                <Typography variant="h6" gutterBottom>
-                                    Pages in this Module
-                                </Typography>
+                                <Typography variant="h6" gutterBottom>Pages in this Module</Typography>
                                 <Stack spacing={2}>
                                     {form.pages.map((p, idx) => (
                                         <Card key={idx} variant="outlined" sx={{ borderRadius: 2 }}>
@@ -178,24 +184,15 @@ export default function ModuleManagement() {
                                                     <Typography variant="subtitle1" fontWeight={600}>
                                                         {p.pageNumber}. {p.title}
                                                     </Typography>
-                                                    <IconButton
-                                                        size="small"
-                                                        color="error"
-                                                        onClick={() => handleRemovePage(idx)}
-                                                    >
+                                                    <IconButton size="small" color="error" onClick={() => handleRemovePage(idx)}>
                                                         <Delete fontSize="small" />
                                                     </IconButton>
                                                 </Box>
                                                 <Divider sx={{ my: 1 }} />
-                                                <Typography variant="body1" sx={{ mb: 1 }}>
-                                                    {p.content}
-                                                </Typography>
+                                                <Typography variant="body1" sx={{ mb: 1 }}>{p.content}</Typography>
                                                 {p.mediaUrl && (
                                                     <Typography variant="body2" color="primary">
-                                                        Media:{" "}
-                                                        <a href={p.mediaUrl} target="_blank" rel="noopener noreferrer">
-                                                            {p.mediaUrl}
-                                                        </a>
+                                                        Media: <a href={p.mediaUrl} target="_blank" rel="noopener noreferrer">{p.mediaUrl}</a>
                                                     </Typography>
                                                 )}
                                             </CardContent>
@@ -210,20 +207,15 @@ export default function ModuleManagement() {
                                 {editingIndex !== null ? "Update Module" : "Add Module"}
                             </Button>
                             {editingIndex !== null && (
-                                <Button variant="outlined" color="error" onClick={handleDiscard}>
-                                    Discard
-                                </Button>
+                                <Button variant="outlined" color="error" onClick={handleDiscard}>Discard</Button>
                             )}
                         </Stack>
                     </Stack>
                 </form>
             </Paper>
 
-            {/* Table */}
             <Paper sx={{ borderRadius: 3, boxShadow: "0 6px 16px rgba(0,0,0,0.08)" }}>
-                <Typography variant="h6" sx={{ padding: "1rem" }}>
-                    Existing Modules
-                </Typography>
+                <Typography variant="h6" sx={{ padding: "1rem" }}>Existing Modules</Typography>
                 <Table>
                     <TableHead>
                         <TableRow>
@@ -253,13 +245,7 @@ export default function ModuleManagement() {
                                             Request Approval
                                         </Button>
                                     )}
-                                    <Button
-                                        variant="outlined"
-                                        size="small"
-                                        onClick={() => handleEdit(index)}
-                                    >
-                                        Edit
-                                    </Button>
+                                    <Button variant="outlined" size="small" onClick={() => handleEdit(index)}>Edit</Button>
                                 </TableCell>
                             </TableRow>
                         ))}
@@ -273,6 +259,32 @@ export default function ModuleManagement() {
                     </TableBody>
                 </Table>
             </Paper>
+
+            {/* Scrollable Dialog for Page Content */}
+            <Dialog
+                open={contentDialogOpen}
+                onClose={() => setContentDialogOpen(false)}
+                maxWidth="md"
+                fullWidth
+                scroll="paper"
+            >
+                <DialogTitle>Edit Page Content</DialogTitle>
+                <DialogContent dividers>
+                    <TextField
+                        label="Page Content"
+                        name="content"
+                        value={pageForm.content}
+                        onChange={handlePageChange}
+                        multiline
+                        rows={15}
+                        fullWidth
+                    />
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setContentDialogOpen(false)}>Cancel</Button>
+                    <Button onClick={() => setContentDialogOpen(false)} variant="contained">Save</Button>
+                </DialogActions>
+            </Dialog>
         </Box>
     );
 }

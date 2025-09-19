@@ -11,7 +11,7 @@ import {
     Alert
 } from "@mui/material";
 
-const STORAGE_KEY = "course_owner_modules"; // same key used in CourseOwner ModuleManagement
+const STORAGE_KEY = "course_owner_modules"; // modules storage key
 
 const AdminModuleApproval = () => {
     const [modules, setModules] = useState([]);
@@ -43,6 +43,7 @@ const AdminModuleApproval = () => {
         if (status === "Active") msg = "Module approved and activated.";
         if (status === "Draft") msg = "Module declined and moved to draft.";
         if (status === "Inactive") msg = "Module deactivated.";
+        if (status === "Request for Approval") msg = "Module sent for approval.";
         setSnack({ open: true, severity: "info", msg });
     };
 
@@ -79,7 +80,7 @@ const AdminModuleApproval = () => {
                                         <TableCell>{m.pages.length}</TableCell>
                                         <TableCell>{m.status}</TableCell>
                                         <TableCell align="right">
-                                            {m.status === "Wait for Approval" && (
+                                            {m.status === "Request for Approval" && (
                                                 <>
                                                     <Tooltip title="Approve">
                                                         <Button

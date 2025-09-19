@@ -12,6 +12,7 @@ import {
 } from "@mui/material";
 
 const STORAGE_KEY = "course_owner_courses";
+const MODULES_KEY = "course_owner_modules";
 
 const AdminCourseApproval = () => {
     const [courses, setCourses] = useState([]);
@@ -32,15 +33,46 @@ const AdminCourseApproval = () => {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(courses));
     }, [courses]);
 
+    // helper to update modules associated with a course
+    const syncModulesForCourse = (courseName, newStatus) => {
+        try {
+            const raw = localStorage.getItem(MODULES_KEY);
+            if (!raw) return;
+            const modules = JSON.parse(raw);
+            const updated = modules.map((m) => {
+                if (m.courseName === courseName) {
+                    return { ...m, status: newStatus };
+                }
+                return m;
+            });
+            localStorage.setItem(MODULES_KEY, JSON.stringify(updated));
+        } catch (e) {
+            // ignore parse errors
+        }
+    };
+
     const updateStatus = (idx, status) => {
         const updated = [...courses];
         updated[idx].status = status;
         setCourses(updated);
 
         let msg = "";
-        if (status === "Active") msg = "✅ Course approved and now Active.";
-        if (status === "Draft") msg = "❌ Course declined and moved back to Draft.";
-        if (status === "Inactive") msg = "⚠️ Course deactivated.";
+        if (status === "Active") {
+            msg = "✅ Course approved and now Active.";
+            // When course approved, also activate all modules for that course
+            syncModulesForCourse(updated[idx].name, "Active");
+        } else if (status === "Draft") {
+            msg = "❌ Course declined and moved back to Draft.";
+            // Declining course moves its modules back to Draft
+            syncModulesForCourse(updated[idx].name, "Draft");
+        } else if (status === "Inactive") {
+            msg = "⚠️ Course deactivated.";
+            syncModulesForCourse(updated[idx].name, "Inactive");
+        } else if (status === "Request for Approval") {
+            msg = "🟡 Course sent for approval.";
+            syncModulesForCourse(updated[idx].name, "Request for Approval");
+        }
+
         setSnack({ open: true, severity: "info", msg });
     };
 
@@ -80,7 +112,7 @@ const AdminCourseApproval = () => {
                                         <TableCell>{course.status}</TableCell>
                                         <TableCell align="right">
                                             {/* Wait for Approval → Approve / Decline */}
-                                            {course.status === "Wait for Approval" && (
+                                            {course.status === "Request for Approval" && (
                                                 <>
                                                     <Tooltip title="Approve">
                                                         <Button
