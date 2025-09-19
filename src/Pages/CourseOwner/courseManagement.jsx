@@ -1,5 +1,5 @@
 // src/Pages/CourseOwner/courseManagement.jsx
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
     Box,
     Button,
@@ -12,11 +12,20 @@ import {
     TableRow,
     TableCell,
     TableBody,
-    Autocomplete
+    Autocomplete,
+    Tooltip,
+    Dialog,
+    DialogTitle,
+    DialogContent,
+    DialogActions,
+    FormControl,
+    InputLabel,
+    Select,
+    MenuItem,
 } from "@mui/material";
 
 const STORAGE_KEY = "course_owner_courses";
-const MODULES_KEY = "course_owner_modules"; // to sync module statuses when course status changes
+const MODULES_KEY = "course_owner_modules";
 
 export default function CourseManagement() {
     const [courses, setCourses] = useState([]);
@@ -24,7 +33,7 @@ export default function CourseManagement() {
         name: "",
         category: "",
         outline: "",
-        duration: "",
+        level: "",
     });
     const [editingIndex, setEditingIndex] = useState(null);
     const [categories, setCategories] = useState([
@@ -34,14 +43,32 @@ export default function CourseManagement() {
         "Programming",
         "Finance",
     ]);
+    const [modules, setModules] = useState([]);
+
+    // outline dialog states
+    const [outlineDialogOpen, setOutlineDialogOpen] = useState(false);
+    const [outlineDraft, setOutlineDraft] = useState("");
+
+    // refs to prevent instant re-open on close
+    const outlineFieldRef = useRef(null);
+    const focusGuardRef = useRef(false);
 
     useEffect(() => {
-        const raw = localStorage.getItem(STORAGE_KEY);
-        if (raw) {
+        const rawCourses = localStorage.getItem(STORAGE_KEY);
+        if (rawCourses) {
             try {
-                setCourses(JSON.parse(raw));
+                setCourses(JSON.parse(rawCourses));
             } catch {
                 setCourses([]);
+            }
+        }
+
+        const rawModules = localStorage.getItem(MODULES_KEY);
+        if (rawModules) {
+            try {
+                setModules(JSON.parse(rawModules));
+            } catch {
+                setModules([]);
             }
         }
     }, []);
@@ -50,21 +77,19 @@ export default function CourseManagement() {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(courses));
     }, [courses]);
 
-    // helper to sync modules for a given courseName
+    // sync module statuses with a course
     const syncModulesForCourse = (courseName, newStatus) => {
         try {
             const raw = localStorage.getItem(MODULES_KEY);
             if (!raw) return;
-            const modules = JSON.parse(raw);
-            const updated = modules.map((m) => {
-                if (m.courseName === courseName) {
-                    return { ...m, status: newStatus };
-                }
-                return m;
-            });
+            const mods = JSON.parse(raw);
+            const updated = mods.map((m) =>
+                m.courseName === courseName ? { ...m, status: newStatus } : m
+            );
             localStorage.setItem(MODULES_KEY, JSON.stringify(updated));
-        } catch (e) {
-            // ignore parse errors
+            setModules(updated);
+        } catch {
+            // ignore
         }
     };
 
@@ -74,43 +99,62 @@ export default function CourseManagement() {
 
     const handleSubmit = (e) => {
         e.preventDefault();
+        if (!form.name || !form.category || !form.outline || !form.level) {
+            alert("❌ Please fill out all fields.");
+            return;
+        }
+
+        // prevent duplicate course names
+        const duplicateCourse = courses.some(
+            (c, idx) =>
+                idx !== editingIndex &&
+                c.name.trim().toLowerCase() === form.name.trim().toLowerCase()
+        );
+        if (duplicateCourse) {
+            alert("❌ A course with this name already exists.");
+            return;
+        }
+
         if (editingIndex !== null) {
             const updated = [...courses];
-            // After editing course detail, course must move to Draft and its modules should be Draft (block access)
             updated[editingIndex] = { ...form, status: "Draft" };
             setCourses(updated);
-
-            // sync modules to Draft for this course
             syncModulesForCourse(form.name, "Draft");
-
             setEditingIndex(null);
         } else {
             setCourses([...courses, { ...form, status: "Draft" }]);
         }
 
-        // Add category to list if new
         if (form.category && !categories.includes(form.category)) {
             setCategories([...categories, form.category]);
         }
 
-        setForm({ name: "", category: "", outline: "", duration: "" });
+        setForm({ name: "", category: "", outline: "", level: "" });
     };
 
     const handleEdit = (index) => {
-        const { name, category, outline, duration } = courses[index];
-        setForm({ name, category, outline, duration });
+        const { name, category, outline, level } = courses[index];
+        setForm({ name, category, outline, level });
         setEditingIndex(index);
     };
 
-    // Request approval for a course:
-    // - set course to "Request for Approval"
-    // - set all modules for that course to "Request for Approval"
+    // eligibility = must have at least one module with pages
+    const isEligibleForApproval = (courseName) => {
+        const relatedModules = modules.filter((m) => m.courseName === courseName);
+        if (relatedModules.length === 0) return false;
+        return relatedModules.every((m) => m.pages && m.pages.length > 0);
+    };
+
     const handleRequestApproval = (index) => {
+        const courseName = courses[index].name;
+        if (!isEligibleForApproval(courseName)) {
+            alert("❌ Cannot request approval: add modules with at least one page each.");
+            return;
+        }
+
         const updated = [...courses];
         updated[index].status = "Request for Approval";
         setCourses(updated);
-
-        const courseName = updated[index].name;
         syncModulesForCourse(courseName, "Request for Approval");
     };
 
@@ -118,20 +162,56 @@ export default function CourseManagement() {
         const updated = [...courses];
         updated[index].status = "Inactive";
         setCourses(updated);
+        syncModulesForCourse(updated[index].name, "Inactive");
+    };
 
-        // when course inactivated, also inactivate its modules
-        const courseName = updated[index].name;
-        syncModulesForCourse(courseName, "Inactive");
+    // outline dialog helpers
+    const openOutlineDialog = () => {
+        setOutlineDraft(form.outline || "");
+        setOutlineDialogOpen(true);
+    };
+
+    const closeOutlineDialogSafely = () => {
+        focusGuardRef.current = true;
+        setOutlineDialogOpen(false);
+        if (outlineFieldRef.current) {
+            outlineFieldRef.current.blur?.();
+        }
+        setTimeout(() => {
+            focusGuardRef.current = false;
+        }, 200);
+    };
+
+    const handleOutlineCancel = () => {
+        setOutlineDraft("");
+        closeOutlineDialogSafely();
+    };
+
+    const handleOutlineSave = () => {
+        setForm((prev) => ({ ...prev, outline: outlineDraft }));
+        closeOutlineDialogSafely();
+    };
+
+    const handleOutlineFieldFocus = () => {
+        if (focusGuardRef.current) return;
+        if (!outlineDialogOpen) openOutlineDialog();
     };
 
     return (
-        <Box sx={{ padding: "2rem" }}>
-            <Typography variant="h4" gutterBottom>
+        <Box sx={{ padding: "2rem", maxWidth: 1000, margin: "0 auto" }}>
+            <Typography variant="h4" gutterBottom fontWeight={700}>
                 Course Management
             </Typography>
 
             {/* Form */}
-            <Paper sx={{ padding: "1.5rem", marginBottom: "2rem" }}>
+            <Paper
+                sx={{
+                    padding: "1.5rem",
+                    marginBottom: "2rem",
+                    borderRadius: 3,
+                    boxShadow: "0 6px 16px rgba(0,0,0,0.08)",
+                }}
+            >
                 <form onSubmit={handleSubmit}>
                     <Stack spacing={2}>
                         <TextField
@@ -142,7 +222,6 @@ export default function CourseManagement() {
                             required
                         />
 
-                        {/* Editable Category Dropdown */}
                         <Autocomplete
                             freeSolo
                             options={categories}
@@ -156,11 +235,7 @@ export default function CourseManagement() {
                                 setForm({ ...form, category: newInputValue });
                             }}
                             renderInput={(params) => (
-                                <TextField
-                                    {...params}
-                                    label="Category"
-                                    required
-                                />
+                                <TextField {...params} label="Category" required />
                             )}
                         />
 
@@ -168,19 +243,29 @@ export default function CourseManagement() {
                             label="Course Outline"
                             name="outline"
                             value={form.outline}
-                            onChange={handleChange}
+                            onClick={openOutlineDialog}
+                            onFocus={handleOutlineFieldFocus}
+                            inputRef={outlineFieldRef}
+                            readOnly
                             multiline
-                            rows={3}
+                            rows={2}
+                            fullWidth
                             required
                         />
-                        <TextField
-                            label="Expected Duration"
-                            name="duration"
-                            value={form.duration}
-                            onChange={handleChange}
-                            placeholder="e.g., 6 weeks"
-                            required
-                        />
+
+                        <FormControl fullWidth required>
+                            <InputLabel>Level</InputLabel>
+                            <Select
+                                name="level"
+                                value={form.level}
+                                onChange={handleChange}
+                                label="Level"
+                            >
+                                <MenuItem value="Beginner">Beginner</MenuItem>
+                                <MenuItem value="Intermediate">Intermediate</MenuItem>
+                                <MenuItem value="Advanced">Advanced</MenuItem>
+                            </Select>
+                        </FormControl>
 
                         <Button type="submit" variant="contained" color="primary">
                             {editingIndex !== null ? "Update Course" : "Add Course"}
@@ -190,7 +275,7 @@ export default function CourseManagement() {
             </Paper>
 
             {/* Table */}
-            <Paper>
+            <Paper sx={{ borderRadius: 3, boxShadow: "0 6px 16px rgba(0,0,0,0.08)" }}>
                 <Typography variant="h6" sx={{ padding: "1rem" }}>
                     Existing Courses
                 </Typography>
@@ -200,7 +285,7 @@ export default function CourseManagement() {
                             <TableCell>Course Name</TableCell>
                             <TableCell>Category</TableCell>
                             <TableCell>Outline</TableCell>
-                            <TableCell>Duration</TableCell>
+                            <TableCell>Level</TableCell>
                             <TableCell>Status</TableCell>
                             <TableCell align="right">Actions</TableCell>
                         </TableRow>
@@ -214,14 +299,29 @@ export default function CourseManagement() {
                             </TableRow>
                         ) : (
                             courses.map((course, index) => (
-                                <TableRow key={index}>
+                                <TableRow key={index} hover>
                                     <TableCell>{course.name}</TableCell>
                                     <TableCell>{course.category}</TableCell>
-                                    <TableCell>{course.outline}</TableCell>
-                                    <TableCell>{course.duration}</TableCell>
+                                    <TableCell
+                                        sx={{
+                                            maxWidth: 200,
+                                            whiteSpace: "nowrap",
+                                            overflow: "hidden",
+                                            textOverflow: "ellipsis",
+                                        }}
+                                    >
+                                        {course.outline}
+                                    </TableCell>
+                                    <TableCell>{course.level}</TableCell>
                                     <TableCell>{course.status}</TableCell>
-                                    <TableCell align="right" sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
-                                        {/* Edit button - disallow edit while waiting for approval */}
+                                    <TableCell
+                                        align="right"
+                                        sx={{
+                                            display: "flex",
+                                            gap: 1,
+                                            justifyContent: "flex-end",
+                                        }}
+                                    >
                                         {course.status !== "Request for Approval" && (
                                             <Button
                                                 variant="outlined"
@@ -232,19 +332,33 @@ export default function CourseManagement() {
                                             </Button>
                                         )}
 
-                                        {/* Request Approval button for Draft or Inactive courses */}
-                                        {(course.status === "Draft" || course.status === "Inactive") && (
-                                            <Button
-                                                variant="contained"
-                                                size="small"
-                                                color="success"
-                                                onClick={() => handleRequestApproval(index)}
-                                            >
-                                                Request Approval
-                                            </Button>
-                                        )}
+                                        {(course.status === "Draft" ||
+                                            course.status === "Inactive") && (
+                                                <Tooltip
+                                                    title={
+                                                        isEligibleForApproval(course.name)
+                                                            ? "Submit for admin review"
+                                                            : "Add modules with at least one page first"
+                                                    }
+                                                >
+                                                    <span>
+                                                        <Button
+                                                            variant="contained"
+                                                            size="small"
+                                                            color="success"
+                                                            onClick={() =>
+                                                                handleRequestApproval(index)
+                                                            }
+                                                            disabled={
+                                                                !isEligibleForApproval(course.name)
+                                                            }
+                                                        >
+                                                            Request Approval
+                                                        </Button>
+                                                    </span>
+                                                </Tooltip>
+                                            )}
 
-                                        {/* Inactivate button for Active courses */}
                                         {course.status === "Active" && (
                                             <Button
                                                 variant="outlined"
@@ -262,6 +376,34 @@ export default function CourseManagement() {
                     </TableBody>
                 </Table>
             </Paper>
+
+            {/* Outline Dialog */}
+            <Dialog
+                open={outlineDialogOpen}
+                onClose={handleOutlineCancel}
+                maxWidth="md"
+                fullWidth
+                scroll="paper"
+            >
+                <DialogTitle>Edit Course Outline</DialogTitle>
+                <DialogContent dividers>
+                    <TextField
+                        label="Course Outline"
+                        value={outlineDraft}
+                        onChange={(e) => setOutlineDraft(e.target.value)}
+                        multiline
+                        rows={15}
+                        fullWidth
+                        autoFocus
+                    />
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={handleOutlineCancel}>Cancel</Button>
+                    <Button onClick={handleOutlineSave} variant="contained">
+                        Save
+                    </Button>
+                </DialogActions>
+            </Dialog>
         </Box>
     );
 }

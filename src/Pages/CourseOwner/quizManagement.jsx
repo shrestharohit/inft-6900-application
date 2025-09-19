@@ -13,22 +13,30 @@ import {
   TableCell,
   TableBody,
   IconButton,
+  Checkbox,
 } from "@mui/material";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
+import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
 
 const STORAGE_KEY = "course_owner_quizzes";
 
 export default function QuizManagement() {
   const [quizzes, setQuizzes] = useState([]);
-  const [form, setForm] = useState({ module: "", timeLimit: "" });
+  const [form, setForm] = useState({
+    courseNumber: "",
+    moduleNumber: "",
+    quizTitle: "",
+    timeLimit: "",
+  });
   const [questions, setQuestions] = useState([]);
   const [editingIndex, setEditingIndex] = useState(null);
 
   const [questionForm, setQuestionForm] = useState({
     text: "",
-    options: ["", "", "", ""],
-    correctAnswer: "",
-    feedback: "",
+    options: [
+      { text: "", isCorrect: false, feedback: "" },
+      { text: "", isCorrect: false, feedback: "" },
+    ],
     image: null,
   });
 
@@ -59,10 +67,17 @@ export default function QuizManagement() {
     setQuestionForm({ ...questionForm, [e.target.name]: e.target.value });
   };
 
-  const handleOptionChange = (index, value) => {
+  const handleOptionChange = (index, field, value) => {
     const newOptions = [...questionForm.options];
-    newOptions[index] = value;
+    newOptions[index][field] = value;
     setQuestionForm({ ...questionForm, options: newOptions });
+  };
+
+  const addOption = () => {
+    setQuestionForm({
+      ...questionForm,
+      options: [...questionForm.options, { text: "", isCorrect: false, feedback: "" }],
+    });
   };
 
   const handleQuestionImage = (e) => {
@@ -75,44 +90,62 @@ export default function QuizManagement() {
   };
 
   const addQuestion = () => {
-    if (
-      !questionForm.text ||
-      questionForm.options.some((o) => !o) ||
-      !questionForm.correctAnswer
-    ) {
-      alert("Please fill all question fields.");
+    if (!questionForm.text || questionForm.options.length < 2) {
+      alert("⚠️ A question must have text and at least 2 options.");
       return;
     }
-    setQuestions([...questions, { ...questionForm }]);
+    if (questionForm.options.some((opt) => !opt.text.trim())) {
+      alert("⚠️ Each option must have text.");
+      return;
+    }
+    if (!questionForm.options.some((opt) => opt.isCorrect)) {
+      alert("⚠️ At least one option must be marked correct.");
+      return;
+    }
+
+    const newQuestion = {
+      ...questionForm,
+      number: questions.length + 1,
+    };
+
+    setQuestions([...questions, newQuestion]);
+
     setQuestionForm({
       text: "",
-      options: ["", "", "", ""],
-      correctAnswer: "",
-      feedback: "",
+      options: [
+        { text: "", isCorrect: false, feedback: "" },
+        { text: "", isCorrect: false, feedback: "" },
+      ],
       image: null,
     });
   };
 
   const deleteQuestion = (qIndex) => {
     const updatedQuestions = questions.filter((_, i) => i !== qIndex);
+    const renumbered = updatedQuestions.map((q, i) => ({ ...q, number: i + 1 }));
 
-    if (updatedQuestions.length === 0 && editingIndex !== null) {
+    if (renumbered.length === 0 && editingIndex !== null) {
       // If it was the last question, delete the entire quiz
       const updatedQuizzes = [...quizzes];
       updatedQuizzes.splice(editingIndex, 1);
       setQuizzes(updatedQuizzes);
-      setForm({ module: "", timeLimit: "" });
+      setForm({ courseNumber: "", moduleNumber: "", quizTitle: "", timeLimit: "" });
       setEditingIndex(null);
       setQuestions([]);
       alert("Last question deleted. Entire quiz has been removed.");
     } else {
-      setQuestions(updatedQuestions);
+      setQuestions(renumbered);
     }
   };
 
   const handleEditQuiz = (index) => {
     const quiz = quizzes[index];
-    setForm({ module: quiz.module, timeLimit: quiz.timeLimit });
+    setForm({
+      courseNumber: quiz.courseNumber,
+      moduleNumber: quiz.moduleNumber,
+      quizTitle: quiz.quizTitle,
+      timeLimit: quiz.timeLimit,
+    });
     setQuestions(quiz.questions);
     setEditingIndex(index);
   };
@@ -129,22 +162,39 @@ export default function QuizManagement() {
   };
 
   const handleSaveQuiz = () => {
-    if (!form.module || !form.timeLimit || questions.length === 0) {
-      alert("Please fill all quiz fields and add at least one question.");
+    if (!form.courseNumber || !form.moduleNumber || !form.quizTitle || !form.timeLimit) {
+      alert("⚠️ Please fill all quiz fields.");
       return;
     }
+    if (questions.length === 0) {
+      alert("⚠️ Add at least one question.");
+      return;
+    }
+
+    // enforce one quiz per module
+    const duplicateQuiz = quizzes.some(
+      (q, idx) =>
+        idx !== editingIndex &&
+        q.courseNumber === form.courseNumber &&
+        q.moduleNumber === form.moduleNumber
+    );
+    if (duplicateQuiz) {
+      alert("❌ A quiz already exists for this module.");
+      return;
+    }
+
     const newQuiz = { ...form, questions, status: "Draft" };
 
     if (editingIndex !== null) {
       const updated = [...quizzes];
-      updated[editingIndex] = newQuiz; // overwrite existing quiz
+      updated[editingIndex] = newQuiz;
       setQuizzes(updated);
       setEditingIndex(null);
     } else {
       setQuizzes([...quizzes, newQuiz]);
     }
 
-    setForm({ module: "", timeLimit: "" });
+    setForm({ courseNumber: "", moduleNumber: "", quizTitle: "", timeLimit: "" });
     setQuestions([]);
   };
 
@@ -158,9 +208,23 @@ export default function QuizManagement() {
       <Paper sx={{ padding: "1.5rem", marginBottom: "2rem" }}>
         <Stack spacing={2}>
           <TextField
-            label="Module"
-            name="module"
-            value={form.module}
+            label="Course Number"
+            name="courseNumber"
+            value={form.courseNumber}
+            onChange={handleChange}
+            required
+          />
+          <TextField
+            label="Module Number"
+            name="moduleNumber"
+            value={form.moduleNumber}
+            onChange={handleChange}
+            required
+          />
+          <TextField
+            label="Quiz Title"
+            name="quizTitle"
+            value={form.quizTitle}
             onChange={handleChange}
             required
           />
@@ -184,32 +248,38 @@ export default function QuizManagement() {
               fullWidth
               margin="normal"
             />
+
             {questionForm.options.map((opt, i) => (
-              <TextField
-                key={i}
-                label={`Option ${i + 1}`}
-                value={opt}
-                onChange={(e) => handleOptionChange(i, e.target.value)}
-                fullWidth
-                margin="normal"
-              />
+              <Stack key={i} direction="row" spacing={1} alignItems="center">
+                <TextField
+                  label={`Option ${i + 1}`}
+                  value={opt.text}
+                  onChange={(e) => handleOptionChange(i, "text", e.target.value)}
+                  fullWidth
+                  margin="normal"
+                />
+                <Checkbox
+                  checked={opt.isCorrect}
+                  onChange={(e) => handleOptionChange(i, "isCorrect", e.target.checked)}
+                />
+                <TextField
+                  label="Feedback"
+                  value={opt.feedback}
+                  onChange={(e) => handleOptionChange(i, "feedback", e.target.value)}
+                  fullWidth
+                  margin="normal"
+                />
+              </Stack>
             ))}
-            <TextField
-              label="Correct Answer"
-              name="correctAnswer"
-              value={questionForm.correctAnswer}
-              onChange={handleQuestionChange}
-              fullWidth
-              margin="normal"
-            />
-            <TextField
-              label="Feedback"
-              name="feedback"
-              value={questionForm.feedback}
-              onChange={handleQuestionChange}
-              fullWidth
-              margin="normal"
-            />
+
+            <Button
+              startIcon={<AddCircleOutlineIcon />}
+              onClick={addOption}
+              sx={{ mt: 1 }}
+            >
+              Add Option
+            </Button>
+
             <Button variant="outlined" component="label" sx={{ mt: 1 }}>
               Upload Image
               <input type="file" hidden onChange={handleQuestionImage} />
@@ -223,11 +293,12 @@ export default function QuizManagement() {
                 />
               </Box>
             )}
+
             <Button
               variant="contained"
               color="secondary"
               onClick={addQuestion}
-              sx={{ mt: 1 }}
+              sx={{ mt: 2 }}
             >
               Add Question
             </Button>
@@ -243,17 +314,36 @@ export default function QuizManagement() {
                     <TableCell>#</TableCell>
                     <TableCell>Question</TableCell>
                     <TableCell>Options</TableCell>
-                    <TableCell>Correct Answer</TableCell>
+                    <TableCell>Correct</TableCell>
+                    <TableCell>Feedback</TableCell>
                     <TableCell>Actions</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
                   {questions.map((q, idx) => (
                     <TableRow key={idx}>
-                      <TableCell>{idx + 1}</TableCell>
+                      <TableCell>{q.number}</TableCell>
                       <TableCell>{q.text}</TableCell>
-                      <TableCell>{q.options.join(", ")}</TableCell>
-                      <TableCell>{q.correctAnswer}</TableCell>
+                      <TableCell>
+                        {q.options.map((o, i) => (
+                          <div key={i}>
+                            {i + 1}. {o.text}
+                          </div>
+                        ))}
+                      </TableCell>
+                      <TableCell>
+                        {q.options
+                          .map((o, i) => (o.isCorrect ? `Option ${i + 1}` : null))
+                          .filter(Boolean)
+                          .join(", ")}
+                      </TableCell>
+                      <TableCell>
+                        {q.options.map((o, i) => (
+                          <div key={i}>
+                            {i + 1}. {o.feedback}
+                          </div>
+                        ))}
+                      </TableCell>
                       <TableCell>
                         <IconButton
                           color="error"
@@ -269,11 +359,7 @@ export default function QuizManagement() {
             </Paper>
           )}
 
-          <Button
-            variant="contained"
-            color="primary"
-            onClick={handleSaveQuiz}
-          >
+          <Button variant="contained" color="primary" onClick={handleSaveQuiz}>
             {editingIndex !== null ? "Update Quiz" : "Save Quiz"}
           </Button>
         </Stack>
@@ -287,7 +373,9 @@ export default function QuizManagement() {
         <Table>
           <TableHead>
             <TableRow>
-              <TableCell>Module</TableCell>
+              <TableCell>Course #</TableCell>
+              <TableCell>Module #</TableCell>
+              <TableCell>Quiz Title</TableCell>
               <TableCell>Time Limit</TableCell>
               <TableCell># Questions</TableCell>
               <TableCell>Status</TableCell>
@@ -297,14 +385,16 @@ export default function QuizManagement() {
           <TableBody>
             {quizzes.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} align="center" sx={{ py: 3 }}>
+                <TableCell colSpan={7} align="center" sx={{ py: 3 }}>
                   No quizzes added yet.
                 </TableCell>
               </TableRow>
             ) : (
               quizzes.map((quiz, idx) => (
                 <TableRow key={idx}>
-                  <TableCell>{quiz.module}</TableCell>
+                  <TableCell>{quiz.courseNumber}</TableCell>
+                  <TableCell>{quiz.moduleNumber}</TableCell>
+                  <TableCell>{quiz.quizTitle}</TableCell>
                   <TableCell>{quiz.timeLimit} min</TableCell>
                   <TableCell>{quiz.questions.length}</TableCell>
                   <TableCell>{quiz.status}</TableCell>
