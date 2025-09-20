@@ -159,7 +159,7 @@ function App() {
                 </>
               ) : (
                 <Link to="/login" style={styles.loginButton}>
-                  <button style={styles.button}>Login/Signup</button>
+                  <button className='bg-gray-100 text-blue-600'>Login/Signup</button>
                 </Link>
               )}
             </div>

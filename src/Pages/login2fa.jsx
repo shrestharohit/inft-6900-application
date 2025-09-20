@@ -4,6 +4,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { API_BASE_URL } from '../api/config';
 import registration_image from '../assets/Images/registration_image.png';
+import { verifyOTP } from '../api/user';
 
 const Login2FA = () => {
     const location = useLocation();
@@ -35,11 +36,7 @@ const Login2FA = () => {
         setIsSubmitting(true);
 
         try {
-            const res = await axios.post(`${API_BASE_URL}/api/auth/verify-otp`, {
-                email,
-                otpCode: otp
-            });
-
+            const res = verifyOTP(email, otp);
             console.log("✅ OTP verified:", res.data);
 
             // Redirect to login or dashboard
