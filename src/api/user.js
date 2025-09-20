@@ -80,3 +80,11 @@ export const verifyOTP = async (email, otp) => {
 
   return res;
 };
+
+export const resendOTP = async (email) => {
+  const res = await axios.post(`${API_BASE_URL}/api/auth/resend-otp`, {
+    email,
+  });
+
+  return res;
+};
