@@ -1,45 +1,69 @@
 import { Avatar, Menu, MenuItem, Button, Box, Typography } from "@mui/material";
 import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 // Import the logo image
 import logo from "../assets/Images/logo.png";
 import { useEffect, useState } from "react";
+import { useAuth } from "../contexts/AuthContext";
 
 const Header = () => {
-  const location = useLocation();
-
-  const isAdminRoute = location.pathname.startsWith("/admin");
-  const isCourseOwnerRoute = location.pathname.startsWith("/courseowner");
-
   const [anchorEl, setAnchorEl] = useState(null);
   const [categoryAnchor, setCategoryAnchor] = useState(null);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const open = Boolean(anchorEl);
 
   const navigate = useNavigate();
+  const { isLoggedIn, clearUserID } = useAuth();
 
-  // Check authentication status on mount and route change
-  useEffect(() => {
-    const token =
-      localStorage.getItem("userToken") || sessionStorage.getItem("userToken");
-    setIsLoggedIn(!!token);
-    console.log("🔑 Login state:", !!token);
-  }, []);
+  // Navigation menu items
+  const navItems = [
+    { path: "/", label: "Home", showAlways: true },
+    { path: "/registration", label: "Registration", showWhenLoggedOut: true },
+    { path: "/login", label: "Login", showWhenLoggedOut: true },
+    { path: "/login2fa", label: "Login 2FA", showAlways: true },
+    { path: "/forgotpassword", label: "Forgot Password", showAlways: true },
+    {
+      path: "/profilemanagement",
+      label: "Profile Management",
+      showWhenLoggedIn: true,
+    },
+    { path: "/admin", label: "Admin", showAlways: true },
+    { path: "/courseowner", label: "Course Owner", showAlways: true },
+  ];
+
+  // Category menu items
+  const categoryMenuItems = {
+    pathways: {
+      title: "Pathways",
+      items: [
+        { path: "/pathway/tech-skills", label: "Tech Skills" },
+        { path: "/pathway/analytical-skills", label: "Analytical Skills" },
+        { path: "/pathway/business-skills", label: "Business Skills" },
+      ],
+    },
+    courses: {
+      title: "Individual Courses",
+      items: [
+        { path: "/courses/coding", label: "Coding" },
+        { path: "/courses/devops", label: "DevOps" },
+        { path: "/courses/bigdata", label: "Big Data" },
+        { path: "/courses/powerbi", label: "Power BI" },
+        { path: "/courses/accounting", label: "Accounting" },
+        { path: "/courses/finance", label: "Finance" },
+      ],
+    },
+  };
 
   const handleMenuOpen = (event) => setAnchorEl(event.currentTarget);
   const handleMenuClose = () => setAnchorEl(null);
 
   const handleLogout = () => {
-    localStorage.removeItem("userToken");
-    sessionStorage.removeItem("userToken");
-    setIsLoggedIn(false);
     setAnchorEl(null);
     navigate("/");
+    clearUserID();
   };
 
   const handleCategoryOpen = (event) => setCategoryAnchor(event.currentTarget);
-  // Category dropdown
   const handleCategoryClose = () => setCategoryAnchor(null);
   const goTo = (path) => {
     navigate(path);
@@ -48,240 +72,97 @@ const Header = () => {
 
   return (
     <>
-      {!isAdminRoute && !isCourseOwnerRoute && (
-        <>
-          <header style={styles.header}>
-            <div style={styles.logoContainer}>
-              <Link to="/">
-                <img src={logo} alt="BrainWave Logo" style={styles.logoImage} />
+      <header className="flex justify-between items-center px-2.5 py-1.5 bg-green-500 text-white h-20">
+        <div className="container mx-auto flex justify-between items-center max-w-6xl">
+          <div className="flex items-center text-3xl font-bold">
+            <Link to="/">
+              <img
+                src={logo}
+                alt="BrainWave Logo"
+                className="w-48 h-32 mr-2.5 cursor-pointer"
+              />
+            </Link>
+          </div>
+
+          <div className="flex items-center cursor-pointer">
+            {isLoggedIn ? (
+              <>
+                <Avatar
+                  onClick={handleMenuOpen}
+                  className="cursor-pointer w-10 h-10 bg-white border border-gray-300"
+                />
+                <Menu anchorEl={anchorEl} open={open} onClose={handleMenuClose}>
+                  <MenuItem onClick={() => navigate("/profilemanagement")}>
+                    Edit Profile
+                  </MenuItem>
+                  <MenuItem onClick={handleLogout}>Logout</MenuItem>
+                </Menu>
+              </>
+            ) : (
+              <Link to="/login" className="ml-5">
+                <button className="px-5 py-2.5 text-base bg-red-600 text-white border-none rounded cursor-pointer hover:bg-red-700 transition-colors">
+                  Login
+                </button>
               </Link>
-            </div>
+            )}
+          </div>
+        </div>
+      </header>
 
-            {/* Categories Dropdown */}
-            <div>
-              <Button
-                onClick={handleCategoryOpen}
-                endIcon={<ArrowDropDownIcon />}
-                style={{
-                  background: "#fff",
-                  color: "#333",
-                  padding: "8px 16px",
-                  borderRadius: "6px",
-                  fontWeight: "600",
-                  textTransform: "none",
-                }}
+      {/* Navigation */}
+      <nav className="bg-gray-800 py-0">
+        <div className="container mx-auto max-w-6xl flex justify-center items-center">
+          {navItems.map((item) => {
+            return (
+              <Link
+                key={item.path}
+                to={item.path}
+                className="text-white no-underline px-5 py-2 mx-2.5 text-base font-bold rounded hover:bg-gray-700 transition-colors"
               >
-                Categories
-              </Button>
+                {item.label}
+              </Link>
+            );
+          })}
 
-              <Menu
-                anchorEl={categoryAnchor}
-                open={Boolean(categoryAnchor)}
-                onClose={handleCategoryClose}
-                MenuListProps={{
-                  style: { display: "flex", padding: "20px", gap: "40px" },
-                }}
-              >
-                <Box display="flex" gap="40px">
-                  {/* Pathways Column */}
-                  <Box display="flex" flexDirection="column">
+          {/* Categories Dropdown */}
+          <div className="relative">
+            <button
+              onClick={handleCategoryOpen}
+              className="text-white no-underline px-5 py-2 mx-2.5 text-base font-bold rounded hover:bg-gray-700 transition-colors flex items-center bg-transparent border-none cursor-pointer"
+            >
+              Categories
+              <ArrowDropDownIcon className="ml-1" />
+            </button>
+
+            <Menu
+              anchorEl={categoryAnchor}
+              open={Boolean(categoryAnchor)}
+              onClose={handleCategoryClose}
+            >
+              <Box display="flex" gap="40px">
+                {Object.entries(categoryMenuItems).map(([key, category]) => (
+                  <Box key={key} display="flex" flexDirection="column">
                     <Typography
                       variant="subtitle1"
                       fontWeight="bold"
                       gutterBottom
                     >
-                      Pathways
+                      {category.title}
                     </Typography>
-                    <MenuItem onClick={() => goTo("/pathway/tech-skills")}>
-                      Tech Skills
-                    </MenuItem>
-                    <MenuItem
-                      onClick={() => goTo("/pathway/analytical-skills")}
-                    >
-                      Analytical Skills
-                    </MenuItem>
-                    <MenuItem onClick={() => goTo("/pathway/business-skills")}>
-                      Business Skills
-                    </MenuItem>
+                    {category.items.map((item) => (
+                      <MenuItem key={item.path} onClick={() => goTo(item.path)}>
+                        {item.label}
+                      </MenuItem>
+                    ))}
                   </Box>
-
-                  {/* Courses Column */}
-                  <Box display="flex" flexDirection="column">
-                    <Typography
-                      variant="subtitle1"
-                      fontWeight="bold"
-                      gutterBottom
-                    >
-                      Individual Courses
-                    </Typography>
-                    <MenuItem onClick={() => goTo("/courses/coding")}>
-                      Coding
-                    </MenuItem>
-                    <MenuItem onClick={() => goTo("/courses/devops")}>
-                      DevOps
-                    </MenuItem>
-                    <MenuItem onClick={() => goTo("/courses/bigdata")}>
-                      Big Data
-                    </MenuItem>
-                    <MenuItem onClick={() => goTo("/courses/powerbi")}>
-                      Power BI
-                    </MenuItem>
-                    <MenuItem onClick={() => goTo("/courses/accounting")}>
-                      Accounting
-                    </MenuItem>
-                    <MenuItem onClick={() => goTo("/courses/finance")}>
-                      Finance
-                    </MenuItem>
-                  </Box>
-                </Box>
-              </Menu>
-            </div>
-
-            <div style={styles.profileContainer}>
-              {isLoggedIn ? (
-                <>
-                  <Avatar onClick={handleMenuOpen} style={styles.avatar} />
-                  <Menu
-                    anchorEl={anchorEl}
-                    open={open}
-                    onClose={handleMenuClose}
-                  >
-                    <MenuItem onClick={() => navigate("/profilemanagement")}>
-                      Edit Profile
-                    </MenuItem>
-                    <MenuItem onClick={handleLogout}>Logout</MenuItem>
-                  </Menu>
-                </>
-              ) : (
-                <Link to="/login" style={styles.loginButton}>
-                  <button className="bg-gray-100 text-blue-600">
-                    Login/Signup
-                  </button>
-                </Link>
-              )}
-            </div>
-          </header>
-          {/* Navigation */}
-          <nav style={styles.navBar}>
-            <Link to="/" style={styles.navLink}>
-              Home
-            </Link>
-            {!isLoggedIn && (
-              <Link to="/registration" style={styles.navLink}>
-                Registration
-              </Link>
-            )}
-            {!isLoggedIn && (
-              <Link to="/login" style={styles.navLink}>
-                Login
-              </Link>
-            )}
-            <Link to="/login2fa" style={styles.navLink}>
-              Login 2FA
-            </Link>
-            <Link to="/forgotpassword" style={styles.navLink}>
-              Forgot Password
-            </Link>
-            {isLoggedIn && (
-              <Link to="/profilemanagement" style={styles.navLink}>
-                Profile Management
-              </Link>
-            )}
-            <Link to="/admin" style={styles.navLink}>
-              Admin
-            </Link>
-            <Link to="/courseowner" style={styles.navLink}>
-              Course Owner
-            </Link>
-          </nav>
-        </>
-      )}
+                ))}
+              </Box>
+            </Menu>
+          </div>
+        </div>
+      </nav>
     </>
   );
 };
 
-const styles = {
-  appContainer: {
-    display: "flex",
-    flexDirection: "column",
-    minHeight: "100vh",
-  },
-  header: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    padding: "5px 10px",
-    backgroundColor: "#4CAF50",
-    color: "#fff",
-    height: "80px",
-  },
-  logoContainer: {
-    display: "flex",
-    alignItems: "center",
-    fontSize: "30px",
-    fontWeight: "bold",
-  },
-  logoImage: {
-    width: "200px",
-    height: "140px",
-    marginRight: "10px",
-    cursor: "pointer",
-  },
-  searchBar: {
-    padding: "8px",
-    fontSize: "16px",
-    borderRadius: "4px",
-    border: "1px solid #ddd",
-    width: "40%",
-    margin: "0 auto",
-  },
-  profileContainer: {
-    display: "flex",
-    alignItems: "center",
-    cursor: "pointer",
-  },
-  avatar: {
-    cursor: "pointer",
-    width: "40px",
-    height: "40px",
-    backgroundColor: "#fff",
-    border: "1px solid #ddd",
-  },
-  loginButton: { marginLeft: "20px" },
-  button: {
-    padding: "10px 20px",
-    fontSize: "16px",
-    backgroundColor: "#db4437",
-    color: "white",
-    border: "none",
-    borderRadius: "5px",
-    cursor: "pointer",
-  },
-  navBar: {
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#333",
-    padding: "0px",
-  },
-  navLink: {
-    color: "#fff",
-    textDecoration: "none",
-    padding: "8px 20px",
-    margin: "0 10px",
-    fontSize: "16px",
-    fontWeight: "bold",
-    borderRadius: "4px",
-  },
-  footer: {
-    backgroundColor: "#333",
-    color: "#fff",
-    padding: "20px 0",
-    textAlign: "center",
-    marginTop: "auto",
-  },
-  footerLinks: { display: "flex", justifyContent: "center", gap: "20px" },
-  footerLink: { color: "#fff", textDecoration: "none", fontSize: "16px" },
-  footerText: { marginTop: "10px", fontSize: "14px", color: "#ccc" },
-};
 export default Header;
