@@ -7,7 +7,7 @@ import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import logo from './assets/Images/logo.png';
 
 // Import pages/components (public)
-import Home from './pages/home';
+import Home from './Pages/Home';
 import RegistrationForm from './pages/Registration';
 import LoginForm from './pages/login';
 import Login2FA from './Pages/login2fa';
