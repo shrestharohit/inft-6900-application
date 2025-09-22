@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { getCurrentUser, updateUser } from "../api/user"; // ✅ API helpers
 import beforeAuthLayout from "../components/BeforeAuth";
+import { useAuth } from "../contexts/AuthContext";
+import useUserApi from "../hooks/useUserApi";
 
 function ProfileManagement({ setIsLoggedIn }) {
   const navigate = useNavigate();
+  const { loggedInUser, setUserDataInState } = useAuth();
+  const { updateUser } = useUserApi();
 
   const [formData, setFormData] = useState({
     firstName: "",
@@ -21,12 +24,10 @@ function ProfileManagement({ setIsLoggedIn }) {
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        const userId = localStorage.getItem("userId"); // or from token/session
-        const user = await getCurrentUser(userId);
         setFormData({
-          firstName: user.firstName || "",
-          lastName: user.lastName || "",
-          email: user.email || "",
+          firstName: loggedInUser.firstName || "",
+          lastName: loggedInUser.lastName || "",
+          email: loggedInUser.email || "",
           password: "",
           confirmPassword: "",
         });
@@ -35,7 +36,7 @@ function ProfileManagement({ setIsLoggedIn }) {
       }
     };
     fetchUser();
-  }, []);
+  }, [loggedInUser]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -47,21 +48,22 @@ function ProfileManagement({ setIsLoggedIn }) {
       alert("Passwords do not match!");
       return;
     }
+    if (loggedInUser === null) {
+      alert("User not logged in");
+      return;
+    }
 
     try {
       setLoading(true);
-      const userId = localStorage.getItem("userId"); // or from session
       const updateData = {
         firstName: formData.firstName,
         lastName: formData.lastName,
-        // password is optional – only send if entered
         ...(formData.password ? { password: formData.password } : {}),
       };
-      const updated = await updateUser(userId, updateData);
+      const response = await updateUser(loggedInUser.id, updateData);
+      setUserDataInState(response);
       alert("Profile updated successfully!");
-      console.log("✅ Updated user:", updated);
     } catch (err) {
-      console.error("❌ Update error:", err);
       alert("Failed to update profile");
     } finally {
       setLoading(false);
