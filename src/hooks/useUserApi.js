@@ -19,7 +19,6 @@ export default function useUserApi() {
 
   const getCurrentUser = useCallback(async (userId) => {
     const res = await api.get('/api/auth/user', { headers: { userId } });
-    // original helper returned res.data.user; keep that shape for compatibility
     return res.data.user;
   }, []);
 
