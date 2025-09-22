@@ -1,31 +1,54 @@
-import React, { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
+import { ROUTES } from "../utils/common";
 
 const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
   const [loggedInUser, setLoggedInUser] = useState(null);
 
+  const getTargetRoute = (role) => {
+    switch (role) {
+      case "admin":
+        return ROUTES.ADMIN;
+      case "course_owner":
+        return ROUTES.COURSE_OWNER;
+      default:
+        return ROUTES.DEFAULT;
+    }
+  };
+
+  const redirectBasedOnRole = (user) => {
+    if (!user) return;
+
+    const role = String(user.role) || "";
+    const target = getTargetRoute(role);
+
+    if (window.location.pathname !== target) {
+      window.location.href = target;
+    }
+  };
+
   useEffect(() => {
-    const storedUserId =
-      localStorage.getItem("userID") || sessionStorage.getItem("userID");
-    if (storedUserId) {
-      setLoggedInUser({ id: storedUserId });
+    const storedUser = localStorage.getItem("user") || null;
+    const parsedUser = JSON.parse(storedUser);
+
+    if (parsedUser) {
+      setLoggedInUser(parsedUser);
+      redirectBasedOnRole(parsedUser);
     }
   }, []);
 
-  const setUserID = ({ id, remember = false }) => {
-    if (remember) {
-      localStorage.setItem("userID", id);
-    } else {
-      sessionStorage.setItem("userID", id);
-    }
-    setLoggedInUser({ id });
+  const setUserDataInState = (user) => {
+    if (!user) return;
+    localStorage.setItem("user", JSON.stringify(user));
+    setLoggedInUser(user);
+    redirectBasedOnRole(user);
   };
 
-  const clearUserID = () => {
-    localStorage.removeItem("userID");
-    sessionStorage.removeItem("userID");
+  const clearUserDataFromState = () => {
+    localStorage.removeItem("user");
     setLoggedInUser(null);
+    window.location.href = ROUTES.DEFAULT;
   };
 
   return (
@@ -33,8 +56,8 @@ export const AuthProvider = ({ children }) => {
       value={{
         loggedInUser,
         isLoggedIn: !!loggedInUser,
-        setUserID,
-        clearUserID,
+        setUserDataInState,
+        clearUserDataFromState,
       }}
     >
       {children}
