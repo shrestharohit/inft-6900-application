@@ -3,7 +3,7 @@ import { createBrowserRouter } from "react-router-dom";
 
 // Import pages/components (public)
 import Home from "../Pages/Home";
-import RegistrationForm from "../pages/Registration";
+import RegistrationForm from "../pages/registration";
 import LoginForm from "../pages/login";
 import Login2FA from "../Pages/login2fa";
 import ForgotPassword from "../Pages/forgotpassword";
@@ -34,6 +34,10 @@ import QuizManagement from "../Pages/CourseOwner/quizManagement";
 import CoursePage from "../Pages/CoursePage";
 import PathwayPage from "../Pages/PathwayPage";
 import Placeholder from "../Pages/Placeholder";
+
+
+
+import SearchResults from "../Pages/SearchResults";
 
 export const router = createBrowserRouter([
   // Public routes
@@ -185,4 +189,13 @@ export const router = createBrowserRouter([
       },
     ],
   },
+// Search Results
+
+  {
+    path: "/search", 
+    element: <SearchResults />
+  },
+  
+
+
 ]);
