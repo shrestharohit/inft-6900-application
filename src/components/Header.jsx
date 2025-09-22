@@ -74,16 +74,97 @@ const Header = () => {
     <>
       <header className="flex justify-between items-center px-2.5 py-1.5 bg-green-500 text-white h-20">
         <div className="container mx-auto flex justify-between items-center max-w-6xl">
-          <div className="flex items-center text-3xl font-bold">
-            <Link to="/">
-              <img
-                src={logo}
-                alt="BrainWave Logo"
-                className="w-48 h-32 mr-2.5 cursor-pointer"
-              />
-            </Link>
-          </div>
+          <div className="flex items-center justify-center">
+            <div className="flex items-center text-3xl font-bold">
+              <Link to="/">
+                <img
+                  src={logo}
+                  alt="BrainWave Logo"
+                  className="w-48 h-32 mr-2.5 cursor-pointer"
+                />
+              </Link>
+            </div>
 
+            {/* Categories Dropdown */}
+            <div>
+              <Button
+                onClick={handleCategoryOpen}
+                endIcon={<ArrowDropDownIcon />}
+                style={{
+                  background: "#fff",
+                  color: "#333",
+                  padding: "8px 16px",
+                  borderRadius: "6px",
+                  fontWeight: "600",
+                  textTransform: "none",
+                }}
+              >
+                Categories
+              </Button>
+
+              <Menu
+                anchorEl={categoryAnchor}
+                open={Boolean(categoryAnchor)}
+                onClose={handleCategoryClose}
+                MenuListProps={{
+                  style: { display: "flex", padding: "20px", gap: "40px" },
+                }}
+              >
+                <Box display="flex" gap="40px">
+                  {/* Pathways Column */}
+                  <Box display="flex" flexDirection="column">
+                    <Typography
+                      variant="subtitle1"
+                      fontWeight="bold"
+                      gutterBottom
+                    >
+                      Pathways
+                    </Typography>
+                    <MenuItem onClick={() => goTo("/pathway/tech-skills")}>
+                      Tech Skills
+                    </MenuItem>
+                    <MenuItem
+                      onClick={() => goTo("/pathway/analytical-skills")}
+                    >
+                      Analytical Skills
+                    </MenuItem>
+                    <MenuItem onClick={() => goTo("/pathway/business-skills")}>
+                      Business Skills
+                    </MenuItem>
+                  </Box>
+
+                  {/* Courses Column */}
+                  <Box display="flex" flexDirection="column">
+                    <Typography
+                      variant="subtitle1"
+                      fontWeight="bold"
+                      gutterBottom
+                    >
+                      Individual Courses
+                    </Typography>
+                    <MenuItem onClick={() => goTo("/courses/coding")}>
+                      Coding
+                    </MenuItem>
+                    <MenuItem onClick={() => goTo("/courses/devops")}>
+                      DevOps
+                    </MenuItem>
+                    <MenuItem onClick={() => goTo("/courses/bigdata")}>
+                      Big Data
+                    </MenuItem>
+                    <MenuItem onClick={() => goTo("/courses/powerbi")}>
+                      Power BI
+                    </MenuItem>
+                    <MenuItem onClick={() => goTo("/courses/accounting")}>
+                      Accounting
+                    </MenuItem>
+                    <MenuItem onClick={() => goTo("/courses/finance")}>
+                      Finance
+                    </MenuItem>
+                  </Box>
+                </Box>
+              </Menu>
+            </div>
+          </div>
           <div className="flex items-center cursor-pointer">
             {isLoggedIn ? (
               <>
@@ -123,42 +204,6 @@ const Header = () => {
               </Link>
             );
           })}
-
-          {/* Categories Dropdown */}
-          <div className="relative">
-            <button
-              onClick={handleCategoryOpen}
-              className="text-white no-underline px-5 py-2 mx-2.5 text-base font-bold rounded hover:bg-gray-700 transition-colors flex items-center bg-transparent border-none cursor-pointer"
-            >
-              Categories
-              <ArrowDropDownIcon className="ml-1" />
-            </button>
-
-            <Menu
-              anchorEl={categoryAnchor}
-              open={Boolean(categoryAnchor)}
-              onClose={handleCategoryClose}
-            >
-              <Box display="flex" gap="40px">
-                {Object.entries(categoryMenuItems).map(([key, category]) => (
-                  <Box key={key} display="flex" flexDirection="column">
-                    <Typography
-                      variant="subtitle1"
-                      fontWeight="bold"
-                      gutterBottom
-                    >
-                      {category.title}
-                    </Typography>
-                    {category.items.map((item) => (
-                      <MenuItem key={item.path} onClick={() => goTo(item.path)}>
-                        {item.label}
-                      </MenuItem>
-                    ))}
-                  </Box>
-                ))}
-              </Box>
-            </Menu>
-          </div>
         </div>
       </nav>
     </>
