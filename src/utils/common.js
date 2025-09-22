@@ -52,3 +52,9 @@ export const trendingPathways = [
     ],
   },
 ];
+
+export const ROUTES = {
+  DEFAULT: "/",
+  ADMIN: "/admin",
+  COURSE_OWNER: "/courseowner",
+};

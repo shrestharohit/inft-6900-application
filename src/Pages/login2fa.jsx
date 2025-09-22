@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import {
   Box,
   Button,
@@ -7,18 +7,22 @@ import {
   Stack,
   CircularProgress,
 } from "@mui/material";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import registration_image from "../assets/Images/registration_image.png";
-import { resendOTP, verifyOTP } from "../api/user";
+import { useAuth } from "../contexts/AuthContext";
+import useUserApi from "../hooks/useUserApi";
+import beforeAuthLayout from "../components/BeforeAuth";
 
 const Login2FA = () => {
   const location = useLocation();
-  const navigate = useNavigate();
   const email = location.state?.email || ""; // passed from Registration
 
   const [otp, setOtp] = useState("");
   const [timer, setTimer] = useState(60);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const { setUserDataInState } = useAuth();
+  const { verifyOTP, resendOTP } = useUserApi();
 
   // Countdown for OTP expiry
   useEffect(() => {
@@ -41,33 +45,21 @@ const Login2FA = () => {
     setIsSubmitting(true);
 
     try {
-      const res = verifyOTP(email, otp);
-      console.log("✅ OTP verified:", res.data);
-
-      // Redirect to login or dashboard
-      navigate("/login", { replace: true });
+      const res = await verifyOTP(email, otp);
+      setUserDataInState(res.user);
     } catch (error) {
-      console.error(
-        "❌ OTP verification failed:",
-        error.response?.data || error.message
-      );
       alert(error.response?.data?.error || "Invalid OTP. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  // Resend OTP
   const handleResendCode = async () => {
     try {
       resendOTP(email);
       setTimer(60);
       alert("A new OTP has been sent to your email.");
     } catch (error) {
-      console.error(
-        "❌ Failed to resend OTP:",
-        error.response?.data || error.message
-      );
       alert(
         error.response?.data?.error || "Failed to resend OTP. Please try again."
       );
@@ -166,4 +158,4 @@ const styles = {
   },
 };
 
-export default Login2FA;
+export default beforeAuthLayout(Login2FA);

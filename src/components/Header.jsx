@@ -13,7 +13,7 @@ const Header = () => {
   const open = Boolean(anchorEl);
 
   const navigate = useNavigate();
-  const { isLoggedIn, clearUserID } = useAuth();
+  const { isLoggedIn, clearUserDataFromState } = useAuth();
 
   // Navigation menu items
   const navItems = [
@@ -60,7 +60,7 @@ const Header = () => {
   const handleLogout = () => {
     setAnchorEl(null);
     navigate("/");
-    clearUserID();
+    clearUserDataFromState();
   };
 
   const handleCategoryOpen = (event) => setCategoryAnchor(event.currentTarget);

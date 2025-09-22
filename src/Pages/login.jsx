@@ -1,13 +1,13 @@
-import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { loginUser } from "../api/user"; // ✅ must exist
+import { useState } from "react";
+import { Link } from "react-router-dom";
 import registration_image from "../assets/Images/registration_image.png";
-import Header from "../components/Header";
-import Footer from "../components/Footer";
 import beforeAuthLayout from "../components/BeforeAuth";
+import { useAuth } from "../contexts/AuthContext";
+import useUserApi from "../hooks/useUserApi";
 
 function LoginForm() {
-  const navigate = useNavigate();
+  const { setUserDataInState } = useAuth();
+  const { loginUser } = useUserApi();
 
   const [formData, setFormData] = useState({
     email: "",
@@ -34,9 +34,7 @@ function LoginForm() {
     try {
       const response = await loginUser(formData);
       console.log("✅ Login API response:", response);
-
-      // Always go straight to dashboard (skip 2FA at login)
-      navigate("/dashboard");
+      setUserDataInState(response.user);
     } catch (err) {
       console.error("❌ Login error:", err);
       if (err?.error) {
