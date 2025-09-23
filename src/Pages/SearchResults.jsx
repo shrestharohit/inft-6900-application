@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useLocation } from "react-router-dom";
-import { Link } from "react-router-dom";
+import { useLocation, Link } from "react-router-dom";
 import beforeAuthLayout from "../components/BeforeAuth";
 import webdevremovebg from "../assets/Images/webdevremovebg.png";
 import dataanaremovebg from "../assets/Images/dataanaremovebg.png";
@@ -11,74 +10,26 @@ import businessSkillsImg from "../assets/Images/businessskills.png";
 
 // Dummy data for demonstration purposes
 const dummyCourses = [
-    {
-        name: "Web Development",
-        description: "Learn to build websites using HTML, CSS, JavaScript.",
-        level: "Beginner",
-        knowledgeArea: "Tech Skills",
-        releasedDate: "2023-05-01",
-        rating: 4.5,
-        numEnrolled: 1200,
-        owner: "Course Owner 1",
-        img: webdevremovebg, // Use imported image
-        link: "/courses/web-development",
-    },
-    {
-        name: "Data Analytics",
-        description: "Master data analysis with Python and SQL.",
-        level: "Intermediate",
-        knowledgeArea: "Analytical Skills",
-        releasedDate: "2023-03-20",
-        rating: 4.7,
-        numEnrolled: 900,
-        owner: "Course Owner 2",
-        img: dataanaremovebg, // Use imported image
-        link: "/courses/data-analytics",
-    },
+    { id: "1", name: "Web Development", description: "Learn to build websites using HTML, CSS, JavaScript.", level: "Beginner", knowledgeArea: "Tech Skills", releasedDate: "2023-05-01", rating: 4.5, numEnrolled: 1200, owner: "Course Owner 1", img: webdevremovebg, link: "/courses/web-development" },
+    { id: "2", name: "Data Analytics", description: "Master data analysis with Python and SQL.", level: "Intermediate", knowledgeArea: "Analytical Skills", releasedDate: "2023-03-20", rating: 4.7, numEnrolled: 900, owner: "Course Owner 2", img: dataanaremovebg, link: "/courses/data-analytics" },
+    { id: "3", name: "AI & Machine Learning", description: "Dive into AI and Machine Learning concepts and applications.", level: "Advanced", knowledgeArea: "Tech Skills", releasedDate: "2023-02-10", rating: 4.8, numEnrolled: 800, owner: "Course Owner 3", img: aiMlImg, link: "/courses/ai-ml" },
 ];
 
 const dummyPathways = [
-    {
-        name: "Tech Skills",
-        description: "Master coding and DevOps skills.",
-        img: techSkillsImg,
-        link: "/pathway/tech-skills",
-        courses: [
-            { name: "Coding", link: "/courses/coding" },
-            { name: "DevOps", link: "/courses/devops" },
-        ],
-    },
-    {
-        name: "Analytical Skills",
-        description: "Learn Big Data and Power BI.",
-        img: analyticalSkillsImg,
-        link: "/pathway/analytical-skills",
-        courses: [
-            { name: "Big Data", link: "/courses/bigdata" },
-            { name: "Power BI", link: "/courses/powerbi" },
-        ],
-    },
-    {
-        name: "Business Skills",
-        description: "Build Accounting and Finance expertise.",
-        img: businessSkillsImg,
-        link: "/pathway/business-skills",
-        courses: [
-            { name: "Accounting", link: "/courses/accounting" },
-            { name: "Finance", link: "/courses/finance" },
-        ],
-    },
+    { id: "1", name: "Tech Skills", description: "Master coding and DevOps skills.", img: techSkillsImg, link: "/pathway/tech-skills", courses: [{ name: "Coding", link: "/courses/coding" }, { name: "DevOps", link: "/courses/devops" }] },
+    { id: "2", name: "Analytical Skills", description: "Learn Big Data and Power BI.", img: analyticalSkillsImg, link: "/pathway/analytical-skills", courses: [{ name: "Big Data", link: "/courses/bigdata" }, { name: "Power BI", link: "/courses/powerbi" }] },
+    { id: "3", name: "Business Skills", description: "Build Accounting and Finance expertise.", img: businessSkillsImg, link: "/pathway/business-skills", courses: [{ name: "Accounting", link: "/courses/accounting" }, { name: "Finance", link: "/courses/finance" }] },
 ];
 
 function SearchResults() {
     const location = useLocation();
     const queryParams = new URLSearchParams(location.search);
-    const query = queryParams.get("query");
+    const query = queryParams.get("query") || ""; // Default to empty query
     const category = queryParams.get("category");
 
     const [searchResults, setSearchResults] = useState({
-        courses: [],   // Initialize as empty array
-        pathways: [],   // Initialize as empty array
+        courses: [],
+        pathways: [],
     });
 
     const [filters, setFilters] = useState({
@@ -92,94 +43,121 @@ function SearchResults() {
             course.name.toLowerCase().includes(query.toLowerCase())
         );
 
+        let filteredPathways = dummyPathways.filter((pathway) =>
+            pathway.name.toLowerCase().includes(query.toLowerCase())
+        );
+
+        // Handle the category logic:
+        if (category === "courses") {
+            filteredPathways = []; // Only show courses if category is 'courses'
+        } else if (category === "pathways") {
+            filteredCourses = []; // Only show pathways if category is 'pathways'
+        } else if (category === "all") {
+            // Show both courses and pathways when category is 'all'
+        }
+
+        // Apply level and knowledge area filters to both courses and pathways
+        if (filters.level !== "all") {
+            filteredCourses = filteredCourses.filter(
+                (course) => course.level === filters.level
+            );
+            filteredPathways = filteredPathways.filter(
+                (pathway) => pathway.courses.some((course) => course.level === filters.level)
+            );
+        }
+
+        if (filters.knowledgeArea !== "all") {
+            filteredCourses = filteredCourses.filter(
+                (course) => course.knowledgeArea === filters.knowledgeArea
+            );
+            filteredPathways = filteredPathways.filter(
+                (pathway) => pathway.courses.some((course) => course.knowledgeArea === filters.knowledgeArea)
+            );
+        }
+
+        // Apply sorting based on "popularity", "rating", or "released"
+        if (filters.sortBy === "popularity") {
+            filteredCourses.sort((a, b) => b.numEnrolled - a.numEnrolled);
+        } else if (filters.sortBy === "rating") {
+            filteredCourses.sort((a, b) => b.rating - a.rating);
+        } else if (filters.sortBy === "released") {
+            filteredCourses.sort(
+                (a, b) =>
+                    new Date(b.releasedDate) - new Date(a.releasedDate)
+            );
+        }
+
         setSearchResults({
             courses: filteredCourses,
-            pathways: dummyPathways, // You can use the same filter for pathways here if necessary
+            pathways: filteredPathways,
         });
-    }, [query, filters]);
+    }, [query, filters, category]);
 
     return (
         <div className="search-results-container bg-gray-50 px-6 py-12">
             {/* Searched term heading */}
-            <div className="mb-6">
+            <div className="mb-2">
                 <h1 className="text-3xl font-bold text-gray-900">
-                    Search Results for: <span className="text-green-600">"{query}"</span>
+                    Search Results for:{" "}
+                    <span className="text-green-600">
+                        "{query || (category === "all" ? "All Courses & Pathways" : category === "courses" ? "All Courses" : "All Pathways")}"
+                    </span>
                 </h1>
             </div>
 
-            {/* Filters Section with overflow handling */}
-            <div className="filters mb-8 flex flex-wrap gap-4 justify-center max-h-[300px] overflow-auto">
-                <select
-                    value={filters.level}
-                    onChange={(e) => setFilters({ ...filters, level: e.target.value })}
-                    className="px-4 py-2 border rounded-lg focus:outline-none text-gray-700"
-                >
-                    <option value="all">All Levels</option>
-                    <option value="Beginner">Beginner</option>
-                    <option value="Intermediate">Intermediate</option>
-                    <option value="Advanced">Advanced</option>
-                </select>
-                <select
-                    value={filters.knowledgeArea}
-                    onChange={(e) =>
-                        setFilters({ ...filters, knowledgeArea: e.target.value })
-                    }
-                    className="px-4 py-2 border rounded-lg focus:outline-none text-gray-700"
-                >
-                    <option value="all">All Knowledge Areas</option>
-                    <option value="Tech Skills">Tech Skills</option>
-                    <option value="Analytical Skills">Analytical Skills</option>
-                    <option value="Business Skills">Business Skills</option>
-                </select>
-                <select
-                    value={filters.sortBy}
-                    onChange={(e) => setFilters({ ...filters, sortBy: e.target.value })}
-                    className="px-4 py-2 border rounded-lg focus:outline-none text-gray-700"
-                >
-                    <option value="popularity">Sort by Popularity</option>
-                    <option value="rating">Sort by Rating</option>
-                    <option value="released">Sort by Release Date</option>
-                </select>
-            </div>
+            {/* Display Results */}
+            <div className="results pt-8">
+                {/* Heading for courses and pathways */}
+                <h2 className="text-3xl font-bold text-gray-900 mb-6">
+                    {category === "all" ?
+                        (searchResults.courses.length > 0 && searchResults.pathways.length > 0 ? "Courses & Pathways" :
+                            searchResults.courses.length > 0 ? "Courses" : "Pathways")
+                        : category === "courses" ? "Courses" : "Pathways"}
+                </h2>
 
-            {/* Display Results with padding */}
-            <div className="results pt-32"> {/* Add padding to avoid overlap */}
-                <h2 className="text-3xl font-bold text-gray-900 mb-6">Courses</h2>
-                {searchResults.courses.length > 0 ? (
+                {/* Show Courses */}
+                {category !== "pathways" && searchResults.courses.length > 0 ? (
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-                        {searchResults.courses.map((course, idx) => (
-                            <div
-                                key={idx}
-                                className="bg-white p-6 rounded-lg shadow-md hover:shadow-xl transition-all"
-                            >
-                                <img
-                                    src={course.img}
-                                    alt={course.name}
-                                    className="w-full h-40 object-cover rounded-lg mb-4"
-                                />
-                                <h3 className="text-xl font-semibold text-gray-800 mb-2">{course.name}</h3>
-                                <p className="text-gray-600 text-sm mb-4">{course.description}</p>
-                                <div className="text-gray-500 text-sm mb-2">
-                                    <span className="font-semibold">Level: </span>{course.level}
-                                </div>
-                                <div className="text-gray-500 text-sm mb-4">
-                                    <span className="font-semibold">Rating: </span>{course.rating} ⭐
-                                </div>
-                                <Link
-                                    to={course.link}
-                                    className="text-green-600 hover:text-green-700 font-semibold"
-                                >
+                        {searchResults.courses.map((item, idx) => (
+                            <div key={idx} className="bg-white p-6 rounded-lg shadow-md hover:shadow-xl transition-all">
+                                <img src={item.img} alt={item.name} className="w-full h-40 object-cover rounded-lg mb-4" />
+                                <h3 className="text-xl font-semibold text-gray-800 mb-2">{item.name}</h3>
+                                <p className="text-gray-600 text-sm mb-4">{item.description}</p>
+                                <Link to={item.link} className="text-green-600 hover:text-green-700 font-semibold">
                                     View Course
                                 </Link>
                             </div>
                         ))}
                     </div>
-                ) : (
+                ) : category === "courses" ? (
                     <p>No courses found</p>
+                ) : null}
+
+                {/* Show Pathways */}
+                {category !== "courses" && searchResults.pathways.length > 0 ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+                        {searchResults.pathways.map((item, idx) => (
+                            <div key={idx} className="bg-white p-6 rounded-lg shadow-md hover:shadow-xl transition-all">
+                                <img src={item.img} alt={item.name} className="w-full h-40 object-cover rounded-lg mb-4" />
+                                <h3 className="text-xl font-semibold text-gray-800 mb-2">{item.name}</h3>
+                                <p className="text-gray-600 text-sm mb-4">{item.description}</p>
+                                <Link to={item.link} className="text-green-600 hover:text-green-700 font-semibold">
+                                    View Pathway
+                                </Link>
+                            </div>
+                        ))}
+                    </div>
+                ) : category === "pathways" ? (
+                    <p>No pathways found</p>
+                ) : null}
+
+                {/* Show No Results Found for "All" */}
+                {category === "all" && !searchResults.courses.length && !searchResults.pathways.length && (
+                    <p>No results found for all categories</p>
                 )}
             </div>
         </div>
     );
 }
 
-export default beforeAuthLayout(SearchResults); // Wrap the component with the layout
+export default beforeAuthLayout(SearchResults);

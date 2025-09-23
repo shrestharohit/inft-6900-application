@@ -63,8 +63,14 @@ const Header = () => {
   const handleSearch = (e) => {
     e.preventDefault();
     if (searchQuery.trim()) {
-      navigate(`/search?query=${encodeURIComponent(searchQuery)}&category=${searchCategory}`);
-      setSearchQuery("");
+      // Update the search URL based on category
+      if (searchCategory === "all") {
+        // Pass empty query to search for all courses and pathways
+        navigate(`/search?query=${encodeURIComponent(searchQuery)}&category=all`);
+      } else {
+        navigate(`/search?query=${encodeURIComponent(searchQuery)}&category=${searchCategory}`);
+      }
+      setSearchQuery(""); // Reset search query after submitting
     }
   };
 
@@ -148,13 +154,13 @@ const Header = () => {
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder={getPlaceholder()} 
+            placeholder={getPlaceholder()}
             className="px-4 py-2 flex-1 text-black focus:outline-none"
           />
           <button
-          type="submit"
-          className="bg-gray-700 hover:bg-gray-600 px-4 py-2 text-white transition">
-          <SearchIcon />
+            type="submit"
+            className="bg-gray-700 hover:bg-gray-600 px-4 py-2 text-white transition">
+            <SearchIcon />
           </button>
         </form>
 
@@ -178,15 +184,15 @@ const Header = () => {
               </Menu>
             </>
           ) : (
-              <Link to="/login">
-                <button
-                  className="inline-block bg-gradient-to-r from-[#1f2a60] to-[#4856a6] text-white px-6 py-3 rounded-lg font-bold shadow-lg hover:bg-[#174bcc] my-8 max-w-[1150px] mx-auto"
-                >
-                  Login
-                </button>
-              </Link>
+            <Link to="/login">
+              <button
+                className="inline-block bg-gradient-to-r from-[#1f2a60] to-[#4856a6] text-white px-6 py-3 rounded-lg font-bold shadow-lg hover:bg-[#174bcc] my-8 max-w-[1150px] mx-auto"
+              >
+                Login
+              </button>
+            </Link>
 
-            
+
           )}
         </div>
       </div>

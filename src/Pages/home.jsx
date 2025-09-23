@@ -102,14 +102,16 @@ function Home() {
                         );
                     })}
                 </div>
+
                 <div className="text-center mt-6">
                     <Link
-                        to="/all-courses"
+                        to="/all-courses"  // Links to AllCoursesPage
                         className="inline-block bg-gradient-to-r from-[#1f2a60] to-[#4856a6] text-white px-6 py-3 rounded-lg font-bold shadow-lg hover:bg-[#174bcc] my-8 max-w-[1150px] mx-auto"
                     >
                         View All Courses
                     </Link>
                 </div>
+
             </section>
 
             {/* Trending Pathways */}
@@ -153,14 +155,19 @@ function Home() {
                 </div>
 
                 {/* ✅ Centered button */}
+
                 <div className="text-center mt-6">
                     <Link
-                        to="/all-pathways"
+                        to="/all-pathways"  // Links to AllPathwaysPage
                         className="inline-block bg-gradient-to-r from-[#1f2a60] to-[#4856a6] text-white px-6 py-3 rounded-lg font-bold shadow-lg hover:bg-[#174bcc] my-8 max-w-[1150px] mx-auto"
                     >
                         View All Pathways
                     </Link>
                 </div>
+
+
+
+
             </section>
 
             {/* Reviews */}

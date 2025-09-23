@@ -1,4 +1,3 @@
-// router.js
 import { createBrowserRouter } from "react-router-dom";
 
 // Import pages/components (public)
@@ -31,13 +30,15 @@ import CourseManagement from "../Pages/CourseOwner/courseManagement";
 import CourseOwnerLayout from "../Pages/CourseOwner/courseOwnerLayout";
 import ModuleManagement from "../Pages/CourseOwner/moduleManagement";
 import QuizManagement from "../Pages/CourseOwner/quizManagement";
-import CoursePage from "../Pages/CoursePage";
+import CoursePage from "../Pages/CoursePage";   // Import the CoursePage
 import PathwayPage from "../Pages/PathwayPage";
 import Placeholder from "../Pages/Placeholder";
 
-
-
 import SearchResults from "../Pages/SearchResults";
+
+// All Courses and Pathways Pages
+import AllCoursesPage from "../Pages/AllCoursesPage";
+import AllPathwaysPage from "../Pages/AllPathwaysPage";
 
 export const router = createBrowserRouter([
   // Public routes
@@ -80,30 +81,10 @@ export const router = createBrowserRouter([
     element: <PathwayPage name="Business Skills" />,
   },
 
-  // Courses routes
+  // Dynamic route for Course Details
   {
-    path: "/courses/coding",
-    element: <CoursePage name="Coding" />,
-  },
-  {
-    path: "/courses/devops",
-    element: <CoursePage name="DevOps" />,
-  },
-  {
-    path: "/courses/bigdata",
-    element: <CoursePage name="Big Data" />,
-  },
-  {
-    path: "/courses/powerbi",
-    element: <CoursePage name="Power BI" />,
-  },
-  {
-    path: "/courses/accounting",
-    element: <CoursePage name="Accounting" />,
-  },
-  {
-    path: "/courses/finance",
-    element: <CoursePage name="Finance" />,
+    path: "/courses/:courseId",
+    element: <CoursePage />
   },
 
   // Admin routes (nested)
@@ -189,13 +170,22 @@ export const router = createBrowserRouter([
       },
     ],
   },
-// Search Results
 
+  // Search Results
   {
-    path: "/search", 
-    element: <SearchResults />
+    path: "/search",
+    element: <SearchResults />,
   },
-  
 
+  // All Courses Page
+  {
+    path: "/all-courses",
+    element: <AllCoursesPage />,
+  },
 
+  // All Pathways Page
+  {
+    path: "/all-pathways",
+    element: <AllPathwaysPage />,
+  }
 ]);

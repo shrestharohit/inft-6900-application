@@ -81,98 +81,86 @@ function ProfileManagement({ setIsLoggedIn }) {
   const togglePasswordVisibility = () => setShowPassword(!showPassword);
 
   return (
-    <div style={styles.pageContainer}>
-      <div style={styles.card}>
-        <h1 style={styles.heading}>Edit Profile</h1>
-        <form style={styles.form} onSubmit={(e) => e.preventDefault()}>
+    <div className="flex justify-center items-center p-6 min-h-screen bg-gray-100">
+      <div className="w-full max-w-lg bg-white rounded-lg p-8 shadow-lg">
+        <h1 className="text-2xl font-bold text-center text-gray-800 mb-6">Edit Profile</h1>
+        <form onSubmit={(e) => e.preventDefault()}>
           {/* First Name */}
-          <div style={styles.formGroup}>
-            <label style={styles.label}>* First Name</label>
+          <div className="mb-4">
+            <label className="block text-sm font-semibold text-gray-700">* First Name</label>
             <input
               type="text"
               name="firstName"
               value={formData.firstName}
               onChange={handleChange}
-              style={styles.input}
+              className="w-full px-4 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
             />
           </div>
 
           {/* Last Name */}
-          <div style={styles.formGroup}>
-            <label style={styles.label}>* Last Name</label>
+          <div className="mb-4">
+            <label className="block text-sm font-semibold text-gray-700">* Last Name</label>
             <input
               type="text"
               name="lastName"
               value={formData.lastName}
               onChange={handleChange}
-              style={styles.input}
+              className="w-full px-4 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
             />
           </div>
 
           {/* Email */}
-          <div style={styles.formGroup}>
-            <label style={styles.label}>Email</label>
+          <div className="mb-4">
+            <label className="block text-sm font-semibold text-gray-700">Email</label>
             <input
               type="email"
               value={formData.email}
               disabled
-              style={{ ...styles.input, backgroundColor: "#f5f5f5" }}
+              className="w-full px-4 py-3 bg-gray-200 border border-gray-300 rounded-md"
             />
           </div>
 
           {/* Password */}
-          <div style={styles.formGroup}>
-            <label style={styles.label}>New Password</label>
-            <div style={styles.passwordWrapper}>
-              <input
-                type={showPassword ? "text" : "password"}
-                name="password"
-                value={formData.password}
-                onChange={handleChange}
-                style={styles.input}
-              />
-              <button
-                type="button"
-                onClick={togglePasswordVisibility}
-                style={styles.showPasswordButton}
-              >
-                {showPassword ? "Hide" : "Show"}
-              </button>
-            </div>
+          <div className="mb-4 relative">
+            <label className="block text-sm font-semibold text-gray-700">New Password</label>
+            <input
+              type={showPassword ? "text" : "password"}
+              name="password"
+              value={formData.password}
+              onChange={handleChange}
+              className="w-full px-4 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 pr-12"
+            />
+            <button
+              type="button"
+              onClick={togglePasswordVisibility}
+              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-green-600 text-sm font-semibold"
+            >
+              {showPassword ? "Hide" : "Show"}
+            </button>
           </div>
 
           {/* Confirm Password */}
-          <div style={styles.formGroup}>
-            <label style={styles.label}>Confirm Password</label>
+          <div className="mb-6">
+            <label className="block text-sm font-semibold text-gray-700">Confirm Password</label>
             <input
               type={showPassword ? "text" : "password"}
               name="confirmPassword"
               value={formData.confirmPassword}
               onChange={handleChange}
-              style={styles.input}
+              className="w-full px-4 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
             />
           </div>
 
           {/* Buttons */}
-          <div style={styles.buttonGroup}>
+          <div className="flex flex-col gap-4">
             <button
               type="button"
               onClick={handleSave}
               disabled={loading}
-              style={{
-                ...styles.saveButton,
-                backgroundColor: !loading ? "#4CAF50" : "#a5d6a7",
-              }}
+              className={`w-full py-3 text-white font-semibold rounded-md transition ${loading ? "bg-green-300" : "bg-green-500 hover:bg-green-600"
+                }`}
             >
               {loading ? "Saving..." : "Save Changes"}
-            </button>
-
-            <button
-              type="button"
-              onClick={handleLogout}
-              style={styles.logoutButton}
-            >
-              Logout
             </button>
           </div>
         </form>
@@ -180,94 +168,5 @@ function ProfileManagement({ setIsLoggedIn }) {
     </div>
   );
 }
-
-const styles = {
-  pageContainer: {
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
-    padding: "50px 20px",
-    minHeight: "80vh",
-    backgroundColor: "#f4f6f8",
-  },
-  card: {
-    width: "100%",
-    maxWidth: "500px",
-    backgroundColor: "#fff",
-    borderRadius: "12px",
-    padding: "40px 30px",
-    boxShadow: "0 8px 25px rgba(0,0,0,0.1)",
-  },
-  heading: {
-    textAlign: "center",
-    marginBottom: "30px",
-    fontSize: "28px",
-    color: "#333",
-  },
-  form: {
-    display: "flex",
-    flexDirection: "column",
-  },
-  formGroup: {
-    marginBottom: "20px",
-    position: "relative",
-  },
-  label: {
-    display: "block",
-    marginBottom: "8px",
-    fontWeight: "600",
-    color: "#555",
-  },
-  input: {
-    width: "95%",
-    padding: "12px 15px",
-    fontSize: "16px",
-    borderRadius: "8px",
-    border: "1px solid #ccc",
-    outline: "none",
-    transition: "0.3s",
-    backgroundColor: "#fff",
-  },
-  passwordWrapper: {
-    position: "relative",
-  },
-  showPasswordButton: {
-    position: "absolute",
-    right: "12px",
-    top: "50%",
-    transform: "translateY(-50%)",
-    background: "none",
-    border: "none",
-    color: "#4CAF50",
-    fontWeight: "600",
-    cursor: "pointer",
-  },
-  buttonGroup: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "12px",
-    marginTop: "20px",
-  },
-  saveButton: {
-    padding: "14px",
-    fontSize: "16px",
-    color: "#fff",
-    border: "none",
-    borderRadius: "8px",
-    fontWeight: "600",
-    transition: "0.3s",
-  },
-  logoutButton: {
-    padding: "14px",
-    fontSize: "16px",
-    color: "#fff",
-    backgroundColor: "#db4437",
-    border: "none",
-    borderRadius: "8px",
-    fontWeight: "600",
-    cursor: "pointer",
-    transition: "0.3s",
-  },
-};
 
 export default beforeAuthLayout(ProfileManagement);
