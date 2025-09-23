@@ -123,9 +123,10 @@ function SearchResults() {
                                 <img src={item.img} alt={item.name} className="w-full h-40 object-cover rounded-lg mb-4" />
                                 <h3 className="text-xl font-semibold text-gray-800 mb-2">{item.name}</h3>
                                 <p className="text-gray-600 text-sm mb-4">{item.description}</p>
-                                <Link to={item.link} className="text-green-600 hover:text-green-700 font-semibold">
+                                <Link to={`/courses/${item.id}`} className="text-green-600 hover:text-green-700 font-semibold">
                                     View Course
                                 </Link>
+
                             </div>
                         ))}
                     </div>

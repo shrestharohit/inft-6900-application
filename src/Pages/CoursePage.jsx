@@ -103,15 +103,17 @@ const CoursePage = ({ loggedInUser }) => {
       </div>
 
       <div className="flex flex-col md:flex-row gap-6">
-        {/* Course Image */}
-        <img
-          src={course.img} // Replace with actual image path
-          alt={course.name}
-          className="w-full md:w-1/2 lg:w-1/3 rounded-lg shadow-md object-cover"
-        />
+        {/* Course Image with proper sizing and aspect ratio */}
+        <div className="flex-shrink-0 w-full md:w-1/3">
+          <img
+            src={course.img} // Replace with actual image path
+            alt={course.name}
+            className="w-full h-auto object-cover rounded-lg shadow-md"
+          />
+        </div>
 
         {/* Course Info */}
-        <div className="md:w-1/2 lg:w-2/3">
+        <div className="md:w-2/3">
           <h1 className="text-3xl font-bold text-gray-800">{course.name}</h1>
           <p className="text-lg text-gray-600 mt-2">{course.description}</p>
 
