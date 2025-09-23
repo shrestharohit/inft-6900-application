@@ -39,6 +39,8 @@ import SearchResults from "../Pages/SearchResults";
 // All Courses and Pathways Pages
 import AllCoursesPage from "../Pages/AllCoursesPage";
 import AllPathwaysPage from "../Pages/AllPathwaysPage";
+import CourseContentPage from "../Pages/CourseContentPage";
+import PathwayContentPage from "../Pages/PathwayContentPage";
 
 export const router = createBrowserRouter([
   // Public routes
@@ -193,7 +195,20 @@ export const router = createBrowserRouter([
   {
     path: "/all-pathways",
     element: <AllPathwaysPage />,
-  }
+  },
+
+  // Course Content Page
+  {
+    path: "/courses/:courseId/content",
+    element: <CourseContentPage /> 
+  },
+
+  // Pathway Content Page
+  {
+    path: "/pathway/:pathwayId/content",
+    element: <PathwayContentPage />
+  },
+
 
   
 ]);

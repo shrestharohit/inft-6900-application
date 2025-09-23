@@ -1,67 +1,46 @@
 import React, { useState, useEffect } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import beforeAuthLayout from "../components/BeforeAuth";
-import techSkillsImg from "../assets/Images/techskills.png";
-import analyticalSkillsImg from "../assets/Images/analyticalskills.png";
-import businessSkillsImg from "../assets/Images/businessskills.png";
-
-// Dummy Pathway Data
-const dummyPathways = [
-  {
-    id: "1",
-    name: "Tech Skills",
-    description: "Master coding and DevOps skills.",
-    img: techSkillsImg,
-    rating: 4.6,
-    reviews: [
-      { user: "Alice", rating: 5, comment: "Fantastic collection of courses!" },
-      { user: "Bob", rating: 4, comment: "Very useful for DevOps beginners." },
-    ],
-    courses: [
-      { id: "coding", name: "Coding", link: "/courses/coding" },
-      { id: "devops", name: "DevOps", link: "/courses/devops" },
-    ],
-  },
-  {
-    id: "2",
-    name: "Analytical Skills",
-    description: "Learn Big Data and Power BI.",
-    img: analyticalSkillsImg,
-    rating: 4.8,
-    reviews: [
-      { user: "Sara", rating: 5, comment: "Helped me land my analyst job!" },
-    ],
-    courses: [
-      { id: "bigdata", name: "Big Data", link: "/courses/bigdata" },
-      { id: "powerbi", name: "Power BI", link: "/courses/powerbi" },
-    ],
-  },
-  {
-    id: "3",
-    name: "Business Skills",
-    description: "Build Accounting and Finance expertise.",
-    img: businessSkillsImg,
-    rating: 4.4,
-    reviews: [],
-    courses: [
-      { id: "accounting", name: "Accounting", link: "/courses/accounting" },
-      { id: "finance", name: "Finance", link: "/courses/finance" },
-    ],
-  },
-];
+import { useAuth } from "../contexts/AuthContext";
+import { dummyPathways } from "../Pages/dummyData"; // ✅ central import
 
 const PathwayPage = () => {
   const { pathwayId } = useParams();
+  const navigate = useNavigate();
+  const { loggedInUser, isLoggedIn, enrollInPathway } = useAuth();
+
   const [pathway, setPathway] = useState(null);
+  const [isEnrolled, setIsEnrolled] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const selectedPathway = dummyPathways.find((p) => p.id === pathwayId);
     setPathway(selectedPathway);
-  }, [pathwayId]);
+
+    if (isLoggedIn && loggedInUser?.enrolledPathways) {
+      setIsEnrolled(loggedInUser.enrolledPathways.includes(pathwayId));
+    }
+  }, [pathwayId, isLoggedIn, loggedInUser]);
 
   if (!pathway) {
     return <div>Pathway not found!</div>;
   }
+
+  const handleEnroll = () => {
+    if (!isLoggedIn) {
+      navigate("/login", { state: { from: `/pathway/${pathwayId}` } });
+      return;
+    }
+
+    setLoading(true);
+
+    setTimeout(() => {
+      enrollInPathway(pathwayId);
+      setIsEnrolled(true);
+      alert(`Successfully enrolled in ${pathway.name}`);
+      setLoading(false);
+    }, 500);
+  };
 
   return (
     <div className="p-8 max-w-7xl mx-auto">
@@ -103,10 +82,10 @@ const PathwayPage = () => {
               Courses in this Pathway
             </h2>
             <ul className="list-disc ml-6 text-gray-600">
-              {pathway.courses.map((course, index) => (
-                <li key={index}>
+              {pathway.courses.map((course) => (
+                <li key={course.id}>
                   <Link
-                    to={course.link}
+                    to={`/courses/${course.id}`}
                     className="text-blue-500 hover:underline"
                   >
                     {course.name}
@@ -116,11 +95,32 @@ const PathwayPage = () => {
             </ul>
           </div>
 
+          {/* Outline */}
+          {pathway.outline && (
+            <div className="bg-gray-100 p-6 rounded-lg mt-6 shadow-md">
+              <h2 className="text-2xl font-semibold text-gray-800 mb-4">
+                Pathway Outline
+              </h2>
+              <p className="text-gray-600 mb-2">
+                <span className="font-semibold">Modules:</span>{" "}
+                {pathway.outline.modules}
+              </p>
+              <p className="text-gray-600 mb-2">
+                <span className="font-semibold">Content Type:</span>{" "}
+                {pathway.outline.contentType}
+              </p>
+              <h3 className="font-semibold text-gray-800 mt-4">Structure:</h3>
+              <ul className="list-disc ml-5 text-gray-600">
+                {pathway.outline.structure.map((step, index) => (
+                  <li key={index}>{step}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+
           {/* Reviews */}
           <div className="mt-6 bg-gray-100 p-6 rounded-lg shadow-md">
-            <h2 className="text-2xl font-semibold text-gray-800 mb-4">
-              Reviews
-            </h2>
+            <h2 className="text-2xl font-semibold text-gray-800 mb-4">Reviews</h2>
             {pathway.reviews.length > 0 ? (
               pathway.reviews.map((review, index) => (
                 <div key={index} className="mb-4">
@@ -138,11 +138,32 @@ const PathwayPage = () => {
             )}
           </div>
 
-          {/* Enroll Button */}
-          <div className="mt-6">
-            <button className="w-full bg-green-500 hover:bg-green-600 text-white py-3 px-6 rounded-md">
-              Enroll in Pathway
-            </button>
+          {/* Enroll / Already Enrolled */}
+          <div className="mt-6 flex flex-col gap-3">
+            {isEnrolled ? (
+              <>
+                <button
+                  className="w-full bg-gray-400 text-white py-3 px-6 rounded-md cursor-not-allowed"
+                  disabled
+                >
+                  You are already enrolled
+                </button>
+                <button
+                  onClick={() => navigate(`/pathway/${pathwayId}/content`)}
+                  className="w-full bg-blue-500 hover:bg-blue-600 text-white py-3 px-6 rounded-md"
+                >
+                  Go to Pathway Content
+                </button>
+              </>
+            ) : (
+              <button
+                onClick={handleEnroll}
+                disabled={loading}
+                className="w-full bg-green-500 hover:bg-green-600 text-white py-3 px-6 rounded-md"
+              >
+                {loading ? "Enrolling..." : "Enroll in Pathway"}
+              </button>
+            )}
           </div>
         </div>
       </div>

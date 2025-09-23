@@ -1,89 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { useLocation, Link } from "react-router-dom";
 import beforeAuthLayout from "../components/BeforeAuth";
-import webdevremovebg from "../assets/Images/webdevremovebg.png";
-import dataanaremovebg from "../assets/Images/dataanaremovebg.png";
-import aiMlImg from "../assets/Images/aimlremovebg.png";
-import techSkillsImg from "../assets/Images/techskills.png";
-import analyticalSkillsImg from "../assets/Images/analyticalskills.png";
-import businessSkillsImg from "../assets/Images/businessskills.png";
 
-// Dummy data for demonstration purposes
-const dummyCourses = [
-    {
-        id: "1",
-        name: "Web Development",
-        description: "Learn to build websites using HTML, CSS, JavaScript.",
-        level: "Beginner",
-        knowledgeArea: "Tech Skills",
-        releasedDate: "2023-05-01",
-        rating: 4.5,
-        numEnrolled: 1200,
-        owner: "Course Owner 1",
-        img: webdevremovebg,
-        link: "/courses/web-development",
-    },
-    {
-        id: "2",
-        name: "Data Analytics",
-        description: "Master data analysis with Python and SQL.",
-        level: "Intermediate",
-        knowledgeArea: "Analytical Skills",
-        releasedDate: "2023-03-20",
-        rating: 4.7,
-        numEnrolled: 900,
-        owner: "Course Owner 2",
-        img: dataanaremovebg,
-        link: "/courses/data-analytics",
-    },
-    {
-        id: "3",
-        name: "AI & Machine Learning",
-        description:
-            "Dive into AI and Machine Learning concepts and applications.",
-        level: "Advanced",
-        knowledgeArea: "Tech Skills",
-        releasedDate: "2023-02-10",
-        rating: 4.8,
-        numEnrolled: 800,
-        owner: "Course Owner 3",
-        img: aiMlImg,
-        link: "/courses/ai-ml",
-    },
-];
-
-const dummyPathways = [
-    {
-        id: "1",
-        name: "Tech Skills",
-        description: "Master coding and DevOps skills.",
-        img: techSkillsImg,
-        courses: [
-            { name: "Coding", link: "/courses/coding" },
-            { name: "DevOps", link: "/courses/devops" },
-        ],
-    },
-    {
-        id: "2",
-        name: "Analytical Skills",
-        description: "Learn Big Data and Power BI.",
-        img: analyticalSkillsImg,
-        courses: [
-            { name: "Big Data", link: "/courses/bigdata" },
-            { name: "Power BI", link: "/courses/powerbi" },
-        ],
-    },
-    {
-        id: "3",
-        name: "Business Skills",
-        description: "Build Accounting and Finance expertise.",
-        img: businessSkillsImg,
-        courses: [
-            { name: "Accounting", link: "/courses/accounting" },
-            { name: "Finance", link: "/courses/finance" },
-        ],
-    },
-];
+// ✅ import shared dummy data
+import { dummyCourses, dummyPathways } from "../Pages/dummyData";
 
 function SearchResults() {
     const location = useLocation();
@@ -125,7 +45,7 @@ function SearchResults() {
             filteredCourses = [];
         }
 
-        // Apply course filters
+        // Apply filters
         if (filters.level !== "all") {
             filteredCourses = filteredCourses.filter(
                 (course) => course.level === filters.level
@@ -161,11 +81,14 @@ function SearchResults() {
                 <h1 className="text-3xl font-bold text-gray-900">
                     Search Results for:{" "}
                     <span className="text-black-600">
-                        "{query || (category === "all"
-                            ? "All Courses & Pathways"
-                            : category === "courses"
-                                ? "All Courses"
-                                : "All Pathways")}"
+                        "
+                        {query ||
+                            (category === "all"
+                                ? "All Courses & Pathways"
+                                : category === "courses"
+                                    ? "All Courses"
+                                    : "All Pathways")}
+                        "
                     </span>
                 </h1>
             </div>
@@ -256,9 +179,7 @@ function SearchResults() {
             {/* Pathways Section */}
             {category !== "courses" && (
                 <div>
-                    <h2 className="text-2xl font-semibold text-gray-900 mb-4">
-                        Pathways
-                    </h2>
+                    <h2 className="text-2xl font-semibold text-gray-900 mb-4">Pathways</h2>
                     {searchResults.pathways.length > 0 ? (
                         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
                             {searchResults.pathways.map((pathway) => (
