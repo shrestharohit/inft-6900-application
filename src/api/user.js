@@ -78,7 +78,7 @@ export const verifyOTP = async (email, otp) => {
     otpCode: otp,
   });
 
-  return res;
+  return res.data;
 };
 
 export const resendOTP = async (email) => {

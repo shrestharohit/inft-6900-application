@@ -1,16 +1,20 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { getCurrentUser, updateUser } from '../api/user'; // ✅ API helpers
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import beforeAuthLayout from "../components/BeforeAuth";
+import { useAuth } from "../contexts/AuthContext";
+import useUserApi from "../hooks/useUserApi";
 
 function ProfileManagement({ setIsLoggedIn }) {
   const navigate = useNavigate();
+  const { loggedInUser, setUserDataInState } = useAuth();
+  const { updateUser } = useUserApi();
 
   const [formData, setFormData] = useState({
-    firstName: '',
-    lastName: '',
-    email: '',
-    password: '',
-    confirmPassword: '',
+    firstName: "",
+    lastName: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
   });
 
   const [showPassword, setShowPassword] = useState(false);
@@ -20,21 +24,19 @@ function ProfileManagement({ setIsLoggedIn }) {
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        const userId = localStorage.getItem("userId"); // or from token/session
-        const user = await getCurrentUser(userId);
         setFormData({
-          firstName: user.firstName || '',
-          lastName: user.lastName || '',
-          email: user.email || '',
-          password: '',
-          confirmPassword: '',
+          firstName: loggedInUser.firstName || "",
+          lastName: loggedInUser.lastName || "",
+          email: loggedInUser.email || "",
+          password: "",
+          confirmPassword: "",
         });
       } catch (err) {
         console.error("❌ Failed to fetch user:", err);
       }
     };
     fetchUser();
-  }, []);
+  }, [loggedInUser]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -46,21 +48,22 @@ function ProfileManagement({ setIsLoggedIn }) {
       alert("Passwords do not match!");
       return;
     }
+    if (loggedInUser === null) {
+      alert("User not logged in");
+      return;
+    }
 
     try {
       setLoading(true);
-      const userId = localStorage.getItem("userId"); // or from session
       const updateData = {
         firstName: formData.firstName,
         lastName: formData.lastName,
-        // password is optional – only send if entered
         ...(formData.password ? { password: formData.password } : {}),
       };
-      const updated = await updateUser(userId, updateData);
+      const response = await updateUser(loggedInUser.id, updateData);
+      setUserDataInState(response);
       alert("Profile updated successfully!");
-      console.log("✅ Updated user:", updated);
     } catch (err) {
-      console.error("❌ Update error:", err);
       alert("Failed to update profile");
     } finally {
       setLoading(false);
@@ -164,7 +167,11 @@ function ProfileManagement({ setIsLoggedIn }) {
               {loading ? "Saving..." : "Save Changes"}
             </button>
 
-            <button type="button" onClick={handleLogout} style={styles.logoutButton}>
+            <button
+              type="button"
+              onClick={handleLogout}
+              style={styles.logoutButton}
+            >
               Logout
             </button>
           </div>
@@ -174,94 +181,93 @@ function ProfileManagement({ setIsLoggedIn }) {
   );
 }
 
-
 const styles = {
   pageContainer: {
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: '50px 20px',
-    minHeight: '80vh',
-    backgroundColor: '#f4f6f8',
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: "50px 20px",
+    minHeight: "80vh",
+    backgroundColor: "#f4f6f8",
   },
   card: {
-    width: '100%',
-    maxWidth: '500px',
-    backgroundColor: '#fff',
-    borderRadius: '12px',
-    padding: '40px 30px',
-    boxShadow: '0 8px 25px rgba(0,0,0,0.1)',
+    width: "100%",
+    maxWidth: "500px",
+    backgroundColor: "#fff",
+    borderRadius: "12px",
+    padding: "40px 30px",
+    boxShadow: "0 8px 25px rgba(0,0,0,0.1)",
   },
   heading: {
-    textAlign: 'center',
-    marginBottom: '30px',
-    fontSize: '28px',
-    color: '#333',
+    textAlign: "center",
+    marginBottom: "30px",
+    fontSize: "28px",
+    color: "#333",
   },
   form: {
-    display: 'flex',
-    flexDirection: 'column',
+    display: "flex",
+    flexDirection: "column",
   },
   formGroup: {
-    marginBottom: '20px',
-    position: 'relative',
+    marginBottom: "20px",
+    position: "relative",
   },
   label: {
-    display: 'block',
-    marginBottom: '8px',
-    fontWeight: '600',
-    color: '#555',
+    display: "block",
+    marginBottom: "8px",
+    fontWeight: "600",
+    color: "#555",
   },
   input: {
-    width: '95%',
-    padding: '12px 15px',
-    fontSize: '16px',
-    borderRadius: '8px',
-    border: '1px solid #ccc',
-    outline: 'none',
-    transition: '0.3s',
-    backgroundColor: '#fff',
+    width: "95%",
+    padding: "12px 15px",
+    fontSize: "16px",
+    borderRadius: "8px",
+    border: "1px solid #ccc",
+    outline: "none",
+    transition: "0.3s",
+    backgroundColor: "#fff",
   },
   passwordWrapper: {
-    position: 'relative',
+    position: "relative",
   },
   showPasswordButton: {
-    position: 'absolute',
-    right: '12px',
-    top: '50%',
-    transform: 'translateY(-50%)',
-    background: 'none',
-    border: 'none',
-    color: '#4CAF50',
-    fontWeight: '600',
-    cursor: 'pointer',
+    position: "absolute",
+    right: "12px",
+    top: "50%",
+    transform: "translateY(-50%)",
+    background: "none",
+    border: "none",
+    color: "#4CAF50",
+    fontWeight: "600",
+    cursor: "pointer",
   },
   buttonGroup: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '12px',
-    marginTop: '20px',
+    display: "flex",
+    flexDirection: "column",
+    gap: "12px",
+    marginTop: "20px",
   },
   saveButton: {
-    padding: '14px',
-    fontSize: '16px',
-    color: '#fff',
-    border: 'none',
-    borderRadius: '8px',
-    fontWeight: '600',
-    transition: '0.3s',
+    padding: "14px",
+    fontSize: "16px",
+    color: "#fff",
+    border: "none",
+    borderRadius: "8px",
+    fontWeight: "600",
+    transition: "0.3s",
   },
   logoutButton: {
-    padding: '14px',
-    fontSize: '16px',
-    color: '#fff',
-    backgroundColor: '#db4437',
-    border: 'none',
-    borderRadius: '8px',
-    fontWeight: '600',
-    cursor: 'pointer',
-    transition: '0.3s',
+    padding: "14px",
+    fontSize: "16px",
+    color: "#fff",
+    backgroundColor: "#db4437",
+    border: "none",
+    borderRadius: "8px",
+    fontWeight: "600",
+    cursor: "pointer",
+    transition: "0.3s",
   },
 };
 
-export default ProfileManagement;
+export default beforeAuthLayout(ProfileManagement);
