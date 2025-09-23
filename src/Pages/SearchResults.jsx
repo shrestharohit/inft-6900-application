@@ -16,10 +16,11 @@ const dummyCourses = [
 ];
 
 const dummyPathways = [
-    { id: "1", name: "Tech Skills", description: "Master coding and DevOps skills.", img: techSkillsImg, link: "/pathway/tech-skills", courses: [{ name: "Coding", link: "/courses/coding" }, { name: "DevOps", link: "/courses/devops" }] },
-    { id: "2", name: "Analytical Skills", description: "Learn Big Data and Power BI.", img: analyticalSkillsImg, link: "/pathway/analytical-skills", courses: [{ name: "Big Data", link: "/courses/bigdata" }, { name: "Power BI", link: "/courses/powerbi" }] },
-    { id: "3", name: "Business Skills", description: "Build Accounting and Finance expertise.", img: businessSkillsImg, link: "/pathway/business-skills", courses: [{ name: "Accounting", link: "/courses/accounting" }, { name: "Finance", link: "/courses/finance" }] },
+    { id: "1", name: "Tech Skills", description: "Master coding and DevOps skills.", img: techSkillsImg, courses: [{ name: "Coding", link: "/courses/coding" }, { name: "DevOps", link: "/courses/devops" }] },
+    { id: "2", name: "Analytical Skills", description: "Learn Big Data and Power BI.", img: analyticalSkillsImg, courses: [{ name: "Big Data", link: "/courses/bigdata" }, { name: "Power BI", link: "/courses/powerbi" }] },
+    { id: "3", name: "Business Skills", description: "Build Accounting and Finance expertise.", img: businessSkillsImg, courses: [{ name: "Accounting", link: "/courses/accounting" }, { name: "Finance", link: "/courses/finance" }] },
 ];
+
 
 function SearchResults() {
     const location = useLocation();
@@ -99,7 +100,7 @@ function SearchResults() {
             <div className="mb-2">
                 <h1 className="text-3xl font-bold text-gray-900">
                     Search Results for:{" "}
-                    <span className="text-green-600">
+                    <span className="text-black-600">
                         "{query || (category === "all" ? "All Courses & Pathways" : category === "courses" ? "All Courses" : "All Pathways")}"
                     </span>
                 </h1>
@@ -142,7 +143,7 @@ function SearchResults() {
                                 <img src={item.img} alt={item.name} className="w-full h-40 object-cover rounded-lg mb-4" />
                                 <h3 className="text-xl font-semibold text-gray-800 mb-2">{item.name}</h3>
                                 <p className="text-gray-600 text-sm mb-4">{item.description}</p>
-                                <Link to={item.link} className="text-green-600 hover:text-green-700 font-semibold">
+                                <Link to={`/pathway/${item.id}`} className="text-green-600 hover:text-green-700 font-semibold">
                                     View Pathway
                                 </Link>
                             </div>

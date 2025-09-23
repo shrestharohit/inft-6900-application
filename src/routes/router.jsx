@@ -87,6 +87,12 @@ export const router = createBrowserRouter([
     element: <CoursePage />
   },
 
+  // Dynamic route for Pathway Details
+  {
+    path: "/pathway/:pathwayId",
+    element: <PathwayPage />
+  },
+
   // Admin routes (nested)
   {
     path: "/admin",
@@ -188,4 +194,6 @@ export const router = createBrowserRouter([
     path: "/all-pathways",
     element: <AllPathwaysPage />,
   }
+
+  
 ]);
