@@ -21,7 +21,6 @@ import {
   MenuItem,
   Card,
   CardContent,
-  Tooltip,
 } from "@mui/material";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
@@ -42,6 +41,7 @@ export default function QuizManagement() {
   });
   const [questions, setQuestions] = useState([]);
   const [editingIndex, setEditingIndex] = useState(null);
+  const [editingQuizIndex, setEditingQuizIndex] = useState(null);
   const [questionForm, setQuestionForm] = useState({
     text: "",
     options: [
@@ -51,7 +51,6 @@ export default function QuizManagement() {
     image: null,
   });
 
-  // Load quizzes, courses, modules
   useEffect(() => {
     const rawQuizzes = localStorage.getItem(STORAGE_KEY_QUIZZES);
     if (rawQuizzes) setQuizzes(JSON.parse(rawQuizzes));
@@ -79,8 +78,9 @@ export default function QuizManagement() {
   };
 
   const handleOptionChange = (index, field, value) => {
-    const newOptions = [...questionForm.options];
-    newOptions[index] = { ...newOptions[index], [field]: value };
+    const newOptions = questionForm.options.map((opt, i) =>
+      i === index ? { ...opt, [field]: value } : opt
+    );
     setQuestionForm({ ...questionForm, options: newOptions });
   };
 
@@ -117,9 +117,17 @@ export default function QuizManagement() {
 
     const updatedQuestions = [...questions];
     if (editingIndex !== null) {
-      updatedQuestions[editingIndex] = { ...questionForm, number: editingIndex + 1 };
+      updatedQuestions[editingIndex] = {
+        ...questionForm,
+        number: editingIndex + 1,
+        options: questionForm.options.map((o) => ({ ...o })),
+      };
     } else {
-      updatedQuestions.push({ ...questionForm, number: updatedQuestions.length + 1 });
+      updatedQuestions.push({
+        ...questionForm,
+        number: updatedQuestions.length + 1,
+        options: questionForm.options.map((o) => ({ ...o })),
+      });
     }
     setQuestions(updatedQuestions);
 
@@ -135,6 +143,26 @@ export default function QuizManagement() {
   };
 
   const deleteQuestion = (qIndex) => {
+    if (questions.length === 1) {
+      if (editingQuizIndex !== null) {
+        const updatedQuizzes = quizzes.filter((_, i) => i !== editingQuizIndex);
+        setQuizzes(updatedQuizzes);
+      }
+      setQuestions([]);
+      setForm({ courseTitle: "", moduleTitle: "", quizTitle: "", timeLimit: "" });
+      setQuestionForm({
+        text: "",
+        options: [
+          { text: "", isCorrect: false, feedback: "" },
+          { text: "", isCorrect: false, feedback: "" },
+        ],
+        image: null,
+      });
+      setEditingIndex(null);
+      setEditingQuizIndex(null);
+      return;
+    }
+
     const updatedQuestions = questions
       .filter((_, i) => i !== qIndex)
       .map((q, i) => ({ ...q, number: i + 1 }));
@@ -151,18 +179,10 @@ export default function QuizManagement() {
       });
       setEditingIndex(null);
     }
-
-    // If deleting last question, delete whole quiz
-    if (updatedQuestions.length === 0 && editingIndex !== null) {
-      const updatedQuizzes = [...quizzes];
-      updatedQuizzes.splice(editingIndex, 1);
-      setQuizzes(updatedQuizzes);
-      setEditingIndex(null);
-    }
   };
 
   const handleEditQuestion = (qIndex) => {
-    setQuestionForm(questions[qIndex]);
+    setQuestionForm({ ...questions[qIndex] });
     setEditingIndex(qIndex);
   };
 
@@ -178,11 +198,11 @@ export default function QuizManagement() {
 
     const newQuiz = { ...form, questions };
 
-    if (editingIndex !== null) {
+    if (editingQuizIndex !== null) {
       const updated = [...quizzes];
-      updated[editingIndex] = {
+      updated[editingQuizIndex] = {
         ...newQuiz,
-        status: "Draft", // Always set Draft when editing
+        status: updated[editingQuizIndex].status === "Active" ? "Wait for Approval" : updated[editingQuizIndex].status,
       };
       setQuizzes(updated);
     } else {
@@ -193,6 +213,7 @@ export default function QuizManagement() {
     setForm({ courseTitle: "", moduleTitle: "", quizTitle: "", timeLimit: "" });
     setQuestions([]);
     setEditingIndex(null);
+    setEditingQuizIndex(null);
   };
 
   const handleEditQuiz = (index) => {
@@ -203,8 +224,19 @@ export default function QuizManagement() {
       quizTitle: quiz.quizTitle,
       timeLimit: quiz.timeLimit,
     });
-    setQuestions(quiz.questions);
-    setEditingIndex(index);
+    setQuestions(
+      quiz.questions.map((q) => ({
+        ...q,
+        options: q.options.map((o) => ({ ...o })),
+      }))
+    );
+    setEditingQuizIndex(index);
+    setEditingIndex(null);
+
+    // Reset status to Draft when editing if Active or Inactive
+    const updated = [...quizzes];
+    if (quiz.status === "Active" || quiz.status === "Inactive") updated[index].status = "Draft";
+    setQuizzes(updated);
   };
 
   const handleRequestApproval = (index) => {
@@ -225,7 +257,9 @@ export default function QuizManagement() {
 
   return (
     <Box sx={{ padding: "2rem", maxWidth: "1200px", margin: "0 auto" }}>
-      <Typography variant="h4" gutterBottom fontWeight="bold">Quiz Management</Typography>
+      <Typography variant="h4" gutterBottom fontWeight="bold">
+        Quiz Management
+      </Typography>
 
       {/* Quiz Form */}
       <Paper sx={{ padding: "2rem", marginBottom: "2rem", borderRadius: 3, boxShadow: "0 8px 20px rgba(0,0,0,0.1)" }}>
@@ -233,52 +267,106 @@ export default function QuizManagement() {
           <FormControl fullWidth size="small">
             <InputLabel>Course Title</InputLabel>
             <Select name="courseTitle" value={form.courseTitle} onChange={handleChange} label="Course Title">
-              {courses.map((c, idx) => <MenuItem key={idx} value={c.name}>{c.name}</MenuItem>)}
+              {courses.map((c, idx) => (
+                <MenuItem key={idx} value={c.name}>{c.name}</MenuItem>
+              ))}
             </Select>
           </FormControl>
 
           <FormControl fullWidth size="small">
             <InputLabel>Module Title</InputLabel>
-            <Select name="moduleTitle" value={form.moduleTitle} onChange={handleChange} label="Module Title" disabled={!form.courseTitle}>
-              {modulesForSelectedCourse.map((m, idx) => <MenuItem key={idx} value={m}>{m}</MenuItem>)}
+            <Select
+              name="moduleTitle"
+              value={form.moduleTitle}
+              onChange={handleChange}
+              label="Module Title"
+              disabled={!form.courseTitle}
+            >
+              {modulesForSelectedCourse.map((m, idx) => (
+                <MenuItem key={idx} value={m}>{m}</MenuItem>
+              ))}
             </Select>
           </FormControl>
 
           <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
             <TextField label="Quiz Title" name="quizTitle" value={form.quizTitle} onChange={handleChange} fullWidth />
-            <TextField label="Time Limit (minutes)" name="timeLimit" type="number" value={form.timeLimit} onChange={handleChange} fullWidth />
+            <TextField
+              label="Time Limit (minutes)"
+              name="timeLimit"
+              type="number"
+              value={form.timeLimit}
+              onChange={handleChange}
+              fullWidth
+            />
           </Stack>
 
           {/* Question Card */}
           <Card sx={{ mt: 2, p: 2, backgroundColor: "#f9f9f9" }}>
             <CardContent>
-              <Typography variant="h6" gutterBottom>Add / Edit Question</Typography>
-              <TextField label="Question Text" name="text" value={questionForm.text} onChange={handleQuestionChange} fullWidth margin="normal" />
+              <Typography variant="h6" gutterBottom>
+                Add / Edit Question
+              </Typography>
+              <TextField
+                label="Question Text"
+                name="text"
+                value={questionForm.text}
+                onChange={handleQuestionChange}
+                fullWidth
+                margin="normal"
+              />
               <Stack spacing={2}>
                 {questionForm.options.map((opt, i) => (
                   <Stack key={i} direction={{ xs: "column", md: "row" }} spacing={2} alignItems="center">
-                    <TextField label={`Option ${i + 1}`} value={opt.text} onChange={(e) => handleOptionChange(i, "text", e.target.value)} fullWidth />
-                    <Checkbox checked={opt.isCorrect} onChange={(e) => handleOptionChange(i, "isCorrect", e.target.checked)} />
-                    <TextField label="Feedback" value={opt.feedback} onChange={(e) => handleOptionChange(i, "feedback", e.target.value)} fullWidth />
+                    <TextField
+                      label={`Option ${i + 1}`}
+                      value={opt.text}
+                      onChange={(e) => handleOptionChange(i, "text", e.target.value)}
+                      fullWidth
+                    />
+                    <Checkbox
+                      checked={opt.isCorrect}
+                      onChange={(e) => handleOptionChange(i, "isCorrect", e.target.checked)}
+                    />
+                    <TextField
+                      label="Feedback"
+                      value={opt.feedback}
+                      onChange={(e) => handleOptionChange(i, "feedback", e.target.value)}
+                      fullWidth
+                    />
                   </Stack>
                 ))}
               </Stack>
               <Stack direction="row" spacing={2} mt={2}>
-                <Button startIcon={<AddCircleOutlineIcon />} onClick={addOption} variant="contained" color="primary">Add Option</Button>
+                <Button startIcon={<AddCircleOutlineIcon />} onClick={addOption} variant="contained" color="primary">
+                  Add Option
+                </Button>
                 <Button variant="contained" color="primary" component="label">
                   Upload Image
                   <input type="file" hidden onChange={handleQuestionImage} />
                 </Button>
               </Stack>
-              {questionForm.image && <Box mt={2}><img src={questionForm.image} alt="Question" style={{ maxWidth: 250, borderRadius: 8 }} /></Box>}
-              <Button variant="contained" color="primary" onClick={addQuestion} sx={{ mt: 3 }}>{editingIndex !== null ? "Update Question" : "Add Question"}</Button>
+              {questionForm.image && (
+                <Box mt={2}>
+                  <img src={questionForm.image} alt="Question" style={{ maxWidth: 250, borderRadius: 8 }} />
+                </Box>
+              )}
+              <Button
+                variant="contained"
+                color="primary"
+                onClick={addQuestion}
+                sx={{ mt: 3 }}
+              >
+                {editingIndex !== null ? "Update Question" : "Add Question"}
+              </Button>
             </CardContent>
           </Card>
 
           {/* Questions Preview */}
           {questions.length > 0 && (
             <Paper sx={{ mt: 3, p: 2 }}>
-              <Typography variant="h6" gutterBottom>Questions Preview</Typography>
+              <Typography variant="h6" gutterBottom>
+                Questions Preview
+              </Typography>
               <Divider sx={{ mb: 2 }} />
               <Table>
                 <TableHead>
@@ -297,12 +385,14 @@ export default function QuizManagement() {
                       <TableCell>{q.number}</TableCell>
                       <TableCell>{q.text}</TableCell>
                       <TableCell>{q.options.map((o,i) => <div key={i}>{i+1}. {o.text}</div>)}</TableCell>
-                      <TableCell>{q.options.filter(o=>o.isCorrect).map((_, i)=>`Option ${i+1}`).join(", ")}</TableCell>
+                      <TableCell>{q.options.map((o,i)=>o.isCorrect? `Option ${i+1}`: null).filter(Boolean).join(", ")}</TableCell>
                       <TableCell>{q.options.map((o,i)=><div key={i}>{i+1}. {o.feedback}</div>)}</TableCell>
                       <TableCell>
                         <Stack direction="row" spacing={1}>
-                          <Button size="small" onClick={() => handleEditQuestion(idx)}>Edit</Button>
-                          <IconButton color="error" onClick={() => deleteQuestion(idx)}><DeleteOutlineIcon /></IconButton>
+                          <Button size="small" onClick={()=>handleEditQuestion(idx)}>Edit</Button>
+                          <IconButton color="error" onClick={()=>deleteQuestion(idx)}>
+                            <DeleteOutlineIcon />
+                          </IconButton>
                         </Stack>
                       </TableCell>
                     </TableRow>
@@ -312,7 +402,12 @@ export default function QuizManagement() {
             </Paper>
           )}
 
-          <Button variant="contained" color="primary" onClick={handleSaveQuiz} sx={{ mt: 3, alignSelf: "flex-start" }}>
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={handleSaveQuiz}
+            sx={{ mt: 3, alignSelf: "flex-start" }}
+          >
             {editingIndex !== null ? "Update Quiz" : "Save Quiz"}
           </Button>
         </Stack>
@@ -320,7 +415,9 @@ export default function QuizManagement() {
 
       {/* Existing Quizzes */}
       <Paper sx={{ padding: "1.5rem", borderRadius: 3, boxShadow: "0 8px 20px rgba(0,0,0,0.1)" }}>
-        <Typography variant="h6" gutterBottom>Existing Quizzes</Typography>
+        <Typography variant="h6" gutterBottom>
+          Existing Quizzes
+        </Typography>
         <Divider sx={{ mb: 2 }} />
         <Table>
           <TableHead>
@@ -337,7 +434,9 @@ export default function QuizManagement() {
           <TableBody>
             {quizzes.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} align="center" sx={{ py: 3 }}>No quizzes added yet.</TableCell>
+                <TableCell colSpan={7} align="center" sx={{ py: 3 }}>
+                  No quizzes added yet.
+                </TableCell>
               </TableRow>
             ) : (
               quizzes.map((quiz, idx) => (
@@ -350,20 +449,20 @@ export default function QuizManagement() {
                   <TableCell>{quiz.status}</TableCell>
                   <TableCell align="right">
                     <Stack direction="row" spacing={1} justifyContent="flex-end">
-                      {quiz.status === "Draft" && (
-                        <Button size="small" variant="contained" color="success" onClick={() => handleRequestApproval(idx)}>Request Approval</Button>
+                      {(quiz.status === "Draft" || quiz.status === "Inactive") && (
+                        <>
+                          <Button size="small" onClick={()=>handleEditQuiz(idx)}>Edit</Button>
+                          <Button size="small" variant="outlined" color="secondary" onClick={()=>handleRequestApproval(idx)}>Request Approval</Button>
+                        </>
                       )}
                       {quiz.status === "Active" && (
                         <>
-                          <Button size="small" onClick={() => handleEditQuiz(idx)}>Edit</Button>
-                          <Button size="small" variant="outlined" color="error" onClick={() => handleInactivate(idx)}>Inactivate</Button>
+                          <Button size="small" onClick={()=>handleEditQuiz(idx)}>Edit</Button>
+                          <Button size="small" variant="outlined" color="warning" onClick={()=>handleInactivate(idx)}>Inactivate</Button>
                         </>
                       )}
-                      {quiz.status === "Inactive" && (
-                        <Button size="small" variant="contained" color="success" onClick={() => handleRequestApproval(idx)}>Request Approval</Button>
-                      )}
                       {quiz.status === "Wait for Approval" && (
-                        <Typography variant="body2" color="textSecondary" sx={{ ml: 1 }}>Waiting Approval</Typography>
+                        <Typography variant="body2" color="text.secondary">Pending with Admin</Typography>
                       )}
                     </Stack>
                   </TableCell>
