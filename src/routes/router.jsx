@@ -42,6 +42,7 @@ import PathwayContentPage from "../Pages/PathwayContentPage";
 import Placeholder from "../Pages/Placeholder";
 
 import SearchResults from "../Pages/SearchResults";
+import CertificatePage from "../Pages/certificatePage";
 
 // All Courses and Pathways Pages
 import AllCoursesPage from "../Pages/AllCoursesPage";
@@ -68,6 +69,7 @@ export const router = createBrowserRouter([
   { path: "/courses/:courseId/modules/:moduleId", element: <ModulePage /> },
   { path: "/courses/:courseId/quizzes/:quizId", element: <QuizPage /> },
   { path: "/courses/:courseId/modules/:moduleId/lessons/:lessonId", element: <LessonPage /> },
+  { path: "/certificate", element: <CertificatePage /> },
 
   // Admin routes (nested)
   {
