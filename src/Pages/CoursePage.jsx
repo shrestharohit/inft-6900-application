@@ -7,7 +7,7 @@ import { dummyCourses } from "../Pages/dummyData"; // ✅ central source
 const CoursePage = () => {
   const { courseId } = useParams();
   const navigate = useNavigate();
-  const { loggedInUser, isLoggedIn, enrollInCourse, completeCourse } = useAuth();
+  const { loggedInUser, isLoggedIn, enrollInCourse, disenrollFromCourse } = useAuth();
 
   const [course, setCourse] = useState(null);
   const [status, setStatus] = useState(null); // locked / unlocked / completed / null
@@ -43,9 +43,13 @@ const CoursePage = () => {
     }, 500);
   };
 
-  const handleComplete = () => {
-    completeCourse(courseId);
-    setStatus("completed");
+  const handleDisenroll = () => {
+    if (window.confirm(`Are you sure you want to leave ${course.name}?`)) {
+      disenrollFromCourse(courseId);
+      setStatus(null); // reset local state
+      alert(`You have left ${course.name}`);
+      navigate("/search"); // optional: redirect to search after leaving
+    }
   };
 
   const hasOutline = course.outline && course.outline.modules;
@@ -194,10 +198,10 @@ const CoursePage = () => {
                   Go to Course Content
                 </button>
                 <button
-                  onClick={handleComplete}
-                  className="w-full bg-green-500 hover:bg-green-600 text-white py-3 px-6 rounded-md"
+                  onClick={handleDisenroll}
+                  className="w-full bg-red-500 hover:bg-red-600 text-white py-3 px-6 rounded-md"
                 >
-                  Mark as Completed ✅
+                  Leave Course
                 </button>
               </>
             )}

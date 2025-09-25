@@ -124,6 +124,49 @@ export const AuthProvider = ({ children }) => {
     persistUser({ ...loggedInUser, enrolledCourses });
   };
 
+  // ✅ Disenroll from a single course
+  const disenrollFromCourse = (courseId) => {
+    if (!loggedInUser) return;
+
+    const enrolledCourses = { ...(loggedInUser.enrolledCourses || {}) };
+
+    // Don’t allow disenrolling from completed courses
+    if (enrolledCourses[courseId]?.status === "completed") {
+      alert("You cannot leave a completed course.");
+      return;
+    }
+
+    // Remove the course
+    delete enrolledCourses[courseId];
+
+    persistUser({ ...loggedInUser, enrolledCourses });
+  };
+
+  // ✅ Disenroll from a pathway (removes non-completed courses)
+  const disenrollFromPathway = (pathwayId) => {
+    if (!loggedInUser) return;
+
+    const enrolledPathways = (loggedInUser.enrolledPathways || []).filter(
+      (id) => id !== pathwayId
+    );
+
+    const enrolledCourses = { ...(loggedInUser.enrolledCourses || {}) };
+    const pathwayCourses = pathwayCourseMap[pathwayId] || [];
+
+    // Remove only non-completed courses from this pathway
+    pathwayCourses.forEach((courseId) => {
+      if (enrolledCourses[courseId]?.status !== "completed") {
+        delete enrolledCourses[courseId];
+      }
+    });
+
+    persistUser({
+      ...loggedInUser,
+      enrolledPathways,
+      enrolledCourses,
+    });
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -134,6 +177,8 @@ export const AuthProvider = ({ children }) => {
         enrollInCourse,
         enrollInPathway,
         completeCourse,
+        disenrollFromCourse,   // ✅ new
+        disenrollFromPathway,  // ✅ new
       }}
     >
       {children}
