@@ -1,66 +1,28 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
-
-// Images
-import webDevImg from "../assets/Images/webdevremovebg.png";
-import dataAnalyticsImg from "../assets/Images/dataanaremovebg.png";
-import aiMlImg from "../assets/Images/aimlremovebg.png";
-import techSkillsImg from "../assets/Images/techskills.png";       // ✅ new
-import analyticalSkillsImg from "../assets/Images/analyticalskills.png"; // ✅ new
-import businessSkillsImg from "../assets/Images/businessskills.png";     // ✅ new
+import { Link, useNavigate } from "react-router-dom";
 import beforeAuthLayout from "../components/BeforeAuth";
+import { dummyCourses, dummyPathways } from "../Pages/dummyData"; // ✅ central data
 
 function Home() {
     const [hoveredCourse, setHoveredCourse] = useState(null);
     const [hoveredPathway, setHoveredPathway] = useState(null);
+    const navigate = useNavigate();
 
-    const popularCourses = [
-        { name: "Web Development", img: webDevImg, link: "/courses/web-development" },
-        { name: "Data Analytics", img: dataAnalyticsImg, link: "/courses/data-analytics" },
-        { name: "AI & Machine Learning", img: aiMlImg, link: "/courses/ai-ml" },
-    ];
+    // Show any 3 "popular" courses — tweak this to pick by rating/enrollment if you like
+    const popularCourses = dummyCourses.slice(0, 3);
+    const trendingPathways = dummyPathways;
 
-    const trendingPathways = [
-        {
-            name: "Tech Skills",
-            img: techSkillsImg,
-            link: "/pathway/tech-skills",
-            description: "Master coding and DevOps skills.",
-            courses: [
-                { name: "Coding", link: "/courses/coding" },
-                { name: "DevOps", link: "/courses/devops" },
-            ],
-        },
-        {
-            name: "Analytical Skills",
-            img: analyticalSkillsImg,
-            link: "/pathway/analytical-skills",
-            description: "Learn Big Data and Power BI.",
-            courses: [
-                { name: "Big Data", link: "/courses/bigdata" },
-                { name: "Power BI", link: "/courses/powerbi" },
-            ],
-        },
-        {
-            name: "Business Skills",
-            img: businessSkillsImg,
-            link: "/pathway/business-skills",
-            description: "Build Accounting and Finance expertise.",
-            courses: [
-                { name: "Accounting", link: "/courses/accounting" },
-                { name: "Finance", link: "/courses/finance" },
-            ],
-        },
-    ];
+    // Helpers to resolve course IDs safely
+    const toId = (c) =>
+        typeof c === "string" || typeof c === "number" ? String(c) : String(c?.id || "");
+    const getCourseById = (id) => dummyCourses.find((x) => String(x.id) === String(id));
 
     return (
         <div className="bg-gray-50 font-inter pb-12">
             {/* Hero Section */}
             <section className="bg-gradient-to-r from-[#1f2a60] to-[#4856a6] text-white rounded-xl my-8 max-w-[1150px] mx-auto shadow-lg">
                 <div className="text-center py-20 px-6 max-w-3xl mx-auto">
-                    <h1 className="font-extrabold text-4xl mb-3">
-                        Learn Today. Lead Tomorrow.
-                    </h1>
+                    <h1 className="font-extrabold text-4xl mb-3">Learn Today. Lead Tomorrow.</h1>
                     <p className="text-lg opacity-90 mb-6">
                         Build real skills with hands-on courses and guided pathways.
                     </p>
@@ -82,8 +44,8 @@ function Home() {
                         const isHover = hoveredCourse === idx;
                         return (
                             <Link
-                                key={idx}
-                                to={course.link}
+                                key={course.id}
+                                to={`/courses/${course.id}`}
                                 className={`bg-white rounded-xl shadow-md text-center p-6 transition transform ${isHover ? "-translate-y-2 shadow-xl" : ""
                                     }`}
                                 onMouseEnter={() => setHoveredCourse(idx)}
@@ -105,13 +67,12 @@ function Home() {
 
                 <div className="text-center mt-6">
                     <Link
-                        to="/all-courses"  // Links to AllCoursesPage
+                        to="/all-courses"
                         className="inline-block bg-gradient-to-r from-[#1f2a60] to-[#4856a6] text-white px-6 py-3 rounded-lg font-bold shadow-lg hover:bg-[#174bcc] my-8 max-w-[1150px] mx-auto"
                     >
                         View All Courses
                     </Link>
                 </div>
-
             </section>
 
             {/* Trending Pathways */}
@@ -119,14 +80,22 @@ function Home() {
                 <h2 className="text-3xl font-extrabold text-[#1f2a60] text-center mb-8">
                     Trending Pathways
                 </h2>
+
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
                     {trendingPathways.map((pathway, idx) => {
                         const isHover = hoveredPathway === idx;
+                        const courseIds = (pathway.courses || []).map(toId).filter(Boolean);
+
                         return (
-                            <Link
-                                key={idx}
-                                to={pathway.link}
-                                className={`bg-white rounded-xl shadow-md text-center p-6 transition transform ${isHover ? "-translate-y-2 shadow-xl" : ""
+                            <div
+                                key={pathway.id}
+                                role="button"
+                                tabIndex={0}
+                                onClick={() => navigate(`/pathway/${pathway.id}`)}
+                                onKeyDown={(e) => {
+                                    if (e.key === "Enter" || e.key === " ") navigate(`/pathway/${pathway.id}`);
+                                }}
+                                className={`bg-white rounded-xl shadow-md text-center p-6 transition transform cursor-pointer flex flex-col h-full ${isHover ? "-translate-y-2 shadow-xl" : ""
                                     }`}
                                 onMouseEnter={() => setHoveredPathway(idx)}
                                 onMouseLeave={() => setHoveredPathway(null)}
@@ -137,37 +106,44 @@ function Home() {
                                     className="w-24 h-24 object-contain mx-auto mb-4"
                                 />
                                 <h3 className="font-bold text-lg mb-2">{pathway.name}</h3>
-                                <p className="text-gray-600 text-sm mb-3">{pathway.description}</p>
-                                <div className="flex justify-center flex-wrap gap-2">
-                                    {pathway.courses.map((course, cIdx) => (
-                                        <Link
-                                            key={cIdx}
-                                            to={course.link}
-                                            className="px-4 py-1 rounded-full bg-green-500 text-[#0b142b] text-sm font-bold shadow hover:bg-green-600"
-                                        >
-                                            {course.name}
-                                        </Link>
-                                    ))}
+                                <p className="text-gray-600 text-sm mb-3 min-h-[48px]">
+                                    {pathway.description}
+                                </p>
+
+                                {/* Chips pinned to the bottom across all cards */}
+                                <div className="mt-auto">
+                                    <div className="flex justify-center flex-wrap gap-2">
+                                        {courseIds.map((cid) => {
+                                            const course = getCourseById(cid);
+                                            const label = course?.name || `Course ${cid}`;
+                                            return (
+                                                <button
+                                                    key={cid}
+                                                    onClick={(e) => {
+                                                        e.stopPropagation(); // don't trigger the card click
+                                                        navigate(`/courses/${cid}`);
+                                                    }}
+                                                    className="px-4 py-1 rounded-full bg-green-500 text-[#0b142b] text-sm font-bold shadow hover:bg-green-600"
+                                                >
+                                                    {label}
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
                                 </div>
-                            </Link>
+                            </div>
                         );
                     })}
                 </div>
 
-                {/* ✅ Centered button */}
-
                 <div className="text-center mt-6">
                     <Link
-                        to="/all-pathways"  // Links to AllPathwaysPage
+                        to="/all-pathways"
                         className="inline-block bg-gradient-to-r from-[#1f2a60] to-[#4856a6] text-white px-6 py-3 rounded-lg font-bold shadow-lg hover:bg-[#174bcc] my-8 max-w-[1150px] mx-auto"
                     >
                         View All Pathways
                     </Link>
                 </div>
-
-
-
-
             </section>
 
             {/* Reviews */}

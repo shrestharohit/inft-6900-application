@@ -13,29 +13,23 @@ function ProfileManagement({ setIsLoggedIn }) {
     firstName: "",
     lastName: "",
     email: "",
-    password: "",
+    currentPassword: "",
+    newPassword: "",
     confirmPassword: "",
   });
 
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // ✅ Load current user on mount
   useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        setFormData({
-          firstName: loggedInUser.firstName || "",
-          lastName: loggedInUser.lastName || "",
-          email: loggedInUser.email || "",
-          password: "",
-          confirmPassword: "",
-        });
-      } catch (err) {
-        console.error("❌ Failed to fetch user:", err);
-      }
-    };
-    fetchUser();
+    if (loggedInUser) {
+      setFormData((prev) => ({
+        ...prev,
+        firstName: loggedInUser.firstName || "",
+        lastName: loggedInUser.lastName || "",
+        email: loggedInUser.email || "",
+      }));
+    }
   }, [loggedInUser]);
 
   const handleChange = (e) => {
@@ -44,13 +38,24 @@ function ProfileManagement({ setIsLoggedIn }) {
   };
 
   const handleSave = async () => {
-    if (formData.password && formData.password !== formData.confirmPassword) {
-      alert("Passwords do not match!");
-      return;
-    }
-    if (loggedInUser === null) {
-      alert("User not logged in");
-      return;
+    if (formData.newPassword) {
+      // 1. Check current password
+      if (formData.currentPassword !== loggedInUser?.password) {
+        alert("Current password is incorrect!");
+        return;
+      }
+
+      // 2. New password ≠ current password
+      if (formData.currentPassword === formData.newPassword) {
+        alert("New password cannot be the same as the current password.");
+        return;
+      }
+
+      // 3. Confirm password matches
+      if (formData.newPassword !== formData.confirmPassword) {
+        alert("New password and confirmation do not match.");
+        return;
+      }
     }
 
     try {
@@ -58,8 +63,9 @@ function ProfileManagement({ setIsLoggedIn }) {
       const updateData = {
         firstName: formData.firstName,
         lastName: formData.lastName,
-        ...(formData.password ? { password: formData.password } : {}),
+        ...(formData.newPassword ? { password: formData.newPassword } : {}),
       };
+
       const response = await updateUser(loggedInUser.id, updateData);
       setUserDataInState(response);
       alert("Profile updated successfully!");
@@ -70,24 +76,20 @@ function ProfileManagement({ setIsLoggedIn }) {
     }
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem("userToken");
-    localStorage.removeItem("userId");
-    sessionStorage.clear();
-    setIsLoggedIn(false);
-    navigate("/");
-  };
-
   const togglePasswordVisibility = () => setShowPassword(!showPassword);
 
   return (
     <div className="flex justify-center items-center p-6 min-h-screen bg-gray-100">
       <div className="w-full max-w-lg bg-white rounded-lg p-8 shadow-lg">
-        <h1 className="text-2xl font-bold text-center text-gray-800 mb-6">Edit Profile</h1>
+        <h1 className="text-2xl font-bold text-center text-gray-800 mb-6">
+          Edit Profile
+        </h1>
         <form onSubmit={(e) => e.preventDefault()}>
           {/* First Name */}
           <div className="mb-4">
-            <label className="block text-sm font-semibold text-gray-700">* First Name</label>
+            <label className="block text-sm font-semibold text-gray-700">
+              * First Name
+            </label>
             <input
               type="text"
               name="firstName"
@@ -99,7 +101,9 @@ function ProfileManagement({ setIsLoggedIn }) {
 
           {/* Last Name */}
           <div className="mb-4">
-            <label className="block text-sm font-semibold text-gray-700">* Last Name</label>
+            <label className="block text-sm font-semibold text-gray-700">
+              * Last Name
+            </label>
             <input
               type="text"
               name="lastName"
@@ -111,7 +115,9 @@ function ProfileManagement({ setIsLoggedIn }) {
 
           {/* Email */}
           <div className="mb-4">
-            <label className="block text-sm font-semibold text-gray-700">Email</label>
+            <label className="block text-sm font-semibold text-gray-700">
+              Email
+            </label>
             <input
               type="email"
               value={formData.email}
@@ -120,13 +126,29 @@ function ProfileManagement({ setIsLoggedIn }) {
             />
           </div>
 
-          {/* Password */}
+          {/* Current Password */}
           <div className="mb-4 relative">
-            <label className="block text-sm font-semibold text-gray-700">New Password</label>
+            <label className="block text-sm font-semibold text-gray-700">
+              Current Password
+            </label>
             <input
               type={showPassword ? "text" : "password"}
-              name="password"
-              value={formData.password}
+              name="currentPassword"
+              value={formData.currentPassword}
+              onChange={handleChange}
+              className="w-full px-4 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 pr-12"
+            />
+          </div>
+
+          {/* New Password */}
+          <div className="mb-4 relative">
+            <label className="block text-sm font-semibold text-gray-700">
+              New Password
+            </label>
+            <input
+              type={showPassword ? "text" : "password"}
+              name="newPassword"
+              value={formData.newPassword}
               onChange={handleChange}
               className="w-full px-4 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 pr-12"
             />
@@ -141,7 +163,9 @@ function ProfileManagement({ setIsLoggedIn }) {
 
           {/* Confirm Password */}
           <div className="mb-6">
-            <label className="block text-sm font-semibold text-gray-700">Confirm Password</label>
+            <label className="block text-sm font-semibold text-gray-700">
+              Confirm New Password
+            </label>
             <input
               type={showPassword ? "text" : "password"}
               name="confirmPassword"
@@ -157,7 +181,9 @@ function ProfileManagement({ setIsLoggedIn }) {
               type="button"
               onClick={handleSave}
               disabled={loading}
-              className={`w-full py-3 text-white font-semibold rounded-md transition ${loading ? "bg-green-300" : "bg-green-500 hover:bg-green-600"
+              className={`w-full py-3 text-white font-semibold rounded-md transition ${loading
+                  ? "bg-green-300"
+                  : "bg-green-500 hover:bg-green-600"
                 }`}
             >
               {loading ? "Saving..." : "Save Changes"}

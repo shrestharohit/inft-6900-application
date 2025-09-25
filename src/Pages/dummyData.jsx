@@ -183,9 +183,11 @@ export const dummyPathways = [
     {
         id: "101",
         name: "Tech Skills Pathway",
-        description: "Start from basics and advance through coding, DevOps, and AI/ML.",
+        description:
+            "Start from basics and advance through coding, DevOps, and AI/ML.",
         img: techSkillsImg,
         rating: 4.6,
+        knowledgeArea: "Tech Skills", // ✅ added
         reviews: [
             { user: "Alice", rating: 5, comment: "Fantastic collection of courses!" },
             { user: "Bob", rating: 4, comment: "Very useful for DevOps beginners." },
@@ -211,6 +213,7 @@ export const dummyPathways = [
         description: "Learn Data Analytics, Big Data, and Power BI.",
         img: analyticalSkillsImg,
         rating: 4.8,
+        knowledgeArea: "Analytical Skills", // ✅ added
         reviews: [
             { user: "Sara", rating: 5, comment: "Helped me land my analyst job!" },
         ],
@@ -235,6 +238,7 @@ export const dummyPathways = [
         description: "Master Accounting and Finance for professional growth.",
         img: businessSkillsImg,
         rating: 4.4,
+        knowledgeArea: "Business Skills", // ✅ added
         reviews: [],
         outline: {
             modules: "2 stages",

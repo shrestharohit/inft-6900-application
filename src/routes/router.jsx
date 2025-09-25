@@ -2,8 +2,8 @@ import { createBrowserRouter } from "react-router-dom";
 
 // Public pages
 import Home from "../Pages/Home";
-import RegistrationForm from "../pages/registration";
-import LoginForm from "../pages/login";
+import RegistrationForm from "../Pages/registration";
+import LoginForm from "../Pages/login";
 import Login2FA from "../Pages/login2fa";
 import ForgotPassword from "../Pages/forgotpassword";
 import ProfileManagement from "../Pages/profilemanagement";

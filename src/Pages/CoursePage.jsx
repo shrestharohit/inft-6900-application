@@ -57,12 +57,22 @@ const CoursePage = () => {
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
-      {/* Back to Search Results */}
+      {/* Back Button */}
       <div className="mb-4">
-        <Link to="/search" className="text-sm text-gray-600 hover:underline">
-          &larr; Back to Search Results
-        </Link>
+        <button
+          onClick={() => {
+            if (window.history.state && window.history.state.idx > 0) {
+              navigate(-1);
+            } else {
+              navigate("/search"); // fallback if no history
+            }
+          }}
+          className="text-sm text-gray-600 hover:underline"
+        >
+          &larr; Back
+        </button>
       </div>
+    
 
       <div className="flex flex-col md:flex-row gap-6">
         {/* Image */}
