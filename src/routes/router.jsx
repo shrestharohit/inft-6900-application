@@ -1,6 +1,6 @@
 import { createBrowserRouter } from "react-router-dom";
 
-// Import pages/components (public)
+// Public pages
 import Home from "../Pages/Home";
 import RegistrationForm from "../pages/registration";
 import LoginForm from "../pages/login";
@@ -30,8 +30,15 @@ import CourseManagement from "../Pages/CourseOwner/courseManagement";
 import CourseOwnerLayout from "../Pages/CourseOwner/courseOwnerLayout";
 import ModuleManagement from "../Pages/CourseOwner/moduleManagement";
 import QuizManagement from "../Pages/CourseOwner/quizManagement";
-import CoursePage from "../Pages/CoursePage";   // Import the CoursePage
+
+// Student pages
+import CoursePage from "../Pages/CoursePage";
+import CourseContentPage from "../Pages/CourseContentPage";
+import ModulePage from "../Pages/ModulePage"; // ✅ new
+import QuizPage from "../Pages/QuizPage"; // ✅ new
+import LessonPage from "../Pages/LessonPage";
 import PathwayPage from "../Pages/PathwayPage";
+import PathwayContentPage from "../Pages/PathwayContentPage";
 import Placeholder from "../Pages/Placeholder";
 
 import SearchResults from "../Pages/SearchResults";
@@ -39,111 +46,45 @@ import SearchResults from "../Pages/SearchResults";
 // All Courses and Pathways Pages
 import AllCoursesPage from "../Pages/AllCoursesPage";
 import AllPathwaysPage from "../Pages/AllPathwaysPage";
-import CourseContentPage from "../Pages/CourseContentPage";
-import PathwayContentPage from "../Pages/PathwayContentPage";
 
 export const router = createBrowserRouter([
   // Public routes
-  {
-    path: "/",
-    element: <Home />,
-  },
-  {
-    path: "/registration",
-    element: <RegistrationForm />,
-  },
-  {
-    path: "/login",
-    element: <LoginForm />,
-  },
-  {
-    path: "/login2fa",
-    element: <Login2FA />,
-  },
-  {
-    path: "/forgotpassword",
-    element: <ForgotPassword />,
-  },
-  {
-    path: "/profilemanagement",
-    element: <ProfileManagement />,
-  },
+  { path: "/", element: <Home /> },
+  { path: "/registration", element: <RegistrationForm /> },
+  { path: "/login", element: <LoginForm /> },
+  { path: "/login2fa", element: <Login2FA /> },
+  { path: "/forgotpassword", element: <ForgotPassword /> },
+  { path: "/profilemanagement", element: <ProfileManagement /> },
 
   // Pathways routes
-  {
-    path: "/pathway/tech-skills",
-    element: <PathwayPage name="Tech Skills" />,
-  },
-  {
-    path: "/pathway/analytical-skills",
-    element: <PathwayPage name="Analytical Skills" />,
-  },
-  {
-    path: "/pathway/business-skills",
-    element: <PathwayPage name="Business Skills" />,
-  },
+  { path: "/pathway/:pathwayId", element: <PathwayPage /> },
+  { path: "/pathway/:pathwayId/content", element: <PathwayContentPage /> },
 
   // Dynamic route for Course Details
-  {
-    path: "/courses/:courseId",
-    element: <CoursePage />
-  },
+  { path: "/courses/:courseId", element: <CoursePage /> },
+  { path: "/courses/:courseId/content", element: <CourseContentPage /> },
 
-  // Dynamic route for Pathway Details
-  {
-    path: "/pathway/:pathwayId",
-    element: <PathwayPage />
-  },
+  // Module & Quiz routes (for navigation from CourseContentPage)
+  { path: "/courses/:courseId/modules/:moduleId", element: <ModulePage /> },
+  { path: "/courses/:courseId/quizzes/:quizId", element: <QuizPage /> },
+  { path: "/courses/:courseId/modules/:moduleId/lessons/:lessonId", element: <LessonPage /> },
 
   // Admin routes (nested)
   {
     path: "/admin",
     element: <AdminLayout />,
     children: [
-      {
-        index: true,
-        element: <DashboardPage />,
-      },
-      {
-        path: "pathways",
-        element: <PathwaysPage />,
-      },
-      {
-        path: "courses",
-        element: <CoursesPage />,
-      },
-      {
-        path: "enrollments",
-        element: <EnrollmentsPage />,
-      },
-      {
-        path: "reports",
-        element: <ReportsPage />,
-      },
-      {
-        path: "users",
-        element: <AdminUserManagement />,
-      },
-      {
-        path: "messages",
-        element: <MessagesPage />,
-      },
-      {
-        path: "settings",
-        element: <SettingsPage />,
-      },
-      {
-        path: "course-approvals",
-        element: <AdminCourseApproval />,
-      },
-      {
-        path: "module-approvals",
-        element: <AdminModuleApproval />,
-      },
-      {
-        path: "quiz-approvals",
-        element: <AdminQuizApproval />,
-      },
+      { index: true, element: <DashboardPage /> },
+      { path: "pathways", element: <PathwaysPage /> },
+      { path: "courses", element: <CoursesPage /> },
+      { path: "enrollments", element: <EnrollmentsPage /> },
+      { path: "reports", element: <ReportsPage /> },
+      { path: "users", element: <AdminUserManagement /> },
+      { path: "messages", element: <MessagesPage /> },
+      { path: "settings", element: <SettingsPage /> },
+      { path: "course-approvals", element: <AdminCourseApproval /> },
+      { path: "module-approvals", element: <AdminModuleApproval /> },
+      { path: "quiz-approvals", element: <AdminQuizApproval /> },
     ],
   },
 
@@ -152,63 +93,21 @@ export const router = createBrowserRouter([
     path: "/courseowner",
     element: <CourseOwnerLayout />,
     children: [
-      {
-        index: true,
-        element: <CourseManagement />,
-      },
-      {
-        path: "courses",
-        element: <CourseManagement />,
-      },
-      {
-        path: "modules",
-        element: <ModuleManagement />,
-      },
-      {
-        path: "quizzes",
-        element: <QuizManagement />,
-      },
-      {
-        path: "reports",
-        element: <Placeholder title="Reports Page" />,
-      },
-      {
-        path: "settings",
-        element: <Placeholder title="Settings Page" />,
-      },
+      { index: true, element: <CourseManagement /> },
+      { path: "courses", element: <CourseManagement /> },
+      { path: "modules", element: <ModuleManagement /> },
+      { path: "quizzes", element: <QuizManagement /> },
+      { path: "reports", element: <Placeholder title="Reports Page" /> },
+      { path: "settings", element: <Placeholder title="Settings Page" /> },
     ],
   },
 
   // Search Results
-  {
-    path: "/search",
-    element: <SearchResults />,
-  },
+  { path: "/search", element: <SearchResults /> },
 
   // All Courses Page
-  {
-    path: "/all-courses",
-    element: <AllCoursesPage />,
-  },
+  { path: "/all-courses", element: <AllCoursesPage /> },
 
   // All Pathways Page
-  {
-    path: "/all-pathways",
-    element: <AllPathwaysPage />,
-  },
-
-  // Course Content Page
-  {
-    path: "/courses/:courseId/content",
-    element: <CourseContentPage /> 
-  },
-
-  // Pathway Content Page
-  {
-    path: "/pathway/:pathwayId/content",
-    element: <PathwayContentPage />
-  },
-
-
-  
+  { path: "/all-pathways", element: <AllPathwaysPage /> },
 ]);
