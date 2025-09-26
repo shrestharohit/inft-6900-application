@@ -1,12 +1,4 @@
 import React, { useState } from "react";
-import {
-  Box,
-  Button,
-  Typography,
-  TextField,
-  Stack,
-  CircularProgress,
-} from "@mui/material";
 import { Link, useNavigate } from "react-router-dom";
 import { resetPassword } from "../api/user"; // ✅ backend API call
 import registration_image from "../assets/Images/registration_image.png";
@@ -53,148 +45,109 @@ const ForgotPassword = () => {
   };
 
   return (
-    <Box
-      display="flex"
-      justifyContent="center"
-      alignItems="center"
-      flexDirection="row"
-      minHeight="100vh"
-      padding={2}
-    >
-      {/* Left-side image */}
-      <div style={styles.imageContainer}>
-        <img src={registration_image} alt="Registration" style={styles.image} />
+    <div className="flex flex-col md:flex-row bg-white shadow-lg rounded-lg max-w-6xl w-full mx-auto my-16 p-10">
+      {/* Left Image */}
+      <div className="flex-1 flex justify-center items-center mb-6 md:mb-0 md:mr-10">
+        <img
+          src={registration_image}
+          alt="Forgot Password Illustration"
+          className="w-full max-w-md rounded-lg"
+        />
       </div>
 
-      {/* Reset form */}
-      <div style={styles.formWrapper}>
-        <Typography variant="h5" gutterBottom>
+      {/* Reset Form */}
+      <div className="flex-1">
+        <h1 className="text-4xl font-bold mb-8 text-center md:text-left text-[#1f2a60]">
           Reset Your Password
-        </Typography>
-        <Typography variant="body1" paragraph>
-          Please enter your email, new password, and confirm your new password.
-        </Typography>
+        </h1>
 
-        <form onSubmit={handleResetSubmit}>
-          <Stack spacing={2} width="100%" maxWidth="400px">
-            <TextField
-              label="Enter Email"
-              variant="outlined"
-              fullWidth
+        <form onSubmit={handleResetSubmit} className="space-y-6">
+          {/* Email */}
+          <div>
+            <label className="block font-semibold mb-1">Enter Email</label>
+            <input
+              type="email"
               name="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               disabled={isSubmitting}
               required
+              className="w-full border border-gray-300 rounded-md px-4 py-3 focus:ring-2 focus:ring-blue-500"
+              placeholder="Enter your email"
             />
+          </div>
 
-            <div style={styles.passwordWrapper}>
-              <TextField
-                label="New Password"
-                variant="outlined"
-                type={showPassword ? "text" : "password"}
-                fullWidth
-                name="newPassword"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                disabled={isSubmitting}
-                required
-                style={styles.passwordInput}
-              />
-              <Button
-                type="button"
-                onClick={togglePasswordVisibility}
-                style={styles.toggleButton}
-              >
-                {showPassword ? "Hide" : "Show"}
-              </Button>
-            </div>
+          {/* New Password */}
+          <div className="relative">
+            <label className="block font-semibold mb-1">New Password</label>
+            <input
+              type={showPassword ? "text" : "password"}
+              name="newPassword"
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              disabled={isSubmitting}
+              required
+              className="w-full border border-gray-300 rounded-md px-4 py-3 focus:ring-2 focus:ring-blue-500"
+              placeholder="Enter your new password"
+            />
+            <button
+              type="button"
+              onClick={togglePasswordVisibility}
+              className="absolute right-3 top-3 text-blue-600 text-sm"
+            >
+              {showPassword ? "Hide" : "Show"}
+            </button>
+          </div>
 
-            <div style={styles.passwordWrapper}>
-              <TextField
-                label="Confirm Password"
-                variant="outlined"
-                type={showPassword ? "text" : "password"}
-                fullWidth
-                name="confirmPassword"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                disabled={isSubmitting}
-                required
-                style={styles.passwordInput}
-              />
-              <Button
-                type="button"
-                onClick={togglePasswordVisibility}
-                style={styles.toggleButton}
-              >
-                {showPassword ? "Hide" : "Show"}
-              </Button>
-            </div>
+          {/* Confirm Password */}
+          <div className="relative">
+            <label className="block font-semibold mb-1">Confirm Password</label>
+            <input
+              type={showPassword ? "text" : "password"}
+              name="confirmPassword"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              disabled={isSubmitting}
+              required
+              className="w-full border border-gray-300 rounded-md px-4 py-3 focus:ring-2 focus:ring-blue-500"
+              placeholder="Confirm your new password"
+            />
+            <button
+              type="button"
+              onClick={togglePasswordVisibility}
+              className="absolute right-3 top-3 text-blue-600 text-sm"
+            >
+              {showPassword ? "Hide" : "Show"}
+            </button>
+          </div>
 
-            <Stack direction="row" spacing={2} justifyContent="space-between">
-              <Button
-                variant="contained"
-                color="success"
-                type="submit"
-                disabled={isSubmitting || newPassword !== confirmPassword}
-              >
-                {isSubmitting ? (
+          {/* Submit Button */}
+          <div>
+            <button
+              type="submit"
+              disabled={isSubmitting || newPassword !== confirmPassword}
+              className="w-full bg-green-500 text-white py-3 rounded-md font-semibold shadow-md focus:outline-none hover:bg-green-600 disabled:bg-green-300"
+            >
+              {isSubmitting ? (
+                <span className="flex justify-center">
                   <CircularProgress size={24} />
-                ) : (
-                  "Reset Password"
-                )}
-              </Button>
-            </Stack>
+                </span>
+              ) : (
+                "Reset Password"
+              )}
+            </button>
+          </div>
 
-            <Stack direction="row" justifyContent="center" marginTop={2}>
-              <Link to="/login" style={{ textDecoration: "none" }}>
-                <Button variant="text" color="secondary">
-                  Back to Login
-                </Button>
-              </Link>
-            </Stack>
-          </Stack>
+          {/* Back to Login Link */}
+          <div className="text-center mt-4">
+            <Link to="/login" className="text-sm text-blue-600 hover:underline">
+              Back to Login
+            </Link>
+          </div>
         </form>
       </div>
-    </Box>
+    </div>
   );
-};
-
-const styles = {
-  imageContainer: {
-    flex: 1,
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: "30px",
-  },
-  image: {
-    maxWidth: "100%",
-    height: "auto",
-    borderRadius: "8px",
-  },
-  formWrapper: {
-    flex: 1,
-    padding: "20px",
-  },
-  passwordWrapper: {
-    position: "relative",
-  },
-  passwordInput: {
-    marginBottom: "10px",
-  },
-  toggleButton: {
-    position: "absolute",
-    right: "10px",
-    top: "50%",
-    transform: "translateY(-50%)",
-    background: "none",
-    border: "none",
-    color: "#4CAF50",
-    cursor: "pointer",
-    fontSize: "14px",
-  },
 };
 
 export default beforeAuthLayout(ForgotPassword);

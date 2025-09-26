@@ -14,23 +14,34 @@ import {
   TableBody,
   IconButton,
   Checkbox,
+  Divider,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  Card,
+  CardContent,
 } from "@mui/material";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
 
-const STORAGE_KEY = "course_owner_quizzes";
+const STORAGE_KEY_QUIZZES = "course_owner_quizzes";
+const STORAGE_KEY_MODULES = "course_owner_modules";
+const COURSES_KEY = "course_owner_courses";
 
 export default function QuizManagement() {
   const [quizzes, setQuizzes] = useState([]);
+  const [courses, setCourses] = useState([]);
+  const [modules, setModules] = useState([]);
   const [form, setForm] = useState({
-    courseNumber: "",
-    moduleNumber: "",
+    courseTitle: "",
+    moduleTitle: "",
     quizTitle: "",
     timeLimit: "",
   });
   const [questions, setQuestions] = useState([]);
   const [editingIndex, setEditingIndex] = useState(null);
-
+  const [editingQuizIndex, setEditingQuizIndex] = useState(null);
   const [questionForm, setQuestionForm] = useState({
     text: "",
     options: [
@@ -40,52 +51,53 @@ export default function QuizManagement() {
     image: null,
   });
 
-  // Load quizzes from localStorage
   useEffect(() => {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) {
-      try {
-        setQuizzes(JSON.parse(raw));
-      } catch {
-        setQuizzes([]);
-      }
-    }
+    const rawQuizzes = localStorage.getItem(STORAGE_KEY_QUIZZES);
+    if (rawQuizzes) setQuizzes(JSON.parse(rawQuizzes));
+
+    const rawCourses = localStorage.getItem(COURSES_KEY);
+    if (rawCourses) setCourses(JSON.parse(rawCourses));
+
+    const rawModules = localStorage.getItem(STORAGE_KEY_MODULES);
+    if (rawModules) setModules(JSON.parse(rawModules));
   }, []);
 
-  // Sync quizzes to localStorage
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(quizzes));
+    localStorage.setItem(STORAGE_KEY_QUIZZES, JSON.stringify(quizzes));
   }, [quizzes]);
 
-  // Quiz form handlers
   const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    setForm((prev) => ({ ...prev, [name]: value }));
+    if (name === "courseTitle") setForm((prev) => ({ ...prev, moduleTitle: "" }));
   };
 
-  // Question form handlers
   const handleQuestionChange = (e) => {
-    setQuestionForm({ ...questionForm, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    setQuestionForm((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleOptionChange = (index, field, value) => {
-    const newOptions = [...questionForm.options];
-    newOptions[index][field] = value;
+    const newOptions = questionForm.options.map((opt, i) =>
+      i === index ? { ...opt, [field]: value } : opt
+    );
     setQuestionForm({ ...questionForm, options: newOptions });
   };
 
   const addOption = () => {
-    setQuestionForm({
-      ...questionForm,
-      options: [...questionForm.options, { text: "", isCorrect: false, feedback: "" }],
-    });
+    if (questionForm.options.length >= 4) {
+      alert("⚠️ You cannot add more than 4 options.");
+      return;
+    }
+    setQuestionForm((prev) => ({
+      ...prev,
+      options: [...prev.options, { text: "", isCorrect: false, feedback: "" }],
+    }));
   };
 
   const handleQuestionImage = (e) => {
     if (e.target.files[0]) {
-      setQuestionForm({
-        ...questionForm,
-        image: URL.createObjectURL(e.target.files[0]),
-      });
+      setQuestionForm({ ...questionForm, image: URL.createObjectURL(e.target.files[0]) });
     }
   };
 
@@ -103,12 +115,21 @@ export default function QuizManagement() {
       return;
     }
 
-    const newQuestion = {
-      ...questionForm,
-      number: questions.length + 1,
-    };
-
-    setQuestions([...questions, newQuestion]);
+    const updatedQuestions = [...questions];
+    if (editingIndex !== null) {
+      updatedQuestions[editingIndex] = {
+        ...questionForm,
+        number: editingIndex + 1,
+        options: questionForm.options.map((o) => ({ ...o })),
+      };
+    } else {
+      updatedQuestions.push({
+        ...questionForm,
+        number: updatedQuestions.length + 1,
+        options: questionForm.options.map((o) => ({ ...o })),
+      });
+    }
+    setQuestions(updatedQuestions);
 
     setQuestionForm({
       text: "",
@@ -118,51 +139,55 @@ export default function QuizManagement() {
       ],
       image: null,
     });
+    setEditingIndex(null);
   };
 
   const deleteQuestion = (qIndex) => {
-    const updatedQuestions = questions.filter((_, i) => i !== qIndex);
-    const renumbered = updatedQuestions.map((q, i) => ({ ...q, number: i + 1 }));
-
-    if (renumbered.length === 0 && editingIndex !== null) {
-      // If it was the last question, delete the entire quiz
-      const updatedQuizzes = [...quizzes];
-      updatedQuizzes.splice(editingIndex, 1);
-      setQuizzes(updatedQuizzes);
-      setForm({ courseNumber: "", moduleNumber: "", quizTitle: "", timeLimit: "" });
-      setEditingIndex(null);
+    if (questions.length === 1) {
+      if (editingQuizIndex !== null) {
+        const updatedQuizzes = quizzes.filter((_, i) => i !== editingQuizIndex);
+        setQuizzes(updatedQuizzes);
+      }
       setQuestions([]);
-      alert("Last question deleted. Entire quiz has been removed.");
-    } else {
-      setQuestions(renumbered);
+      setForm({ courseTitle: "", moduleTitle: "", quizTitle: "", timeLimit: "" });
+      setQuestionForm({
+        text: "",
+        options: [
+          { text: "", isCorrect: false, feedback: "" },
+          { text: "", isCorrect: false, feedback: "" },
+        ],
+        image: null,
+      });
+      setEditingIndex(null);
+      setEditingQuizIndex(null);
+      return;
+    }
+
+    const updatedQuestions = questions
+      .filter((_, i) => i !== qIndex)
+      .map((q, i) => ({ ...q, number: i + 1 }));
+    setQuestions(updatedQuestions);
+
+    if (editingIndex === qIndex) {
+      setQuestionForm({
+        text: "",
+        options: [
+          { text: "", isCorrect: false, feedback: "" },
+          { text: "", isCorrect: false, feedback: "" },
+        ],
+        image: null,
+      });
+      setEditingIndex(null);
     }
   };
 
-  const handleEditQuiz = (index) => {
-    const quiz = quizzes[index];
-    setForm({
-      courseNumber: quiz.courseNumber,
-      moduleNumber: quiz.moduleNumber,
-      quizTitle: quiz.quizTitle,
-      timeLimit: quiz.timeLimit,
-    });
-    setQuestions(quiz.questions);
-    setEditingIndex(index);
-  };
-
-  const handleRequestApproval = (index) => {
-    const updated = [...quizzes];
-    updated[index].status = "Wait for Approval";
-    setQuizzes(updated);
-  };
-
-  const handleDeleteQuiz = (index) => {
-    const updated = quizzes.filter((_, i) => i !== index);
-    setQuizzes(updated);
+  const handleEditQuestion = (qIndex) => {
+    setQuestionForm({ ...questions[qIndex] });
+    setEditingIndex(qIndex);
   };
 
   const handleSaveQuiz = () => {
-    if (!form.courseNumber || !form.moduleNumber || !form.quizTitle || !form.timeLimit) {
+    if (!form.courseTitle || !form.moduleTitle || !form.quizTitle || !form.timeLimit) {
       alert("⚠️ Please fill all quiz fields.");
       return;
     }
@@ -171,143 +196,178 @@ export default function QuizManagement() {
       return;
     }
 
-    // enforce one quiz per module
-    const duplicateQuiz = quizzes.some(
-      (q, idx) =>
-        idx !== editingIndex &&
-        q.courseNumber === form.courseNumber &&
-        q.moduleNumber === form.moduleNumber
-    );
-    if (duplicateQuiz) {
-      alert("❌ A quiz already exists for this module.");
-      return;
-    }
+    const newQuiz = { ...form, questions };
 
-    const newQuiz = { ...form, questions, status: "Draft" };
-
-    if (editingIndex !== null) {
+    if (editingQuizIndex !== null) {
       const updated = [...quizzes];
-      updated[editingIndex] = newQuiz;
+      updated[editingQuizIndex] = {
+        ...newQuiz,
+        status: updated[editingQuizIndex].status === "Active" ? "Wait for Approval" : updated[editingQuizIndex].status,
+      };
       setQuizzes(updated);
-      setEditingIndex(null);
     } else {
+      newQuiz.status = "Draft";
       setQuizzes([...quizzes, newQuiz]);
     }
 
-    setForm({ courseNumber: "", moduleNumber: "", quizTitle: "", timeLimit: "" });
+    setForm({ courseTitle: "", moduleTitle: "", quizTitle: "", timeLimit: "" });
     setQuestions([]);
+    setEditingIndex(null);
+    setEditingQuizIndex(null);
   };
 
+  const handleEditQuiz = (index) => {
+    const quiz = quizzes[index];
+    setForm({
+      courseTitle: quiz.courseTitle,
+      moduleTitle: quiz.moduleTitle,
+      quizTitle: quiz.quizTitle,
+      timeLimit: quiz.timeLimit,
+    });
+    setQuestions(
+      quiz.questions.map((q) => ({
+        ...q,
+        options: q.options.map((o) => ({ ...o })),
+      }))
+    );
+    setEditingQuizIndex(index);
+    setEditingIndex(null);
+
+    // Reset status to Draft when editing if Active or Inactive
+    const updated = [...quizzes];
+    if (quiz.status === "Active" || quiz.status === "Inactive") updated[index].status = "Draft";
+    setQuizzes(updated);
+  };
+
+  const handleRequestApproval = (index) => {
+    const updated = [...quizzes];
+    updated[index].status = "Wait for Approval";
+    setQuizzes(updated);
+  };
+
+  const handleInactivate = (index) => {
+    const updated = [...quizzes];
+    updated[index].status = "Inactive";
+    setQuizzes(updated);
+  };
+
+  const modulesForSelectedCourse = modules
+    .filter((m) => m.courseName === form.courseTitle)
+    .map((m) => m.moduleTitle);
+
   return (
-    <Box sx={{ padding: "2rem" }}>
-      <Typography variant="h4" gutterBottom>
+    <Box sx={{ padding: "2rem", maxWidth: "1200px", margin: "0 auto" }}>
+      <Typography variant="h4" gutterBottom fontWeight="bold">
         Quiz Management
       </Typography>
 
       {/* Quiz Form */}
-      <Paper sx={{ padding: "1.5rem", marginBottom: "2rem" }}>
+      <Paper sx={{ padding: "2rem", marginBottom: "2rem", borderRadius: 3, boxShadow: "0 8px 20px rgba(0,0,0,0.1)" }}>
         <Stack spacing={2}>
-          <TextField
-            label="Course Number"
-            name="courseNumber"
-            value={form.courseNumber}
-            onChange={handleChange}
-            required
-          />
-          <TextField
-            label="Module Number"
-            name="moduleNumber"
-            value={form.moduleNumber}
-            onChange={handleChange}
-            required
-          />
-          <TextField
-            label="Quiz Title"
-            name="quizTitle"
-            value={form.quizTitle}
-            onChange={handleChange}
-            required
-          />
-          <TextField
-            label="Time Limit (minutes)"
-            name="timeLimit"
-            type="number"
-            value={form.timeLimit}
-            onChange={handleChange}
-            required
-          />
+          <FormControl fullWidth size="small">
+            <InputLabel>Course Title</InputLabel>
+            <Select name="courseTitle" value={form.courseTitle} onChange={handleChange} label="Course Title">
+              {courses.map((c, idx) => (
+                <MenuItem key={idx} value={c.name}>{c.name}</MenuItem>
+              ))}
+            </Select>
+          </FormControl>
 
-          {/* Question Form */}
-          <Paper sx={{ padding: "1rem", mt: 1 }}>
-            <Typography variant="h6">Add / Edit Question</Typography>
+          <FormControl fullWidth size="small">
+            <InputLabel>Module Title</InputLabel>
+            <Select
+              name="moduleTitle"
+              value={form.moduleTitle}
+              onChange={handleChange}
+              label="Module Title"
+              disabled={!form.courseTitle}
+            >
+              {modulesForSelectedCourse.map((m, idx) => (
+                <MenuItem key={idx} value={m}>{m}</MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+
+          <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
+            <TextField label="Quiz Title" name="quizTitle" value={form.quizTitle} onChange={handleChange} fullWidth />
             <TextField
-              label="Question Text"
-              name="text"
-              value={questionForm.text}
-              onChange={handleQuestionChange}
+              label="Time Limit (minutes)"
+              name="timeLimit"
+              type="number"
+              value={form.timeLimit}
+              onChange={handleChange}
               fullWidth
-              margin="normal"
             />
+          </Stack>
 
-            {questionForm.options.map((opt, i) => (
-              <Stack key={i} direction="row" spacing={1} alignItems="center">
-                <TextField
-                  label={`Option ${i + 1}`}
-                  value={opt.text}
-                  onChange={(e) => handleOptionChange(i, "text", e.target.value)}
-                  fullWidth
-                  margin="normal"
-                />
-                <Checkbox
-                  checked={opt.isCorrect}
-                  onChange={(e) => handleOptionChange(i, "isCorrect", e.target.checked)}
-                />
-                <TextField
-                  label="Feedback"
-                  value={opt.feedback}
-                  onChange={(e) => handleOptionChange(i, "feedback", e.target.value)}
-                  fullWidth
-                  margin="normal"
-                />
+          {/* Question Card */}
+          <Card sx={{ mt: 2, p: 2, backgroundColor: "#f9f9f9" }}>
+            <CardContent>
+              <Typography variant="h6" gutterBottom>
+                Add / Edit Question
+              </Typography>
+              <TextField
+                label="Question Text"
+                name="text"
+                value={questionForm.text}
+                onChange={handleQuestionChange}
+                fullWidth
+                margin="normal"
+              />
+              <Stack spacing={2}>
+                {questionForm.options.map((opt, i) => (
+                  <Stack key={i} direction={{ xs: "column", md: "row" }} spacing={2} alignItems="center">
+                    <TextField
+                      label={`Option ${i + 1}`}
+                      value={opt.text}
+                      onChange={(e) => handleOptionChange(i, "text", e.target.value)}
+                      fullWidth
+                    />
+                    <Checkbox
+                      checked={opt.isCorrect}
+                      onChange={(e) => handleOptionChange(i, "isCorrect", e.target.checked)}
+                    />
+                    <TextField
+                      label="Feedback"
+                      value={opt.feedback}
+                      onChange={(e) => handleOptionChange(i, "feedback", e.target.value)}
+                      fullWidth
+                    />
+                  </Stack>
+                ))}
               </Stack>
-            ))}
-
-            <Button
-              startIcon={<AddCircleOutlineIcon />}
-              onClick={addOption}
-              sx={{ mt: 1 }}
-            >
-              Add Option
-            </Button>
-
-            <Button variant="outlined" component="label" sx={{ mt: 1 }}>
-              Upload Image
-              <input type="file" hidden onChange={handleQuestionImage} />
-            </Button>
-            {questionForm.image && (
-              <Box mt={1}>
-                <img
-                  src={questionForm.image}
-                  alt="Question"
-                  style={{ maxWidth: 200, borderRadius: 8 }}
-                />
-              </Box>
-            )}
-
-            <Button
-              variant="contained"
-              color="secondary"
-              onClick={addQuestion}
-              sx={{ mt: 2 }}
-            >
-              Add Question
-            </Button>
-          </Paper>
+              <Stack direction="row" spacing={2} mt={2}>
+                <Button startIcon={<AddCircleOutlineIcon />} onClick={addOption} variant="contained" color="primary">
+                  Add Option
+                </Button>
+                <Button variant="contained" color="primary" component="label">
+                  Upload Image
+                  <input type="file" hidden onChange={handleQuestionImage} />
+                </Button>
+              </Stack>
+              {questionForm.image && (
+                <Box mt={2}>
+                  <img src={questionForm.image} alt="Question" style={{ maxWidth: 250, borderRadius: 8 }} />
+                </Box>
+              )}
+              <Button
+                variant="contained"
+                color="primary"
+                onClick={addQuestion}
+                sx={{ mt: 3 }}
+              >
+                {editingIndex !== null ? "Update Question" : "Add Question"}
+              </Button>
+            </CardContent>
+          </Card>
 
           {/* Questions Preview */}
           {questions.length > 0 && (
-            <Paper sx={{ mt: 2, p: 2 }}>
-              <Typography variant="h6">Questions Preview</Typography>
+            <Paper sx={{ mt: 3, p: 2 }}>
+              <Typography variant="h6" gutterBottom>
+                Questions Preview
+              </Typography>
+              <Divider sx={{ mb: 2 }} />
               <Table>
                 <TableHead>
                   <TableRow>
@@ -324,33 +384,16 @@ export default function QuizManagement() {
                     <TableRow key={idx}>
                       <TableCell>{q.number}</TableCell>
                       <TableCell>{q.text}</TableCell>
+                      <TableCell>{q.options.map((o,i) => <div key={i}>{i+1}. {o.text}</div>)}</TableCell>
+                      <TableCell>{q.options.map((o,i)=>o.isCorrect? `Option ${i+1}`: null).filter(Boolean).join(", ")}</TableCell>
+                      <TableCell>{q.options.map((o,i)=><div key={i}>{i+1}. {o.feedback}</div>)}</TableCell>
                       <TableCell>
-                        {q.options.map((o, i) => (
-                          <div key={i}>
-                            {i + 1}. {o.text}
-                          </div>
-                        ))}
-                      </TableCell>
-                      <TableCell>
-                        {q.options
-                          .map((o, i) => (o.isCorrect ? `Option ${i + 1}` : null))
-                          .filter(Boolean)
-                          .join(", ")}
-                      </TableCell>
-                      <TableCell>
-                        {q.options.map((o, i) => (
-                          <div key={i}>
-                            {i + 1}. {o.feedback}
-                          </div>
-                        ))}
-                      </TableCell>
-                      <TableCell>
-                        <IconButton
-                          color="error"
-                          onClick={() => deleteQuestion(idx)}
-                        >
-                          <DeleteOutlineIcon />
-                        </IconButton>
+                        <Stack direction="row" spacing={1}>
+                          <Button size="small" onClick={()=>handleEditQuestion(idx)}>Edit</Button>
+                          <IconButton color="error" onClick={()=>deleteQuestion(idx)}>
+                            <DeleteOutlineIcon />
+                          </IconButton>
+                        </Stack>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -359,22 +402,28 @@ export default function QuizManagement() {
             </Paper>
           )}
 
-          <Button variant="contained" color="primary" onClick={handleSaveQuiz}>
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={handleSaveQuiz}
+            sx={{ mt: 3, alignSelf: "flex-start" }}
+          >
             {editingIndex !== null ? "Update Quiz" : "Save Quiz"}
           </Button>
         </Stack>
       </Paper>
 
-      {/* Existing Quizzes Table */}
-      <Paper>
-        <Typography variant="h6" sx={{ padding: "1rem" }}>
+      {/* Existing Quizzes */}
+      <Paper sx={{ padding: "1.5rem", borderRadius: 3, boxShadow: "0 8px 20px rgba(0,0,0,0.1)" }}>
+        <Typography variant="h6" gutterBottom>
           Existing Quizzes
         </Typography>
+        <Divider sx={{ mb: 2 }} />
         <Table>
           <TableHead>
             <TableRow>
-              <TableCell>Course #</TableCell>
-              <TableCell>Module #</TableCell>
+              <TableCell>Course Title</TableCell>
+              <TableCell>Module Title</TableCell>
               <TableCell>Quiz Title</TableCell>
               <TableCell>Time Limit</TableCell>
               <TableCell># Questions</TableCell>
@@ -392,48 +441,30 @@ export default function QuizManagement() {
             ) : (
               quizzes.map((quiz, idx) => (
                 <TableRow key={idx}>
-                  <TableCell>{quiz.courseNumber}</TableCell>
-                  <TableCell>{quiz.moduleNumber}</TableCell>
+                  <TableCell>{quiz.courseTitle}</TableCell>
+                  <TableCell>{quiz.moduleTitle}</TableCell>
                   <TableCell>{quiz.quizTitle}</TableCell>
                   <TableCell>{quiz.timeLimit} min</TableCell>
                   <TableCell>{quiz.questions.length}</TableCell>
                   <TableCell>{quiz.status}</TableCell>
-                  <TableCell
-                    align="right"
-                    sx={{
-                      display: "flex",
-                      gap: 1,
-                      justifyContent: "flex-end",
-                      flexWrap: "wrap",
-                    }}
-                  >
-                    {quiz.status !== "Wait for Approval" && (
-                      <Button
-                        variant="outlined"
-                        size="small"
-                        onClick={() => handleEditQuiz(idx)}
-                      >
-                        Edit
-                      </Button>
-                    )}
-                    {(quiz.status === "Draft" || quiz.status === "Inactive") && (
-                      <Button
-                        variant="contained"
-                        size="small"
-                        color="success"
-                        onClick={() => handleRequestApproval(idx)}
-                      >
-                        Request Approval
-                      </Button>
-                    )}
-                    <Button
-                      variant="outlined"
-                      size="small"
-                      color="error"
-                      onClick={() => handleDeleteQuiz(idx)}
-                    >
-                      Delete
-                    </Button>
+                  <TableCell align="right">
+                    <Stack direction="row" spacing={1} justifyContent="flex-end">
+                      {(quiz.status === "Draft" || quiz.status === "Inactive") && (
+                        <>
+                          <Button size="small" onClick={()=>handleEditQuiz(idx)}>Edit</Button>
+                          <Button size="small" variant="outlined" color="secondary" onClick={()=>handleRequestApproval(idx)}>Request Approval</Button>
+                        </>
+                      )}
+                      {quiz.status === "Active" && (
+                        <>
+                          <Button size="small" onClick={()=>handleEditQuiz(idx)}>Edit</Button>
+                          <Button size="small" variant="outlined" color="warning" onClick={()=>handleInactivate(idx)}>Inactivate</Button>
+                        </>
+                      )}
+                      {quiz.status === "Wait for Approval" && (
+                        <Typography variant="body2" color="text.secondary">Pending with Admin</Typography>
+                      )}
+                    </Stack>
                   </TableCell>
                 </TableRow>
               ))

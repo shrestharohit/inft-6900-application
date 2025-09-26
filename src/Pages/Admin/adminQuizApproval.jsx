@@ -47,16 +47,18 @@ function AdminQuizApproval() {
 
   return (
     <Box sx={{ maxWidth: 1200, margin: "24px auto", padding: "0 16px" }}>
-      <Paper sx={{ padding: 20, borderRadius: 10, boxShadow: "0 8px 24px rgba(0,0,0,0.08)" }}>
-        <Typography variant="h5" fontWeight={700} mb={2}>
+      <Paper sx={{ padding: 3, borderRadius: 3, boxShadow: "0 8px 24px rgba(0,0,0,0.08)" }}>
+        <Typography variant="h5" fontWeight={700} mb={3}>
           Quiz Approval
         </Typography>
 
-        <Paper variant="outlined">
+        <Paper variant="outlined" sx={{ borderRadius: 2 }}>
           <Table>
             <TableHead sx={{ background: "#f7f7f9" }}>
               <TableRow>
+                <TableCell>Course</TableCell>
                 <TableCell>Module</TableCell>
+                <TableCell>Quiz Title</TableCell>
                 <TableCell>Time Limit</TableCell>
                 <TableCell>Status</TableCell>
                 <TableCell align="right">Actions</TableCell>
@@ -65,14 +67,16 @@ function AdminQuizApproval() {
             <TableBody>
               {quizzes.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={4} align="center" sx={{ py: 4, color: "text.secondary" }}>
+                  <TableCell colSpan={6} align="center" sx={{ py: 4, color: "text.secondary" }}>
                     No quizzes submitted yet.
                   </TableCell>
                 </TableRow>
               ) : (
                 quizzes.map((quiz, idx) => (
                   <TableRow key={idx} hover>
-                    <TableCell>{quiz.module}</TableCell>
+                    <TableCell>{quiz.courseTitle}</TableCell>
+                    <TableCell>{quiz.moduleTitle}</TableCell>
+                    <TableCell>{quiz.quizTitle}</TableCell>
                     <TableCell>{quiz.timeLimit} mins</TableCell>
                     <TableCell>{quiz.status}</TableCell>
                     <TableCell align="right">
