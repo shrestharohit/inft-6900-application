@@ -2,11 +2,13 @@ import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import beforeAuthLayout from "../components/BeforeAuth";
 import { dummyCourses, dummyPathways } from "../Pages/dummyData"; // ✅ central data
+import { useTTS } from "../contexts/TTSContext";
 
 function Home() {
     const [hoveredCourse, setHoveredCourse] = useState(null);
     const [hoveredPathway, setHoveredPathway] = useState(null);
     const navigate = useNavigate();
+    const { speak, stop } = useTTS(); // ✅ TTS context
 
     // Show any 3 "popular" courses — tweak this to pick by rating/enrollment if you like
     const popularCourses = dummyCourses.slice(0, 3);
@@ -17,8 +19,35 @@ function Home() {
         typeof c === "string" || typeof c === "number" ? String(c) : String(c?.id || "");
     const getCourseById = (id) => dummyCourses.find((x) => String(x.id) === String(id));
 
+    // Text content for TTS (customize if needed)
+    const pageText = `
+        Learn Today. Lead Tomorrow.
+        Build real skills with hands-on courses and guided pathways.
+        Popular Courses include ${popularCourses.map(c => c.name).join(", ")}.
+        Trending Pathways include ${trendingPathways.map(p => p.name).join(", ")}.
+        Learner Reviews: Alex says this platform helped grow his career. 
+        Sarah says courses have practical projects. 
+        John says the user experience is motivating.
+    `;
+
     return (
         <div className="bg-gray-50 font-inter pb-12">
+            {/* 🔊 TTS Controls */}
+            <div className="max-w-[1150px] mx-auto flex gap-3 justify-end py-4">
+                <button
+                    onClick={() => speak(pageText)}
+                    className="bg-blue-500 text-white px-4 py-2 rounded shadow hover:bg-blue-600"
+                >
+                    🔊 Read Page
+                </button>
+                <button
+                    onClick={stop}
+                    className="bg-red-500 text-white px-4 py-2 rounded shadow hover:bg-red-600"
+                >
+                    ⏹ Stop
+                </button>
+            </div>
+
             {/* Hero Section */}
             <section className="bg-gradient-to-r from-[#1f2a60] to-[#4856a6] text-white rounded-xl my-8 max-w-[1150px] mx-auto shadow-lg">
                 <div className="text-center py-20 px-6 max-w-3xl mx-auto">
@@ -46,8 +75,9 @@ function Home() {
                             <Link
                                 key={course.id}
                                 to={`/courses/${course.id}`}
-                                className={`bg-white rounded-xl shadow-md text-center p-6 transition transform ${isHover ? "-translate-y-2 shadow-xl" : ""
-                                    }`}
+                                className={`bg-white rounded-xl shadow-md text-center p-6 transition transform ${
+                                    isHover ? "-translate-y-2 shadow-xl" : ""
+                                }`}
                                 onMouseEnter={() => setHoveredCourse(idx)}
                                 onMouseLeave={() => setHoveredCourse(null)}
                             >
@@ -95,8 +125,9 @@ function Home() {
                                 onKeyDown={(e) => {
                                     if (e.key === "Enter" || e.key === " ") navigate(`/pathway/${pathway.id}`);
                                 }}
-                                className={`bg-white rounded-xl shadow-md text-center p-6 transition transform cursor-pointer flex flex-col h-full ${isHover ? "-translate-y-2 shadow-xl" : ""
-                                    }`}
+                                className={`bg-white rounded-xl shadow-md text-center p-6 transition transform cursor-pointer flex flex-col h-full ${
+                                    isHover ? "-translate-y-2 shadow-xl" : ""
+                                }`}
                                 onMouseEnter={() => setHoveredPathway(idx)}
                                 onMouseLeave={() => setHoveredPathway(null)}
                             >
