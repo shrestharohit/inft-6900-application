@@ -57,7 +57,10 @@ const Header = () => {
   };
 
   return (
-    <header className="flex justify-between items-center px-6 py-3 bg-green-500 text-white h-20">
+    // <header className="flex justify-between items-center px-6 py-3 bg-green-500 text-white h-20">
+    //   <div className="container mx-auto flex justify-between items-center max-w-7xl">
+
+    <header className="fixed top-0 left-0 right-0 z-50 flex justify-between items-center px-6 py-3 bg-green-500 text-white h-20 shadow-md">
       <div className="container mx-auto flex justify-between items-center max-w-7xl">
         {/* Logo + Categories */}
         <div className="flex items-center space-x-6">
@@ -180,10 +183,14 @@ const Header = () => {
                 }}
               />
               <Menu anchorEl={anchorEl} open={open} onClose={handleMenuClose}>
+                <MenuItem onClick={() => navigate("/dashboard")}>
+                  Dashboard
+                </MenuItem>
                 <MenuItem onClick={() => navigate("/profilemanagement")}>
                   Edit Profile
                 </MenuItem>
                 <MenuItem onClick={handleLogout}>Logout</MenuItem>
+
               </Menu>
             </>
           ) : (
