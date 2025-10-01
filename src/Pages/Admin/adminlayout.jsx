@@ -16,7 +16,6 @@ import {
 
 const NAV_ITEMS = [
     { label: "Dashboard", to: "/admin", icon: <Dashboard /> },
-    { label: "Pathways", to: "/admin/pathways", icon: <ClassIcon /> },
     { label: "Courses", to: "/admin/courses", icon: <LibraryBooks /> },
     { label: "Enrollments", to: "/admin/enrollments", icon: <School /> },
     { label: "Users", to: "/admin/users", icon: <People /> },
@@ -25,6 +24,7 @@ const NAV_ITEMS = [
     { label: "Course Approvals", to: "/admin/course-approvals", icon: <LibraryBooks /> },
     { label: "Module Approvals", to: "/admin/module-approvals", icon: <School /> },
     { label: "Quiz Approvals", to: "/admin/quiz-approvals", icon: <Quiz /> },
+    { label: "Pathways Approvals", to: "/admin/pathways", icon: <LibraryBooks /> },
 ];
 
 export default function AdminLayout() {

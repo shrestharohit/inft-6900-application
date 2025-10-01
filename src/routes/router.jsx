@@ -15,6 +15,7 @@ import AdminCourseApproval from "../Pages/Admin/adminCourseApproval";
 import AdminModuleApproval from "../Pages/Admin/adminModuleApproval";
 import AdminQuizApproval from "../Pages/Admin/adminQuizApproval";
 import AdminProfile from "../Pages/Admin/AdminProfile";
+import AdminPathwayApproval from "../Pages/Admin/adminPathwayApproval.jsx"; // ✅ added
 
 // Student imports
 import Dashboard from "../Pages/Dashboard";
@@ -51,6 +52,7 @@ import CourseOwnerProfile from "../Pages/CourseOwner/courseOwnerProfile";
 import CourseOwnerAnnouncementsPage from "../Pages/CourseOwner/CourseOwnerAnnouncementsPage";
 import CourseOwnerDiscussionPage from "../Pages/CourseOwner/CourseOwnerDiscussionPage";
 import CourseOwnerQuestionsPage from "../Pages/CourseOwner/CourseOwnerQuestionsPage";
+import PathwayManagement from "../Pages/CourseOwner/pathwayManagement"; // ✅ added
 
 // All Courses and Pathways Pages
 import AllCoursesPage from "../Pages/AllCoursesPage";
@@ -70,7 +72,7 @@ export const router = createBrowserRouter([
   { path: "/pathway/:pathwayId/content", element: <PathwayContentPage /> },
 
   // Student course routes
-  {path: "/dashboard",element: <Dashboard />}, 
+  { path: "/dashboard", element: <Dashboard /> },
   {
     path: "/courses/:courseId",
     children: [
@@ -97,7 +99,7 @@ export const router = createBrowserRouter([
     element: <AdminLayout />,
     children: [
       { index: true, element: <DashboardPage /> },
-      { path: "pathways", element: <PathwaysPage /> },
+      { path: "pathways", element: <AdminPathwayApproval /> }, // ✅ updated
       { path: "courses", element: <CoursesPage /> },
       { path: "enrollments", element: <EnrollmentsPage /> },
       { path: "users", element: <AdminUserManagement /> },
@@ -114,7 +116,7 @@ export const router = createBrowserRouter([
     path: "/courseowner",
     element: <CourseOwnerLayout />,
     children: [
-      { index: true, element: <CourseOwnerDashboard /> }, // default landing page
+      { index: true, element: <CourseOwnerDashboard /> },
       { path: "courses", element: <CourseManagement /> },
       { path: "modules", element: <ModuleManagement /> },
       { path: "quizzes", element: <QuizManagement /> },
@@ -122,9 +124,9 @@ export const router = createBrowserRouter([
       { path: "announcements", element: <CourseOwnerAnnouncementsPage /> },
       { path: "discussions", element: <CourseOwnerDiscussionPage /> },
       { path: "questions", element: <CourseOwnerQuestionsPage /> },
+      { path: "pathways", element: <PathwayManagement /> }, // ✅ new
     ],
   },
-
 
   // Search & global
   { path: "/search", element: <SearchResults /> },
