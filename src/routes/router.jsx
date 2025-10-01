@@ -8,6 +8,11 @@ import Login2FA from "../Pages/login2fa";
 import ForgotPassword from "../Pages/forgotpassword";
 import ProfileManagement from "../Pages/profilemanagement";
 
+// Dummy pages for footer
+import About from "../Pages/about";
+import Contact from "../Pages/contactus";
+import Terms from "../Pages/termsAndCondition";
+
 // Admin imports
 import AdminLayout from "../Pages/Admin/adminlayout";
 import AdminUserManagement from "../Pages/Admin/adminUserManagement";
@@ -19,7 +24,7 @@ import AdminPathwayApproval from "../Pages/Admin/adminPathwayApproval.jsx"; // �
 
 // Student imports
 import Dashboard from "../Pages/Dashboard";
-import CourseLayout from "../Pages/CourseLayout";
+//import CourseLayout from "../Pages/CourseLayout";
 import CoursePage from "../Pages/CoursePage";
 import CourseContentPage from "../Pages/CourseContentPage";
 import ModulePage from "../Pages/ModulePage";
@@ -67,6 +72,11 @@ export const router = createBrowserRouter([
   { path: "/forgotpassword", element: <ForgotPassword /> },
   { path: "/profilemanagement", element: <ProfileManagement /> },
 
+  // Footer dummy pages
+  { path: "/about", element: <About /> },
+  { path: "/contact", element: <Contact /> },
+  { path: "/terms", element: <Terms /> },
+
   // Pathways routes
   { path: "/pathway/:pathwayId", element: <PathwayPage /> },
   { path: "/pathway/:pathwayId/content", element: <PathwayContentPage /> },
@@ -99,7 +109,7 @@ export const router = createBrowserRouter([
     element: <AdminLayout />,
     children: [
       { index: true, element: <DashboardPage /> },
-      { path: "pathways", element: <AdminPathwayApproval /> }, // ✅ updated
+      { path: "pathways", element: <AdminPathwayApproval /> },
       { path: "courses", element: <CoursesPage /> },
       { path: "enrollments", element: <EnrollmentsPage /> },
       { path: "users", element: <AdminUserManagement /> },
@@ -124,7 +134,7 @@ export const router = createBrowserRouter([
       { path: "announcements", element: <CourseOwnerAnnouncementsPage /> },
       { path: "discussions", element: <CourseOwnerDiscussionPage /> },
       { path: "questions", element: <CourseOwnerQuestionsPage /> },
-      { path: "pathways", element: <PathwayManagement /> }, // ✅ new
+      { path: "pathways", element: <PathwayManagement /> },
     ],
   },
 

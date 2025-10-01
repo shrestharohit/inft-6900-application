@@ -93,7 +93,7 @@ const CoursePage = () => {
       disenrollFromCourse(courseId);
       setStatus(null);
       alert(`You have left ${course.name}`);
-      navigate("/search");
+      navigate("/");
     }
   };
 
@@ -392,7 +392,6 @@ const CoursePage = () => {
             )}
           </div>
         </div>
-        
       </div>
     </div>
   );
