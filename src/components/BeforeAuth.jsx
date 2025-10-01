@@ -6,7 +6,7 @@ export default function beforeAuthLayout(PageComponent) {
     <div className="min-h-screen flex flex-col justify-between">
       <Header />
       {/* 👇 add top padding so content doesn't hide behind header */}
-      <main className="flex-1 pt-20">
+      <main className="flex-1 pt-8">
         <PageComponent {...props} />
       </main>
       <Footer />

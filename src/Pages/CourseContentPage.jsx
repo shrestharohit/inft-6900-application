@@ -1,33 +1,23 @@
 import React from "react";
-import { useParams, useNavigate, Link } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 import beforeAuthLayout from "../components/BeforeAuth";
 import { dummyCourses } from "../Pages/dummyData";
+import { dummyModules } from "../Pages/dummyModule";
 
 const CourseContentPage = () => {
   const { courseId } = useParams();
-  const navigate = useNavigate();
 
   const course = dummyCourses.find((c) => c.id === courseId);
+  const modules = dummyModules[courseId] || [];
 
   if (!course) {
-    return <div className="p-6 text-red-500">Course not found!</div>;
+    return <div className="p-4 text-red-500">Course not found!</div>;
   }
 
-  const modules = [
-    {
-      id: 1,
-      title: `Module 1: Introduction to ${course.name}`,
-      pages: [
-        { id: 101, title: `Lesson 1.1 - Introduction to ${course.name}` },
-        { id: 102, title: "Quiz 1" },
-      ],
-    },
-  ];
-
   return (
-    <div className="p-6 max-w-7xl mx-auto">
+    <div className="max-w-7xl mx-auto">
       {/* Page Heading */}
-      <h1 className="text-3xl font-bold text-gray-800 mb-6">Course Content</h1>
+      <h1 className="text-3xl font-bold text-gray-800 mb-4">Course Content</h1>
 
       <p className="text-gray-600 mb-6">
         Welcome to your course! Here you’ll find lessons and quizzes for{" "}
@@ -35,29 +25,35 @@ const CourseContentPage = () => {
       </p>
 
       {/* Modules Section */}
-      <div className="space-y-4 mb-10">
+      <div className="space-y-4">
         {modules.map((module) => (
           <div
             key={module.id}
             className="bg-white p-4 rounded-lg shadow hover:shadow-lg transition-shadow"
           >
-            <Link
-              to={`/courses/${courseId}/modules/${module.id}`}
-              className="text-xl font-semibold text-blue-600 hover:underline"
-            >
+            <h2 className="text-xl font-semibold text-blue-600 mb-2">
               {module.title}
-            </Link>
+            </h2>
 
-            <ul className="list-disc list-inside text-gray-600 mt-2 space-y-1">
-              {module.pages.map((page) => (
-                <li key={page.id}>{page.title}</li>
+            <ul className="list-disc list-inside text-gray-600 space-y-1">
+              {module.lessons.map((lesson) => (
+                <li key={lesson.id}>
+                  <Link
+                    to={
+                      lesson.title.toLowerCase().includes("quiz")
+                        ? `/courses/${courseId}/quizzes/${lesson.id}`
+                        : `/courses/${courseId}/modules/${module.id}/lessons/${lesson.id}`
+                    }
+                    className="text-gray-700 hover:text-blue-600 hover:underline"
+                  >
+                    {lesson.title}
+                  </Link>
+                </li>
               ))}
             </ul>
           </div>
         ))}
       </div>
-
-     
     </div>
   );
 };

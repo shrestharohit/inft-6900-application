@@ -19,8 +19,11 @@ const CoursePage = () => {
   const [avgRating, setAvgRating] = useState(0);
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState("");
-  const [editingReview, setEditingReview] = useState(false);
+  const [editingReview, setEditingReview] = useState(false); // user has submitted a review
+  const [isEditing, setIsEditing] = useState(false); // user is actively editing
+  const [currentUserReviewId, setCurrentUserReviewId] = useState(null);
 
+  // Load course and reviews
   useEffect(() => {
     const selectedCourse = dummyCourses.find((c) => c.id === courseId);
     setCourse(selectedCourse);
@@ -32,7 +35,7 @@ const CoursePage = () => {
         [];
       setReviews(savedReviews);
 
-      // If user has a review, prefill
+      // Check if logged-in user already has a review
       if (isLoggedIn && loggedInUser) {
         const existingReview = savedReviews.find(
           (r) => r.user === loggedInUser.firstName
@@ -40,7 +43,13 @@ const CoursePage = () => {
         if (existingReview) {
           setRating(existingReview.rating);
           setComment(existingReview.comment);
-          setEditingReview(true);
+          setEditingReview(true);   // review exists
+          setIsEditing(false);      // not actively editing yet
+          setCurrentUserReviewId(existingReview.id);
+        } else {
+          setRating(0);
+          setComment("");
+          setEditingReview(false);
         }
       }
     }
@@ -52,7 +61,7 @@ const CoursePage = () => {
     }
   }, [courseId, isLoggedIn, loggedInUser]);
 
-  // recalc avg
+  // Recalculate average rating
   useEffect(() => {
     if (reviews.length > 0) {
       const avg =
@@ -88,6 +97,7 @@ const CoursePage = () => {
     }
   };
 
+  // Submit new or updated review
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!isLoggedIn) {
@@ -97,7 +107,7 @@ const CoursePage = () => {
     if (!rating || !comment.trim()) return;
 
     const newReview = {
-      id: loggedInUser?.id || Date.now(),
+      id: currentUserReviewId || Date.now(),
       rating,
       comment,
       user: loggedInUser?.firstName || "Anonymous User",
@@ -106,31 +116,38 @@ const CoursePage = () => {
 
     let updatedReviews;
     if (editingReview) {
+      // Update existing review
       updatedReviews = reviews.map((r) =>
         r.user === newReview.user ? newReview : r
       );
+      alert("Review updated!");
     } else {
+      // Add new review
       updatedReviews = [newReview, ...reviews];
       setEditingReview(true);
+      alert("Review submitted!");
     }
 
     setReviews(updatedReviews);
     localStorage.setItem(`reviews_${courseId}`, JSON.stringify(updatedReviews));
-    alert(editingReview ? "Review updated!" : "Review submitted!");
+
+    // Reset editing state
+    setIsEditing(false);
+    setCurrentUserReviewId(newReview.id);
   };
 
-  const handleDelete = () => {
-    if (
-      window.confirm("Are you sure you want to delete your review for this course?")
-    ) {
-      const updatedReviews = reviews.filter(
-        (r) => r.user !== loggedInUser?.firstName
-      );
+  const handleDelete = (user) => {
+    if (window.confirm("Are you sure you want to delete your review for this course?")) {
+      const updatedReviews = reviews.filter((r) => r.user !== user);
       setReviews(updatedReviews);
       localStorage.setItem(`reviews_${courseId}`, JSON.stringify(updatedReviews));
-      setRating(0);
-      setComment("");
-      setEditingReview(false);
+      if (user === loggedInUser?.firstName) {
+        setRating(0);
+        setComment("");
+        setEditingReview(false);
+        setIsEditing(false);
+        setCurrentUserReviewId(null);
+      }
       alert("Your review has been deleted.");
     }
   };
@@ -230,6 +247,7 @@ const CoursePage = () => {
           <div className="bg-white p-6 rounded-lg shadow mt-6">
             <h2 className="text-2xl font-bold mb-4">Reviews</h2>
 
+            {/* Review Form */}
             {isLoggedIn && status === "unlocked" ? (
               <form onSubmit={handleSubmit} className="mb-6">
                 <div className="flex gap-2 mb-3">
@@ -238,8 +256,10 @@ const CoursePage = () => {
                       key={star}
                       type="button"
                       onClick={() => setRating(star)}
-                      className={`text-2xl ${rating >= star ? "text-yellow-500" : "text-gray-300"
-                        }`}
+                      className={`text-2xl ${
+                        rating >= star ? "text-yellow-500" : "text-gray-300"
+                      }`}
+                      disabled={editingReview && !isEditing}
                     >
                       ★
                     </button>
@@ -251,34 +271,25 @@ const CoursePage = () => {
                   onChange={(e) => setComment(e.target.value)}
                   placeholder="Write your feedback..."
                   className="w-full p-3 border border-gray-300 rounded-md mb-3 focus:ring-2 focus:ring-blue-500"
+                  disabled={editingReview && !isEditing}
                 />
 
-                <div className="flex gap-3">
+                {!editingReview || isEditing ? (
                   <button
                     type="submit"
                     className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md font-semibold"
                   >
                     {editingReview ? "Update Review" : "Submit Review"}
                   </button>
-
-                  {editingReview && (
-                    <button
-                      type="button"
-                      onClick={handleDelete}
-                      className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-md font-semibold"
-                    >
-                      Delete Review
-                    </button>
-                  )}
-                </div>
+                ) : (
+                  <p className="text-gray-500">
+                    You have already submitted a review. You can update or delete it below.
+                  </p>
+                )}
               </form>
             ) : !isLoggedIn ? (
               <p className="text-gray-500 mb-4">
-                Please{" "}
-                <Link to="/login" className="text-blue-500">
-                  log in
-                </Link>{" "}
-                to leave a review.
+                Please <Link to="/login" className="text-blue-500">log in</Link> to leave a review.
               </p>
             ) : (
               <p className="text-gray-500 mb-4">
@@ -306,6 +317,29 @@ const CoursePage = () => {
                       </div>
                       <p className="text-gray-700">{r.comment}</p>
                       <p className="text-xs text-gray-400">{r.createdAt}</p>
+
+                      {/* Update/Delete buttons only for logged-in user's review */}
+                      {isLoggedIn && r.user === loggedInUser?.firstName && (
+                        <div className="mt-2 flex gap-2">
+                          <button
+                            onClick={() => {
+                              setRating(r.rating);
+                              setComment(r.comment);
+                              setIsEditing(true); // allow editing
+                              setCurrentUserReviewId(r.id);
+                            }}
+                            className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded-md text-sm"
+                          >
+                            Update Review
+                          </button>
+                          <button
+                            onClick={() => handleDelete(r.user)}
+                            className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded-md text-sm"
+                          >
+                            Delete Review
+                          </button>
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -358,6 +392,7 @@ const CoursePage = () => {
             )}
           </div>
         </div>
+        
       </div>
     </div>
   );

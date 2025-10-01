@@ -12,7 +12,14 @@ export default function CourseLayout() {
         <div className="flex">
             {/* Sidebar */}
             <aside className="fixed top-20 left-0 w-64 bg-white border-r shadow-sm h-[calc(100vh-5rem)] overflow-y-auto">
-                <h2 className="text-lg font-bold px-4 py-3 border-b">Course Menu</h2>
+                {/* Clickable Course Menu Header */}
+                <NavLink
+                    to={`/courses/${courseId}/content`}
+                    className="block text-lg font-bold px-4 py-3 border-b hover:bg-gray-100 text-blue-600 cursor-pointer"
+                >
+                    Course Menu
+                </NavLink>
+
                 <nav className="flex flex-col space-y-1 p-2">
                     {/* Expandable Modules */}
                     {modules.map((module) => (
@@ -52,8 +59,6 @@ export default function CourseLayout() {
                     <NavLink
                         to="announcements"
                         className="px-4 py-2 rounded hover:bg-gray-100"
-                        
-
                     >
                         Announcements
                     </NavLink>
