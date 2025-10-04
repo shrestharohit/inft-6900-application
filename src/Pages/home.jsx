@@ -1,21 +1,29 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import beforeAuthLayout from "../components/BeforeAuth";
-import { dummyCourses, dummyPathways } from "../Pages/dummyData"; // ✅ central data
+import { dummyCourses, dummyPathways } from "../Pages/dummyData";
+import { useAuth } from "../contexts/AuthContext"; // ✅
 
 function Home() {
     const [hoveredCourse, setHoveredCourse] = useState(null);
     const [hoveredPathway, setHoveredPathway] = useState(null);
     const navigate = useNavigate();
+    const { isLoggedIn } = useAuth(); // ✅ check login state
 
-    // Show any 3 "popular" courses — tweak this to pick by rating/enrollment if you like
     const popularCourses = dummyCourses.slice(0, 3);
     const trendingPathways = dummyPathways;
 
-    // Helpers to resolve course IDs safely
     const toId = (c) =>
         typeof c === "string" || typeof c === "number" ? String(c) : String(c?.id || "");
     const getCourseById = (id) => dummyCourses.find((x) => String(x.id) === String(id));
+
+    const handleGetStarted = () => {
+        if (isLoggedIn) {
+            navigate("/dashboard"); // ✅ go to new dashboard page
+        } else {
+            navigate("/login");
+        }
+    };
 
     return (
         <div className="bg-gray-50 font-inter pb-12">
@@ -26,11 +34,12 @@ function Home() {
                     <p className="text-lg opacity-90 mb-6">
                         Build real skills with hands-on courses and guided pathways.
                     </p>
-                    <Link to="/login">
-                        <button className="bg-green-500 text-[#0b142b] px-8 py-3 rounded-lg font-bold text-lg shadow-lg hover:bg-green-600">
-                            Get Started
-                        </button>
-                    </Link>
+                    <button
+                        onClick={handleGetStarted}
+                        className="bg-green-500 text-[#0b142b] px-8 py-3 rounded-lg font-bold text-lg shadow-lg hover:bg-green-600"
+                    >
+                        Get Started
+                    </button>
                 </div>
             </section>
 
@@ -46,8 +55,9 @@ function Home() {
                             <Link
                                 key={course.id}
                                 to={`/courses/${course.id}`}
-                                className={`bg-white rounded-xl shadow-md text-center p-6 transition transform ${isHover ? "-translate-y-2 shadow-xl" : ""
-                                    }`}
+                                className={`bg-white rounded-xl shadow-md text-center p-6 transition transform ${
+                                    isHover ? "-translate-y-2 shadow-xl" : ""
+                                }`}
                                 onMouseEnter={() => setHoveredCourse(idx)}
                                 onMouseLeave={() => setHoveredCourse(null)}
                             >
@@ -95,8 +105,9 @@ function Home() {
                                 onKeyDown={(e) => {
                                     if (e.key === "Enter" || e.key === " ") navigate(`/pathway/${pathway.id}`);
                                 }}
-                                className={`bg-white rounded-xl shadow-md text-center p-6 transition transform cursor-pointer flex flex-col h-full ${isHover ? "-translate-y-2 shadow-xl" : ""
-                                    }`}
+                                className={`bg-white rounded-xl shadow-md text-center p-6 transition transform cursor-pointer flex flex-col h-full ${
+                                    isHover ? "-translate-y-2 shadow-xl" : ""
+                                }`}
                                 onMouseEnter={() => setHoveredPathway(idx)}
                                 onMouseLeave={() => setHoveredPathway(null)}
                             >

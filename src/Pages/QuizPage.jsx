@@ -63,17 +63,10 @@ const QuizPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-indigo-100 py-10 px-6">
+    <div className="p-6 min-h-screen bg-gray-50">
       <div className="max-w-5xl mx-auto">
         {/* Back to Module */}
-        <div className="mb-6">
-          <button
-            onClick={() => navigate(-1)}
-            className="text-sm text-blue-600 hover:underline flex items-center gap-1"
-          >
-            &larr; Back to Module
-          </button>
-        </div>
+
 
         {/* Quiz Heading */}
         <h1 className="text-4xl font-extrabold text-gray-800 mb-8 text-center">
