@@ -54,12 +54,19 @@ export default function useUserApi() {
   }, []);
 
   const fetchAllUsers = useCallback(async () => {
-    const res = await api.get("/api/admin/users");
+    const res = await api.get("/api/auth/users");
     return res.data.users || res.data;
   }, []);
 
   const deleteUserById = useCallback(async (userId) => {
-    const res = await api.delete(`/api/admin/user/${userId}`);
+    const res = await api.delete(`/api/auth/delete`, {
+      data: { userID: userId },
+    });
+    return res.data;
+  }, []);
+
+  const updateUserById = useCallback(async (payload) => {
+    const res = await api.put(`/api/auth/update`, payload);
     return res.data;
   }, []);
 
@@ -68,6 +75,7 @@ export default function useUserApi() {
     registerPriviledgedUser,
     fetchAllUsers,
     deleteUserById,
+    updateUserById,
     loginUser,
     resetPassword,
     getCurrentUser,

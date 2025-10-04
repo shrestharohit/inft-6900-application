@@ -47,8 +47,12 @@ const AdminUserManagement = () => {
     msg: "",
   });
 
-  const { registerPriviledgedUser, fetchAllUsers, deleteUserById } =
-    useUserApi();
+  const {
+    registerPriviledgedUser,
+    fetchAllUsers,
+    deleteUserById,
+    updateUserById,
+  } = useUserApi();
 
   useEffect(() => {
     let mounted = true;
@@ -107,21 +111,32 @@ const AdminUserManagement = () => {
 
   const handleSave = () => {
     if (!validate()) return;
-    registerPriviledgedUser(form)
-      .then((res) => {
-        const created = res.user || res;
-        setUsers((prev) => [created, ...prev]);
-      })
-      .catch((err) => {
-        console.error("Failed to create user", err);
-      });
+    if (editingIndex === null) {
+      registerPriviledgedUser(form)
+        .then((res) => {
+          const created = res.user || res;
+          setUsers((prev) => [created, ...prev]);
+        })
+        .catch((err) => {
+          console.error("Failed to create user", err);
+        });
+    } else {
+      updateUserById({ ...form, userID: users[editingIndex].userID })
+        .then((res) => {
+          const created = res.user || res;
+          setUsers((prev) => [created, ...prev]);
+        })
+        .catch((err) => {
+          console.error("Failed to create user", err);
+        });
+    }
     handleClose();
   };
 
   const handleDelete = (idx) => {
     const u = users[idx];
     if (!window.confirm(`Delete ${u.email}?`)) return;
-    deleteUserById(u.id)
+    deleteUserById(u.userID)
       .then(() => {
         setUsers((prev) => prev.filter((_, i) => i !== idx));
       })
@@ -182,7 +197,7 @@ const AdminUserManagement = () => {
               ) : (
                 users.map((u, idx) => (
                   <TableRow key={u.id || idx} hover>
-                    <TableCell>{u.fullName}</TableCell>
+                    <TableCell>{u.firstName}</TableCell>
                     <TableCell>{u.email}</TableCell>
                     <TableCell>{u.role}</TableCell>
                     <TableCell align="right">

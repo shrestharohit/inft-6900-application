@@ -13,13 +13,53 @@ function Home() {
 
   const { fetchPopularCoursesAndPathway } = useCourseApi();
 
-  useEffect(() => {
-    const res = fetchPopularCoursesAndPathway();
-    console.log(res);
-  }, []);
+  const [apiPopularCourses, setApiPopularCourses] = useState(null);
+  const [apiPopularPathways, setApiPopularPathways] = useState(null);
 
-  const popularCourses = dummyCourses.slice(0, 3);
-  const trendingPathways = dummyPathways;
+  useEffect(() => {
+    let mounted = true;
+    const load = async () => {
+      try {
+        const res = await fetchPopularCoursesAndPathway();
+        if (!mounted) return;
+        setApiPopularCourses(res?.popularCourses || null);
+        setApiPopularPathways(res?.popularPathways || res?.pathways || null);
+      } catch (e) {
+        console.error("Failed to load popular courses/pathways", e);
+        if (mounted) {
+          setApiPopularCourses(null);
+          setApiPopularPathways(null);
+        }
+      }
+    };
+
+    load();
+    return () => (mounted = false);
+  }, [fetchPopularCoursesAndPathway]);
+
+  // UI-ready data: map API objects to the shape the page expects (id, name, img)
+  const popularCourses =
+    apiPopularCourses
+      ?.map((c, i) => {
+        return {
+          id: String(c.courseID || c.id),
+          name: c.title || c.name || `Course ${id}`,
+          img: webdevremovebg,
+          meta: c,
+        };
+      })
+      .slice(0, 3) || [];
+
+  const trendingPathways =
+    apiPopularPathways?.map((p) => {
+      return {
+        id: String(p.pathwayID || p.id),
+        name: p.name || p.title,
+        img: webdevremovebg,
+        description: p.description || "",
+        meta: p,
+      };
+    }) || [];
 
   const toId = (c) =>
     typeof c === "string" || typeof c === "number"

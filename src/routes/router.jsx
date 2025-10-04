@@ -24,7 +24,7 @@ import AdminPathwayApproval from "../Pages/Admin/adminPathwayApproval.jsx"; // â
 
 // Student imports
 import Dashboard from "../Pages/Dashboard";
-//import CourseLayout from "../Pages/CourseLayout";
+import CourseLayout from "../Pages/CourseLayout";
 import CoursePage from "../Pages/CoursePage";
 import CourseContentPage from "../Pages/CourseContentPage";
 import ModulePage from "../Pages/ModulePage";
