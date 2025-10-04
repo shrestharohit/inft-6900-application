@@ -187,13 +187,15 @@ export default function CourseManagement() {
 
   // eligibility = must have at least one module with pages
   const isEligibleForApproval = (courseName) => {
-    const relatedModules = modules.filter((m) => m.courseName === courseName);
+    return true; //bypass for testing, need one api that can get all the list of modules without course ids.
+    const relatedModules = modules.filter((m) => m.title === courseName);
     if (relatedModules.length === 0) return false;
-    return relatedModules.every((m) => m.pages && m.pages.length > 0);
+    // return relatedModules.every((m) => m.pages && m.pages.length > 0);
+    return relatedModules;
   };
 
   const handleRequestApproval = (index) => {
-    const courseName = courses[index].name;
+    const courseName = courses[index].title;
     if (!isEligibleForApproval(courseName)) {
       alert(
         "❌ Cannot request approval: add modules with at least one page each."
@@ -201,14 +203,14 @@ export default function CourseManagement() {
       return;
     }
 
-    const courseId = courses[index]?.id;
+    const courseId = courses[index]?.courseID;
     if (!courseId) return alert("Missing course id");
-    updateCourse(courseId, { status: "Request for Approval" })
+    updateCourse(courseId, { status: "wait_for_approval" })
       .then((res) => {
         const updated = res.course ||
-          res || { ...courses[index], status: "Request for Approval" };
+          res || { ...courses[index], status: "wait_for_approval" };
         setCourses((prev) => prev.map((c, i) => (i === index ? updated : c)));
-        syncModulesForCourse(courseName, "Request for Approval");
+        syncModulesForCourse(courseName, "wait_for_approval");
       })
       .catch((err) => {
         console.error("Failed to request approval", err);
@@ -403,7 +405,7 @@ export default function CourseManagement() {
                       course.status === "Inactive") && (
                       <Tooltip
                         title={
-                          isEligibleForApproval(course.name)
+                          isEligibleForApproval(course.title)
                             ? "Submit for admin review"
                             : "Add modules with at least one page first"
                         }
@@ -414,7 +416,7 @@ export default function CourseManagement() {
                             size="small"
                             color="success"
                             onClick={() => handleRequestApproval(index)}
-                            disabled={!isEligibleForApproval(course.name)}
+                            disabled={!isEligibleForApproval(course.courseID)}
                           >
                             Request Approval
                           </Button>

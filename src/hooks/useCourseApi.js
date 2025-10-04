@@ -32,6 +32,11 @@ export default function useCourseApi() {
     return res.data;
   }, []);
 
+  const fetchAllModules = useCallback(async () => {
+    const res = await api.get('/api/module/course/1');
+    return res.data;
+  }, []);
+
   const fetchCourseMeta = useCallback(async () => {
     const res = await api.get('/api/course/_meta');
     return res.data;
@@ -54,6 +59,7 @@ export default function useCourseApi() {
     updateCourse,
     fetchCourse,
     fetchAllCourses,
+    fetchAllModules,
     fetchCourseMeta,
     fetchCourseCategories,
     fetchPopularCoursesAndPathway

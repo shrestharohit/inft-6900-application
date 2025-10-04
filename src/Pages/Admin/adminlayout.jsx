@@ -14,14 +14,14 @@ import {
 import { useAuth } from "../../contexts/AuthContext";
 
 const NAV_ITEMS = [
-    { label: "Dashboard", to: "/admin", icon: <Dashboard /> },
-    { label: "Courses", to: "/admin/courses", icon: <LibraryBooks /> },
-    { label: "Enrollments", to: "/admin/enrollments", icon: <School /> },
+    // { label: "Dashboard", to: "/admin", icon: <Dashboard /> },
+    // { label: "Courses", to: "/admin/courses", icon: <LibraryBooks /> },
+    // { label: "Enrollments", to: "/admin/enrollments", icon: <School /> },
     { label: "Users", to: "/admin/users", icon: <People /> },
-    { label: "Messages", to: "/admin/messages", icon: <Mail /> },
+    // { label: "Messages", to: "/admin/messages", icon: <Mail /> },
     { label: "Profile", to: "/admin/profile", icon: <Settings /> }, // 🔄 updated
     { label: "Course Approvals", to: "/admin/course-approvals", icon: <LibraryBooks /> },
-    { label: "Module Approvals", to: "/admin/module-approvals", icon: <School /> },
+    // { label: "Module Approvals", to: "/admin/module-approvals", icon: <School /> },
     { label: "Quiz Approvals", to: "/admin/quiz-approvals", icon: <Quiz /> },
     { label: "Pathways Approvals", to: "/admin/pathways", icon: <LibraryBooks /> },
 ];
