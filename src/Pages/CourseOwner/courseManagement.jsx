@@ -119,7 +119,7 @@ export default function CourseManagement() {
     }
 
     if (editingIndex !== null) {
-      const courseId = courses[editingIndex]?.id;
+      const courseId = courses[editingIndex]?.courseID;
       if (!courseId) {
         alert("Cannot update course: missing course id");
         return;
@@ -128,7 +128,7 @@ export default function CourseManagement() {
         title: form.name,
         pathwayId: null,
         category: form.category,
-        level: form.level,
+        level: form.level.toLowerCase(),
         outline: form.outline,
         userId: loggedInUser?.id,
         status: "draft",
@@ -151,9 +151,9 @@ export default function CourseManagement() {
         title: form.name,
         pathwayId: null,
         category: form.category,
-        level: form.level,
+        level: form.level.toLowerCase(),
         outline: form.outline,
-        userId: loggedInUser?.id,
+        userID: loggedInUser?.id,
         status: "draft",
       })
         .then((res) => {
@@ -174,8 +174,14 @@ export default function CourseManagement() {
   };
 
   const handleEdit = (index) => {
-    const { name, category, outline, level } = courses[index];
-    setForm({ name, category, outline, level });
+    const { title, category, outline, level } = courses[index];
+    console.log(courses[index]);
+    const mapper = {
+      advanced: "Advanced",
+      beginner: "Beginner",
+      intermediate: "Intermediate",
+    };
+    setForm({ name: title, category, outline, level: mapper[level] });
     setEditingIndex(index);
   };
 
@@ -361,7 +367,7 @@ export default function CourseManagement() {
             ) : (
               courses.map((course, index) => (
                 <TableRow key={index} hover>
-                  <TableCell>{course.name}</TableCell>
+                  <TableCell>{course.title}</TableCell>
                   <TableCell>{course.category}</TableCell>
                   <TableCell
                     sx={{

@@ -115,7 +115,7 @@ const AdminUserManagement = () => {
       registerPriviledgedUser(form)
         .then((res) => {
           const created = res.user || res;
-          setUsers((prev) => [created, ...prev]);
+          setUsers((prev) => [...prev, created]);
         })
         .catch((err) => {
           console.error("Failed to create user", err);
@@ -124,7 +124,7 @@ const AdminUserManagement = () => {
       updateUserById({ ...form, userID: users[editingIndex].userID })
         .then((res) => {
           const created = res.user || res;
-          setUsers((prev) => [created, ...prev]);
+          setUsers((prev) => [...prev, created]);
         })
         .catch((err) => {
           console.error("Failed to create user", err);
