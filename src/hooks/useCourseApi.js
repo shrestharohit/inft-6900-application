@@ -32,8 +32,8 @@ export default function useCourseApi() {
     return res.data;
   }, []);
 
-  const fetchAllModules = useCallback(async () => {
-    const res = await api.get('/api/module/course/1');
+  const fetchAllModules = useCallback(async (ownerID) => {
+    const res = await api.get(`/api/module/owner/${ownerID}`);
     return res.data;
   }, []);
 

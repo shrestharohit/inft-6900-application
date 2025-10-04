@@ -31,6 +31,7 @@ import Autocomplete from "@mui/material/Autocomplete";
 
 import useModuleApi from "../../hooks/useModuleApi";
 import useCourseApi from "../../hooks/useCourseApi";
+import { useAuth } from "../../contexts/AuthContext";
 
 const STATUS_OPTIONS = ["draft", "wait_for_approval", "active", "inactive"];
 
@@ -43,6 +44,7 @@ export default function ModuleManagement() {
 
   const { registerModule, updateModule } = useModuleApi();
   const { fetchAllModules, fetchAllCourses } = useCourseApi();
+    const { loggedInUser } = useAuth();
 
   const [moduleForm, setModuleForm] = useState({
     courseID: "",
@@ -77,7 +79,7 @@ export default function ModuleManagement() {
           ? coursesResponse
           : coursesResponse?.courses || [];
 
-        const modulesResponse = await fetchAllModules();
+        const modulesResponse = await fetchAllModules(loggedInUser?.id);
         const modulesList = Array.isArray(modulesResponse)
           ? modulesResponse
           : modulesResponse?.modules || [];
@@ -257,7 +259,7 @@ export default function ModuleManagement() {
         alert("Module created successfully!");
       }
 
-      resetForm();
+      // resetForm();
     } catch (err) {
       console.error("Failed to save module", err);
       alert(
@@ -282,20 +284,20 @@ export default function ModuleManagement() {
     setEditingModuleIndex(index);
   };
 
-  const resetForm = () => {
-    setModuleForm({
-      courseID: "",
-      title: "",
-      description: "",
-      moduleNumber: "",
-      expectedHours: "",
-      status: "draft",
-      content: [],
-    });
-    setPageForm({ title: "", content: "", mediaUrl: "" });
-    setEditingModuleIndex(null);
-    setEditingPageIndex(null);
-  };
+  // const resetForm = () => {
+  //   setModuleForm({
+  //     courseID: "",
+  //     title: "",
+  //     description: "",
+  //     moduleNumber: "",
+  //     expectedHours: "",
+  //     status: "draft",
+  //     content: [],
+  //   });
+  //   setPageForm({ title: "", content: "", mediaUrl: "" });
+  //   setEditingModuleIndex(null);
+  //   setEditingPageIndex(null);
+  // };
 
   // Get existing module titles for autocomplete
   const existingModuleTitles = modules
@@ -500,9 +502,9 @@ export default function ModuleManagement() {
                   ? "Update Module"
                   : "Create Module"}
               </Button>
-              <Button variant="outlined" color="secondary" onClick={resetForm}>
+              {/* <Button variant="outlined" color="secondary" onClick={resetForm}>
                 {editingModuleIndex !== null ? "Cancel Edit" : "Clear Form"}
-              </Button>
+              </Button> */}
             </Stack>
           </Stack>
         </form>
@@ -522,11 +524,11 @@ export default function ModuleManagement() {
           <TableHead>
             <TableRow>
               <TableCell>Course</TableCell>
-              <TableCell>Module #</TableCell>
+              <TableCell>Module</TableCell>
               <TableCell>Title</TableCell>
               <TableCell>Description</TableCell>
-              <TableCell>Expected Hours</TableCell>
-              <TableCell>Pages</TableCell>
+              {/* <TableCell>Expected Hours</TableCell> */}
+              <TableCell>No of Pages</TableCell>
               <TableCell>Status</TableCell>
               <TableCell align="right">Actions</TableCell>
             </TableRow>
@@ -545,7 +547,7 @@ export default function ModuleManagement() {
                       (module.description.length > 50 ? "..." : "")
                     : "—"}
                 </TableCell>
-                <TableCell>{module.expectedHours || "—"}</TableCell>
+                {/* <TableCell>{module.expectedHours || "—"}</TableCell> */}
                 <TableCell>{module.content?.length || 0}</TableCell>
                 <TableCell>
                   <Typography

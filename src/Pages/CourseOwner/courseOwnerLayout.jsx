@@ -14,14 +14,14 @@ import {
 import { useAuth } from "../../contexts/AuthContext";
 
 const NAV_ITEMS = [
-    { label: "Dashboard", to: "/courseowner", icon: <Dashboard /> },
+    // { label: "Dashboard", to: "/courseowner", icon: <Dashboard /> },
     { label: "Courses", to: "/courseowner/courses", icon: <LibraryBooks /> },
     { label: "Modules", to: "/courseowner/modules", icon: <ViewModule /> },
     { label: "Quizzes", to: "/courseowner/quizzes", icon: <Quiz /> },
-    { label: "Pathways", to: "/courseowner/pathways", icon: <LibraryBooks /> },
-    { label: "Announcements", to: "/courseowner/announcements", icon: <LibraryBooks /> },
-    { label: "Discussions", to: "/courseowner/discussions", icon: <BarChart /> },
-    { label: "Questions", to: "/courseowner/questions", icon: <QuestionAnswer /> }, // ✅ badge target
+    // { label: "Pathways", to: "/courseowner/pathways", icon: <LibraryBooks /> },
+    // { label: "Announcements", to: "/courseowner/announcements", icon: <LibraryBooks /> },
+    // { label: "Discussions", to: "/courseowner/discussions", icon: <BarChart /> },
+    // { label: "Questions", to: "/courseowner/questions", icon: <QuestionAnswer /> }, // ✅ badge target
     { label: "Profile", to: "/courseowner/profile", icon: <Settings /> },
 ];
 
