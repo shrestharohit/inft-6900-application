@@ -78,11 +78,20 @@ export default function QuizManagement() {
   };
 
   const handleOptionChange = (index, field, value) => {
-    const newOptions = questionForm.options.map((opt, i) =>
-      i === index ? { ...opt, [field]: value } : opt
-    );
-    setQuestionForm({ ...questionForm, options: newOptions });
-  };
+  let newOptions = [...questionForm.options];
+
+  if (field === "isCorrect" && value === true) {
+    // when one option is selected as correct, clear others
+    newOptions = newOptions.map((opt, i) => ({
+      ...opt,
+      isCorrect: i === index,
+    }));
+  } else {
+    newOptions[index] = { ...newOptions[index], [field]: value };
+  }
+
+  setQuestionForm({ ...questionForm, options: newOptions });
+};
 
   const addOption = () => {
     if (questionForm.options.length >= 4) {
@@ -93,6 +102,15 @@ export default function QuizManagement() {
       ...prev,
       options: [...prev.options, { text: "", isCorrect: false, feedback: "" }],
     }));
+  };
+
+  const deleteOption = (index) => {
+    if (questionForm.options.length <= 2) {
+      alert("⚠️ A question must have at least 2 options.");
+      return;
+    }
+    const updatedOptions = questionForm.options.filter((_, i) => i !== index);
+    setQuestionForm({ ...questionForm, options: updatedOptions });
   };
 
   const handleQuestionImage = (e) => {
@@ -333,6 +351,14 @@ export default function QuizManagement() {
                       onChange={(e) => handleOptionChange(i, "feedback", e.target.value)}
                       fullWidth
                     />
+                    {/* Delete Option Button */}
+                    <IconButton
+                      color="error"
+                      onClick={() => deleteOption(i)}
+                      disabled={questionForm.options.length <= 2}
+                    >
+                      <DeleteOutlineIcon />
+                    </IconButton>
                   </Stack>
                 ))}
               </Stack>

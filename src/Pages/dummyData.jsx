@@ -1,10 +1,17 @@
-// src/data/dummyData.js
 import webdevremovebg from "../assets/Images/webdevremovebg.png";
 import dataanaremovebg from "../assets/Images/dataanaremovebg.png";
 import aiMlImg from "../assets/Images/aimlremovebg.png";
 import techSkillsImg from "../assets/Images/techskills.png";
 import analyticalSkillsImg from "../assets/Images/analyticalskills.png";
 import businessSkillsImg from "../assets/Images/businessskills.png";
+
+/**
+ * Utility: Load reviews from localStorage if present, else use defaults
+ */
+const loadReviews = (courseId, defaultReviews = []) => {
+    const stored = localStorage.getItem(`reviews_${courseId}`);
+    return stored ? JSON.parse(stored) : defaultReviews;
+};
 
 export const dummyCourses = [
     {
@@ -17,17 +24,20 @@ export const dummyCourses = [
         rating: 4.5,
         numEnrolled: 1200,
         owner: "Course Owner 1",
+        ownerId: "17",                    // ✅ match loggedInUser.id
+        ownerEmail: "hideaki.sato0312@gmail.com",      // ✅ match loggedInUser.email
         img: webdevremovebg,
         outline: {
             modules: "10 modules",
             contentType: "Videos, Quizzes, Assignments",
             structure: ["HTML Basics", "CSS Basics", "JavaScript Basics", "Project"],
         },
-        reviews: [
+        reviews: loadReviews("1", [
             { user: "John Doe", rating: 4, comment: "Great course for beginners!" },
             { user: "Jane Smith", rating: 5, comment: "Loved it! Easy to follow." },
-        ],
+        ]),
     },
+
     {
         id: "2",
         name: "Data Analytics",
@@ -44,9 +54,9 @@ export const dummyCourses = [
             contentType: "Videos, Quizzes",
             structure: ["Intro to Data", "SQL Basics", "Data Cleaning"],
         },
-        reviews: [
+        reviews: loadReviews("2", [
             { user: "Alex Johnson", rating: 4, comment: "Very insightful course!" },
-        ],
+        ]),
     },
     {
         id: "3",
@@ -64,7 +74,7 @@ export const dummyCourses = [
             contentType: "Labs, Projects",
             structure: ["Regression", "Classification", "Clustering", "Capstone"],
         },
-        reviews: [],
+        reviews: loadReviews("3"),
     },
     {
         id: "4",
@@ -82,7 +92,7 @@ export const dummyCourses = [
             contentType: "Hands-on Labs",
             structure: ["HDFS Basics", "MapReduce", "Spark", "Mini Project"],
         },
-        reviews: [],
+        reviews: loadReviews("4"),
     },
     {
         id: "5",
@@ -100,7 +110,7 @@ export const dummyCourses = [
             contentType: "Videos, Quizzes",
             structure: ["Intro to Accounting", "Ledgers", "Balance Sheets"],
         },
-        reviews: [],
+        reviews: loadReviews("5"),
     },
     {
         id: "6",
@@ -118,7 +128,7 @@ export const dummyCourses = [
             contentType: "Case Studies",
             structure: ["Financial Ratios", "Business Planning", "Case Project"],
         },
-        reviews: [],
+        reviews: loadReviews("6"),
     },
     {
         id: "7",
@@ -136,7 +146,7 @@ export const dummyCourses = [
             contentType: "Videos + Labs",
             structure: ["CI/CD Basics", "Docker", "Kubernetes"],
         },
-        reviews: [],
+        reviews: loadReviews("7"),
     },
     {
         id: "8",
@@ -154,7 +164,7 @@ export const dummyCourses = [
             contentType: "Videos + Projects",
             structure: ["Intro to Power BI", "DAX Basics", "Dashboard Project"],
         },
-        reviews: [],
+        reviews: loadReviews("8"),
     },
     {
         id: "9",
@@ -172,22 +182,19 @@ export const dummyCourses = [
             contentType: "Videos + Labs",
             structure: ["AWS Basics", "Azure", "Google Cloud", "Capstone"],
         },
-        reviews: [],
+        reviews: loadReviews("9"),
     },
 ];
 
-
-// ✅ 3 dummy pathways (matching AuthContext.map)
-
+// ✅ Pathways can stay static for now (or we can also hook them to localStorage if needed)
 export const dummyPathways = [
     {
         id: "101",
         name: "Tech Skills Pathway",
-        description:
-            "Start from basics and advance through coding, DevOps, and AI/ML.",
+        description: "Start from basics and advance through coding, DevOps, and AI/ML.",
         img: techSkillsImg,
         rating: 4.6,
-        knowledgeArea: "Tech Skills", // ✅ added
+        knowledgeArea: "Tech Skills",
         reviews: [
             { user: "Alice", rating: 5, comment: "Fantastic collection of courses!" },
             { user: "Bob", rating: 4, comment: "Very useful for DevOps beginners." },
@@ -213,10 +220,8 @@ export const dummyPathways = [
         description: "Learn Data Analytics, Big Data, and Power BI.",
         img: analyticalSkillsImg,
         rating: 4.8,
-        knowledgeArea: "Analytical Skills", // ✅ added
-        reviews: [
-            { user: "Sara", rating: 5, comment: "Helped me land my analyst job!" },
-        ],
+        knowledgeArea: "Analytical Skills",
+        reviews: [{ user: "Sara", rating: 5, comment: "Helped me land my analyst job!" }],
         outline: {
             modules: "3 stages",
             contentType: "Courses, Labs, Projects",
@@ -238,7 +243,7 @@ export const dummyPathways = [
         description: "Master Accounting and Finance for professional growth.",
         img: businessSkillsImg,
         rating: 4.4,
-        knowledgeArea: "Business Skills", // ✅ added
+        knowledgeArea: "Business Skills",
         reviews: [],
         outline: {
             modules: "2 stages",

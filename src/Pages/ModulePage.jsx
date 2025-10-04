@@ -27,15 +27,7 @@ const ModulePage = () => {
 
   return (
     <div className="p-6 max-w-5xl mx-auto">
-      {/* Back to Course Content */}
-      <div className="mb-6">
-        <Link
-          to={`/courses/${courseId}/content`}
-          className="text-sm text-blue-600 hover:underline flex items-center gap-1"
-        >
-          &larr; Back to Course Content
-        </Link>
-      </div>
+    
 
       {/* Module Heading */}
       <h1 className="text-4xl font-extrabold text-gray-800 mb-3">{module.title}</h1>

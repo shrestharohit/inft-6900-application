@@ -1,77 +1,111 @@
 import React from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
-import { Avatar, Menu, MenuItem, Tooltip } from "@mui/material";
+import { Avatar, Menu, MenuItem, Tooltip, Badge } from "@mui/material";
 import {
     Dashboard,
     LibraryBooks,
     ViewModule,
     Quiz,
+    QuestionAnswer,
     BarChart,
     Settings,
-    ExitToApp
+    ExitToApp,
 } from "@mui/icons-material";
+import { useAuth } from "../../contexts/AuthContext";
 
 const NAV_ITEMS = [
     { label: "Dashboard", to: "/courseowner", icon: <Dashboard /> },
     { label: "Courses", to: "/courseowner/courses", icon: <LibraryBooks /> },
     { label: "Modules", to: "/courseowner/modules", icon: <ViewModule /> },
     { label: "Quizzes", to: "/courseowner/quizzes", icon: <Quiz /> },
-    { label: "Reports", to: "/courseowner/reports", icon: <BarChart /> },
-    { label: "Settings", to: "/courseowner/settings", icon: <Settings /> },
+    { label: "Pathways", to: "/courseowner/pathways", icon: <LibraryBooks /> },
+    { label: "Announcements", to: "/courseowner/announcements", icon: <LibraryBooks /> },
+    { label: "Discussions", to: "/courseowner/discussions", icon: <BarChart /> },
+    { label: "Questions", to: "/courseowner/questions", icon: <QuestionAnswer /> }, // ✅ badge target
+    { label: "Profile", to: "/courseowner/profile", icon: <Settings /> },
 ];
-
-const SIDEBAR_WIDTH = 240;
 
 export default function CourseOwnerLayout() {
     const [anchorEl, setAnchorEl] = React.useState(null);
     const open = Boolean(anchorEl);
     const navigate = useNavigate();
+    const { clearUserDataFromState } = useAuth();
+
+    const unansweredCount = React.useMemo(() => {
+        let total = 0;
+        Object.keys(localStorage).forEach((key) => {
+            if (key.startsWith("questions_")) {
+                const questions = JSON.parse(localStorage.getItem(key)) || [];
+                const pending = questions.filter((q) => !q.reply).length;
+                total += pending;
+            }
+        });
+        return total;
+    }, []);
 
     const handleMenuOpen = (e) => setAnchorEl(e.currentTarget);
     const handleMenuClose = () => setAnchorEl(null);
 
     const handleEditProfile = () => {
         handleMenuClose();
-        navigate("/profilemanagement");
+        navigate("/courseowner/profile");
     };
 
     const handleLogout = () => {
         handleMenuClose();
-        localStorage.removeItem("userToken");
-        sessionStorage.removeItem("userToken");
-        navigate("/");
+        clearUserDataFromState();
     };
 
     return (
-        <div style={styles.shell}>
-            {/* Sticky / fixed sidebar */}
-            <aside style={styles.sidebar}>
-                <div style={styles.brand}>
-                    <div style={styles.brandText}>BrainWave Course Owner</div>
+        <div className="min-h-screen bg-gray-100 flex">
+            {/* Sidebar */}
+            <aside className="fixed top-0 left-0 bottom-0 w-60 bg-gray-900 text-gray-200 flex flex-col border-r border-white/10">
+                {/* Brand */}
+                <div className="flex items-center gap-3 px-4 py-5 border-b border-white/10">
+                    <span className="font-bold tracking-wide text-white">
+                        BrainWave Course Owner
+                    </span>
                 </div>
 
-                <nav style={styles.nav}>
-                    {NAV_ITEMS.map((item) => (
-                        <NavLink
-                            key={item.to}
-                            to={item.to}
-                            end
-                            style={({ isActive }) => ({
-                                ...styles.navItem,
-                                backgroundColor: isActive ? "#2d3748" : "transparent",
-                            })}
-                        >
-                            <span style={styles.icon}>{item.icon}</span>
-                            <span>{item.label}</span>
-                        </NavLink>
-                    ))}
+                {/* Navigation */}
+                <nav className="flex-1 p-2 overflow-y-auto">
+                    {NAV_ITEMS.map((item) => {
+                        const isQuestions = item.label === "Questions";
+                        return (
+                            <NavLink
+                                key={item.to}
+                                to={item.to}
+                                end
+                                className={({ isActive }) =>
+                                    `flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors ${isActive
+                                        ? "bg-gray-700 text-white"
+                                        : "hover:bg-gray-800 hover:text-white text-gray-300"
+                                    }`
+                                }
+                            >
+                                {/* If it's Questions, wrap icon with Badge */}
+                                {isQuestions && unansweredCount > 0 ? (
+                                    <Badge
+                                        badgeContent={unansweredCount}
+                                        color="error"
+                                        overlap="circular"
+                                    >
+                                        <span className="text-gray-400">{item.icon}</span>
+                                    </Badge>
+                                ) : (
+                                    <span className="text-gray-400">{item.icon}</span>
+                                )}
+                                <span>{item.label}</span>
+                            </NavLink>
+                        );
+                    })}
                 </nav>
             </aside>
 
-            {/* Main content (shifted right to account for fixed sidebar) */}
-            <main style={styles.content}>
-                {/* Floating top-right profile avatar */}
-                <div style={styles.topRightControls}>
+            {/* Main content */}
+            <main className="ml-60 flex-1 p-6">
+                {/* Top-right controls */}
+                <div className="sticky top-4 flex justify-end mb-4 z-20">
                     <Tooltip title="Account">
                         <Avatar
                             onClick={handleMenuOpen}
@@ -86,83 +120,18 @@ export default function CourseOwnerLayout() {
                         />
                     </Tooltip>
                     <Menu anchorEl={anchorEl} open={open} onClose={handleMenuClose}>
-                        <MenuItem onClick={handleEditProfile}>Edit Profile</MenuItem>
+                        <MenuItem onClick={handleEditProfile}>
+                            <Settings fontSize="small" className="mr-2" />
+                            Profile
+                        </MenuItem>
                         <MenuItem onClick={handleLogout}>
-                            <ExitToApp fontSize="small" style={{ marginRight: 8 }} />
+                            <ExitToApp fontSize="small" className="mr-2" />
                             Logout
                         </MenuItem>
                     </Menu>
                 </div>
-
-                {/* Routed course owner pages go here */}
                 <Outlet />
             </main>
         </div>
     );
 }
-
-const styles = {
-    shell: {
-        minHeight: "100vh",
-        background: "#f7fafc",
-    },
-    sidebar: {
-        position: "fixed",
-        top: 0,
-        left: 0,
-        bottom: 0,
-        width: SIDEBAR_WIDTH,
-        backgroundColor: "#1a202c",
-        color: "#e2e8f0",
-        display: "flex",
-        flexDirection: "column",
-        borderRight: "1px solid rgba(255,255,255,0.06)",
-    },
-    brand: {
-        display: "flex",
-        alignItems: "center",
-        gap: 12,
-        padding: "18px 16px",
-        borderBottom: "1px solid rgba(255,255,255,0.06)",
-    },
-    brandText: {
-        fontWeight: 700,
-        letterSpacing: "0.2px",
-        color: "#fff",
-    },
-    nav: {
-        flex: 1,
-        padding: "8px 6px",
-        overflowY: "auto",
-    },
-    navItem: {
-        display: "flex",
-        alignItems: "center",
-        gap: 12,
-        padding: "10px 12px",
-        margin: "4px 6px",
-        textDecoration: "none",
-        color: "#e2e8f0",
-        borderRadius: 8,
-        transition: "background 0.15s ease",
-    },
-    icon: {
-        display: "inline-flex",
-        alignItems: "center",
-        color: "#a0aec0",
-        width: 22,
-    },
-    content: {
-        marginLeft: SIDEBAR_WIDTH,
-        padding: "24px",
-        minHeight: "100vh",
-    },
-    topRightControls: {
-        position: "sticky",
-        top: 16,
-        display: "flex",
-        justifyContent: "flex-end",
-        zIndex: 2,
-        marginBottom: 16,
-    },
-};
