@@ -11,6 +11,7 @@ import {
     Settings,
     ExitToApp,
 } from "@mui/icons-material";
+import { useAuth } from "../../contexts/AuthContext";
 
 const NAV_ITEMS = [
     { label: "Dashboard", to: "/courseowner", icon: <Dashboard /> },
@@ -28,11 +29,10 @@ export default function CourseOwnerLayout() {
     const [anchorEl, setAnchorEl] = React.useState(null);
     const open = Boolean(anchorEl);
     const navigate = useNavigate();
+    const { clearUserDataFromState } = useAuth();
 
-    // ✅ Load unanswered questions count from localStorage
     const unansweredCount = React.useMemo(() => {
         let total = 0;
-        // loop through all courses in localStorage
         Object.keys(localStorage).forEach((key) => {
             if (key.startsWith("questions_")) {
                 const questions = JSON.parse(localStorage.getItem(key)) || [];
@@ -53,9 +53,7 @@ export default function CourseOwnerLayout() {
 
     const handleLogout = () => {
         handleMenuClose();
-        localStorage.removeItem("userToken");
-        sessionStorage.removeItem("userToken");
-        navigate("/");
+        clearUserDataFromState();
     };
 
     return (
@@ -132,8 +130,6 @@ export default function CourseOwnerLayout() {
                         </MenuItem>
                     </Menu>
                 </div>
-
-                {/* Routed course owner pages */}
                 <Outlet />
             </main>
         </div>

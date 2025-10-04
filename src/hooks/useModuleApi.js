@@ -2,13 +2,13 @@ import { useCallback } from 'react';
 import api from '../api/config';
 
 export default function useModuleApi() {
-  const registerModule = useCallback(async (courseID, payload) => {
-    const res = await api.post(`/api/course/${courseID}/module/register`, payload);
+  const registerModule = useCallback(async (payload) => {
+    const res = await api.post(`/api/module/register`, payload);
     return res.data;
   }, []);
 
-  const updateModule = useCallback(async (courseID, moduleNumber, payload) => {
-    const res = await api.put(`/api/course/${courseID}/module/${moduleNumber}`, payload);
+  const updateModule = useCallback(async (moduleNumber, payload) => {
+    const res = await api.put(`/api/module/update/${moduleNumber}`, payload);
     return res.data;
   }, []);
 
