@@ -63,7 +63,7 @@ export default function AdminProfile() {
         userID: loggedInUser.id,
         role: loggedInUser.role,
       });
-      setUserDataInState(response);
+      setUserDataInState(response.user);
       alert("Profile updated successfully!");
     } catch (err) {
       alert("Failed to update profile");

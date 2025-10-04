@@ -150,6 +150,12 @@ const AdminUserManagement = () => {
       });
   };
 
+  const roleMapper = {
+    student: "Student",
+    course_owner: "Course Owner",
+    admin: "Admin",
+  };
+
   return (
     <Box sx={styles.page}>
       <Box sx={styles.card}>
@@ -197,9 +203,9 @@ const AdminUserManagement = () => {
               ) : (
                 users.map((u, idx) => (
                   <TableRow key={u.id || idx} hover>
-                    <TableCell>{u.firstName}</TableCell>
+                    <TableCell>{u.firstName} {u.lastName}</TableCell>
                     <TableCell>{u.email}</TableCell>
-                    <TableCell>{u.role}</TableCell>
+                    <TableCell>{roleMapper[u.role]}</TableCell>
                     <TableCell align="right">
                       <Tooltip title="Edit">
                         <IconButton
