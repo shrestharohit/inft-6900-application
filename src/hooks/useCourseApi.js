@@ -42,6 +42,11 @@ export default function useCourseApi() {
     return res.data;
   }, []);
 
+  const fetchPopularCoursesAndPathway = useCallback(async () => {
+    const res = await api.get('/api/enrolment/popular');
+    return res.data;
+  }, []);
+
   return {
     registerCourseOwner,
     updateCourseOwner,
@@ -51,5 +56,6 @@ export default function useCourseApi() {
     fetchAllCourses,
     fetchCourseMeta,
     fetchCourseCategories,
+    fetchPopularCoursesAndPathway
   };
 }

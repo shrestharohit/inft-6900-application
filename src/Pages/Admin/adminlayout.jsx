@@ -1,18 +1,17 @@
 import React from "react";
-import { NavLink, Outlet, useNavigate } from "react-router-dom";
+import { NavLink, Outlet } from "react-router-dom";
 import { Avatar, Menu, MenuItem, Tooltip } from "@mui/material";
 import {
     Dashboard,
     School,
     LibraryBooks,
     People,
-    BarChart,
     Mail,
     Settings,
-    Class as ClassIcon,
     ExitToApp,
     Quiz,
 } from "@mui/icons-material";
+import { useAuth } from "../../contexts/AuthContext";
 
 const NAV_ITEMS = [
     { label: "Dashboard", to: "/admin", icon: <Dashboard /> },
@@ -30,21 +29,14 @@ const NAV_ITEMS = [
 export default function AdminLayout() {
     const [anchorEl, setAnchorEl] = React.useState(null);
     const open = Boolean(anchorEl);
-    const navigate = useNavigate();
+    const { clearUserDataFromState } = useAuth();
 
     const handleMenuOpen = (e) => setAnchorEl(e.currentTarget);
     const handleMenuClose = () => setAnchorEl(null);
 
-    const handleEditProfile = () => {
-        handleMenuClose();
-        navigate("/admin/profile"); // 🔄 updated path
-    };
-
     const handleLogout = () => {
         handleMenuClose();
-        localStorage.removeItem("userToken");
-        sessionStorage.removeItem("userToken");
-        navigate("/");
+        clearUserDataFromState();
     };
 
     return (
