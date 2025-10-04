@@ -1,5 +1,5 @@
-import { useCallback } from 'react';
-import api from '../api/config';
+import { useCallback } from "react";
+import api from "../api/config";
 
 export default function useModuleApi() {
   const registerModule = useCallback(async (payload) => {
@@ -22,10 +22,22 @@ export default function useModuleApi() {
     return res.data;
   }, []);
 
+  const fetchAllModulesInACourse = useCallback(async (courseID) => {
+    const res = await api.get(`/api/module/course/${courseID}`);
+    return res.data;
+  }, []);
+
   const fetchModuleMeta = useCallback(async (courseID) => {
     const res = await api.get(`/api/course/${courseID}/module/_meta`);
     return res.data;
   }, []);
 
-  return { registerModule, updateModule, fetchModule, fetchAllModules, fetchModuleMeta };
+  return {
+    registerModule,
+    updateModule,
+    fetchModule,
+    fetchAllModules,
+    fetchModuleMeta,
+    fetchAllModulesInACourse,
+  };
 }
