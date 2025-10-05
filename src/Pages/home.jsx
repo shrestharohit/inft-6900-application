@@ -26,7 +26,7 @@ function Home() {
     };
 
     return (
-        <div className="bg-gray-50 font-inter pb-12">
+        <div className="bg-gray-50 font-inter pb-12 pt-12">
             {/* Hero Section */}
             <section className="bg-gradient-to-r from-[#1f2a60] to-[#4856a6] text-white rounded-xl my-8 max-w-[1150px] mx-auto shadow-lg">
                 <div className="text-center py-20 px-6 max-w-3xl mx-auto">
