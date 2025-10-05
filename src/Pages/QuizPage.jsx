@@ -1,9 +1,9 @@
 // src/Pages/QuizPage.jsx
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import beforeAuthLayout from "../components/BeforeAuth";
 
-// Dummy quiz data (keep as placeholder for now)
+// Dummy quiz data
 const dummyQuiz = [
   {
     id: 1,
@@ -27,6 +27,7 @@ const dummyQuiz = [
 
 const QuizPage = () => {
   const navigate = useNavigate();
+  const { courseId } = useParams(); // ✅ get the courseId from URL
   const [answers, setAnswers] = useState({});
   const [attempts, setAttempts] = useState([]);
   const [showResult, setShowResult] = useState(false);
@@ -54,7 +55,7 @@ const QuizPage = () => {
     const score = Math.round((correctCount / dummyQuiz.length) * 100);
     const passed = score >= 80;
 
-    const attempt = { id: attempts.length + 1, score, passed, feedback };
+    const attempt = { id: attempts.length + 1, score, passed, feedback, date: new Date() };
     setAttempts([...attempts, attempt]);
     setCurrentAttempt(attempt);
     setShowResult(true);
@@ -65,10 +66,6 @@ const QuizPage = () => {
   return (
     <div className="p-6 min-h-screen bg-gray-50">
       <div className="max-w-5xl mx-auto">
-        {/* Back to Module */}
-
-
-        {/* Quiz Heading */}
         <h1 className="text-4xl font-extrabold text-gray-800 mb-8 text-center">
           Module Quiz
         </h1>
@@ -80,12 +77,10 @@ const QuizPage = () => {
               Ready to test your knowledge?
             </h2>
             <p className="text-gray-600 mb-3">
-              <strong>{dummyQuiz.length}</strong> questions | Passing score:{" "}
-              <strong>80%</strong>
+              <strong>{dummyQuiz.length}</strong> questions | Passing score: <strong>80%</strong>
             </p>
             <p className="text-gray-600 mb-6">
-              Attempts made:{" "}
-              <span className="font-semibold text-blue-600">{attempts.length}</span>
+              Attempts made: <span className="font-semibold text-blue-600">{attempts.length}</span>
             </p>
             <button
               onClick={() => setQuizStarted(true)}
@@ -100,10 +95,7 @@ const QuizPage = () => {
         {quizStarted && !showResult && (
           <div className="space-y-6">
             {dummyQuiz.map((q, idx) => (
-              <div
-                key={q.id}
-                className="p-6 bg-white rounded-xl shadow-lg border border-gray-200"
-              >
+              <div key={q.id} className="p-6 bg-white rounded-xl shadow-lg border border-gray-200">
                 <p className="text-lg font-semibold mb-4 text-gray-800">
                   Q{idx + 1}. {q.question}
                 </p>
@@ -146,9 +138,7 @@ const QuizPage = () => {
           <div className="space-y-6">
             <div
               className={`p-6 rounded-xl shadow-lg border ${
-                currentAttempt.passed
-                  ? "border-green-500 bg-green-50"
-                  : "border-red-500 bg-red-50"
+                currentAttempt.passed ? "border-green-500 bg-green-50" : "border-red-500 bg-red-50"
               }`}
             >
               <h2
@@ -156,8 +146,7 @@ const QuizPage = () => {
                   currentAttempt.passed ? "text-green-700" : "text-red-700"
                 }`}
               >
-                Attempt #{currentAttempt.id} -{" "}
-                {currentAttempt.passed ? "Passed ✅" : "Failed ❌"}
+                Attempt #{currentAttempt.id} - {currentAttempt.passed ? "Passed ✅" : "Failed ❌"}
               </h2>
               <p className="text-gray-700 font-medium">
                 Score: <span className="font-bold">{currentAttempt.score}%</span>
@@ -168,8 +157,7 @@ const QuizPage = () => {
             {currentAttempt.feedback.map((f, idx) => (
               <div
                 key={idx}
-                className="p-5 bg-white rounded-lg border-l-4 shadow-sm mb-3
-                  border-l-gray-300 hover:shadow-md transition"
+                className="p-5 bg-white rounded-lg border-l-4 shadow-sm mb-3 border-l-gray-300 hover:shadow-md transition"
               >
                 <p className="font-medium text-gray-800">
                   <strong>Q:</strong> {f.question}
@@ -185,11 +173,12 @@ const QuizPage = () => {
               {currentAttempt.passed ? (
                 <button
                   onClick={() =>
-                    navigate("/certificate", {
+                    navigate(`/courses/${courseId}/certificate`, {
                       state: {
-                        name: "John Doe", // you can replace with logged-in student name
+                        name: "John Doe", // replace with logged-in user name
                         course: "Module Quiz",
                         score: currentAttempt.score,
+                        date: currentAttempt.date,
                       },
                     })
                   }
@@ -222,9 +211,7 @@ const QuizPage = () => {
         {/* Previous Attempts */}
         {attempts.length > 0 && (
           <div className="mt-12">
-            <h2 className="text-2xl font-bold text-blue-700 mb-4">
-              Previous Attempts
-            </h2>
+            <h2 className="text-2xl font-bold text-blue-700 mb-4">Previous Attempts</h2>
             <div className="space-y-3">
               {attempts.map((a) => (
                 <div

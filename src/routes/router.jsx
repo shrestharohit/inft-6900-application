@@ -5,7 +5,9 @@ import Home from "../Pages/Home";
 import RegistrationForm from "../Pages/registration";
 import LoginForm from "../Pages/login";
 import Login2FA from "../Pages/login2fa";
-import ForgotPassword from "../Pages/forgotpassword";
+import ForgotPassword from "../Pages/forgotpassword";       // Step 1
+import VerifyOtpPage from "../Pages/verifyOtpPage";        // Step 2
+import ResetPasswordPage from "../Pages/resetPasswordPage"; // Step 3
 import ProfileManagement from "../Pages/profilemanagement";
 
 // Dummy pages for footer
@@ -20,11 +22,11 @@ import AdminCourseApproval from "../Pages/Admin/adminCourseApproval";
 import AdminModuleApproval from "../Pages/Admin/adminModuleApproval";
 import AdminQuizApproval from "../Pages/Admin/adminQuizApproval";
 import AdminProfile from "../Pages/Admin/AdminProfile";
-import AdminPathwayApproval from "../Pages/Admin/adminPathwayApproval.jsx"; // ✅ added
+import AdminPathwayApproval from "../Pages/Admin/adminPathwayApproval.jsx";
 
 // Student imports
 import Dashboard from "../Pages/Dashboard";
-//import CourseLayout from "../Pages/CourseLayout";
+import CourseLayout from "../Pages/CourseLayout";
 import CoursePage from "../Pages/CoursePage";
 import CourseContentPage from "../Pages/CourseContentPage";
 import ModulePage from "../Pages/ModulePage";
@@ -39,6 +41,7 @@ import StudentDiscussionPage from "../Pages/StudentDiscussionPage";
 import SearchResults from "../Pages/SearchResults";
 import CertificatePage from "../Pages/certificatePage";
 
+// Admin placeholder pages
 import {
   DashboardPage,
   PathwaysPage,
@@ -57,7 +60,7 @@ import CourseOwnerProfile from "../Pages/CourseOwner/courseOwnerProfile";
 import CourseOwnerAnnouncementsPage from "../Pages/CourseOwner/CourseOwnerAnnouncementsPage";
 import CourseOwnerDiscussionPage from "../Pages/CourseOwner/CourseOwnerDiscussionPage";
 import CourseOwnerQuestionsPage from "../Pages/CourseOwner/CourseOwnerQuestionsPage";
-import PathwayManagement from "../Pages/CourseOwner/pathwayManagement"; // ✅ added
+import PathwayManagement from "../Pages/CourseOwner/pathwayManagement";
 
 // All Courses and Pathways Pages
 import AllCoursesPage from "../Pages/AllCoursesPage";
@@ -69,7 +72,12 @@ export const router = createBrowserRouter([
   { path: "/registration", element: <RegistrationForm /> },
   { path: "/login", element: <LoginForm /> },
   { path: "/login2fa", element: <Login2FA /> },
-  { path: "/forgotpassword", element: <ForgotPassword /> },
+
+  // Forgot password 3-step flow
+  { path: "/forgotpassword", element: <ForgotPassword /> },       // Step 1
+  { path: "/verify-otp", element: <VerifyOtpPage /> },           // Step 2
+  { path: "/reset-password", element: <ResetPasswordPage /> },   // Step 3
+
   { path: "/profilemanagement", element: <ProfileManagement /> },
 
   // Footer dummy pages
@@ -142,4 +150,7 @@ export const router = createBrowserRouter([
   { path: "/search", element: <SearchResults /> },
   { path: "/all-courses", element: <AllCoursesPage /> },
   { path: "/all-pathways", element: <AllPathwaysPage /> },
+
+  // fallback route
+  { path: "*", element: <h1 className="text-center mt-20 text-3xl">404 - Page Not Found</h1> },
 ]);
