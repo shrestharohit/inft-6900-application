@@ -17,6 +17,16 @@ export default function useUserApi() {
     return res.data;
   }, []);
 
+  const sendResetOTP = useCallback(async (email) => {
+    const res = await api.post("/api/auth/send-resetotp", { email });
+    return res.data;
+  }, []);
+
+  const verifyResetOTP = useCallback(async (email, otp) => {
+    const res = await api.post("/api/auth/verify-resetotp", { email, otpCode: otp });
+    return res.data;
+  }, []);
+
   const resetPassword = useCallback(
     async ({ email, newPassword, confirmPassword }) => {
       const res = await api.post("/api/auth/reset-password", {
@@ -82,5 +92,7 @@ export default function useUserApi() {
     updateUser,
     verifyOTP,
     resendOTP,
+    sendResetOTP,
+    verifyResetOTP
   };
 }

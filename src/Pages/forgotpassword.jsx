@@ -2,23 +2,24 @@ import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import registration_image from "../assets/Images/registration_image.png";
 import beforeAuthLayout from "../components/BeforeAuth";
+import useUserApi from "../hooks/useUserApi";
 
 const ForgotPassword = () => {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const { sendResetOTP } = useUserApi();
+  
   const handleForgotSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
 
     try {
-      // ✅ Here you would call your API to send OTP
-      // e.g. await sendOtp({ email });
-      console.log("OTP sent to:", email);
-
-      alert("OTP sent to your email!");
-      navigate("/verify-otp", { state: { email } }); // move to OTP page
+      await sendResetOTP(email).then(() => {
+        alert("OTP sent to your email!");
+        navigate("/verify-otp", { state: { email } });
+      });
     } catch (err) {
       console.error("❌ Forgot password error:", err);
       alert("Failed to send OTP. Please try again.");
