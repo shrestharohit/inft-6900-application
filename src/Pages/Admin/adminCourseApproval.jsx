@@ -119,7 +119,6 @@ const AdminCourseApproval = () => {
                 </TableRow>
               ) : (
                 courses.map((course, idx) => {
-                  const courseModules = getModulesForCourse(course.courseID);
                   return (
                     <React.Fragment key={idx}>
                       <TableRow hover>
@@ -205,17 +204,17 @@ const AdminCourseApproval = () => {
                       <TableRow>
                         <TableCell colSpan={7} sx={{ py: 0 }}>
                           <Collapse
-                            in={expanded[course.name]}
+                            in={expanded[course.courseID]}
                             timeout="auto"
                             unmountOnExit
                           >
                             <Box sx={{ m: 2 }}>
-                              {courseModules.length === 0 ? (
+                              {course?.modules?.length === 0 ? (
                                 <Typography color="text.secondary">
                                   No modules for this course.
                                 </Typography>
                               ) : (
-                                courseModules.map((mod, mIdx) => (
+                                course?.modules?.map((mod, mIdx) => (
                                   <Box key={mIdx} sx={{ mb: 2 }}>
                                     <Typography
                                       variant="subtitle1"
@@ -223,13 +222,13 @@ const AdminCourseApproval = () => {
                                     >
                                       Module: {mod.moduleTitle} ({mod.status})
                                     </Typography>
-                                    {mod.pages.length === 0 ? (
+                                    {mod?.contents?.length === 0 ? (
                                       <Typography color="text.secondary" ml={2}>
                                         No pages in this module.
                                       </Typography>
                                     ) : (
-                                      mod.pages.map((p, pIdx) => (
-                                        <Box key={pIdx} ml={3} mb={1}>
+                                      mod?.contents?.map((p, cIdx) => (
+                                        <Box key={cIdx} ml={3} mb={1}>
                                           <Typography variant="body2">
                                             {p.pageNumber}. <b>{p.title}</b> –{" "}
                                             {p.content.substring(0, 80)}

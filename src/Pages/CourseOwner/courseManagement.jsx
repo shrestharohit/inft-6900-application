@@ -47,17 +47,14 @@ export default function CourseManagement() {
   const { registerCourse, updateCourse, fetchAllCourses } = useCourseApi();
   const { loggedInUser } = useAuth();
 
-  // outline dialog states
   const [outlineDialogOpen, setOutlineDialogOpen] = useState(false);
   const [outlinedraft, setOutlinedraft] = useState("");
 
-  // refs to prevent instant re-open on close
   const outlineFieldRef = useRef(null);
   const focusGuardRef = useRef(false);
 
   useEffect(() => {
     let mounted = true;
-    // load courses from backend
     fetchAllCourses()
       .then((res) => {
         const list = Array.isArray(res) ? res : res?.courses || [];
@@ -266,6 +263,19 @@ export default function CourseManagement() {
     if (!outlineDialogOpen) openOutlineDialog();
   };
 
+  const statusMapper = {
+    wait_for_approval: "Wait For Approval",
+    draft: "Draft",
+    active: "Active",
+    inactive: "Inactive",
+  };
+
+  const levelMapper = {
+    advanced: "Advanced",
+    beginner: "Beginner",
+    intermediate: "Intermediate",
+  };
+
   return (
     <Box sx={{ padding: "2rem", maxWidth: 1000, margin: "0 auto" }}>
       <Typography variant="h4" gutterBottom fontWeight={700}>
@@ -381,8 +391,8 @@ export default function CourseManagement() {
                   >
                     {course.outline}
                   </TableCell>
-                  <TableCell>{course.level}</TableCell>
-                  <TableCell>{course.status}</TableCell>
+                  <TableCell>{levelMapper[course.level]}</TableCell>
+                  <TableCell>{statusMapper[course.status]}</TableCell>
                   <TableCell
                     align="right"
                     sx={{

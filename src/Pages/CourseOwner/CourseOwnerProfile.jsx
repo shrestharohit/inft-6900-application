@@ -59,7 +59,7 @@ export default function CourseOwnerProfile() {
             };
 
             const response = await updateUser(loggedInUser.id, updateData);
-            setUserDataInState(response);
+            setUserDataInState(response.user);
             alert("Profile updated successfully!");
         } catch (err) {
             alert("Failed to update profile");

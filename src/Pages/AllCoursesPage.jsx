@@ -2,9 +2,28 @@ import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import beforeAuthLayout from "../components/BeforeAuth";
 import { dummyCourses } from "../Pages/dummyData"; // ✅ central source
+import useCourseApi from "../hooks/useCourseApi";
+import { useCallback } from "react";
 
 const AllCoursesPage = () => {
     const [courses, setCourses] = useState([]);
+    const [apiCourses, setApiCourses] = useState([]);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState(null);
+    const { fetchAllCourses } = useCourseApi();
+
+    const normalizeCourse = useCallback((c) => ({
+        id: c.courseID ?? c.id,
+        name: c.title ?? c.name ?? c.courseName ?? 'Untitled',
+        description: c.description ?? c.outline ?? c.shortDescription ?? '',
+        img: c.image ?? c.logo ?? c.img ?? c.coverImage ?? '/logo.png',
+        level: c.level ?? c.difficulty ?? 'Beginner',
+        knowledgeArea: c.knowledgeArea ?? c.category ?? c.type ?? 'Tech Skills',
+        numEnrolled: c.numEnrolled ?? c.enrolments ?? c.enrolledCount ?? 0,
+        rating: c.rating ?? c.avgRating ?? 0,
+        releasedDate: c.releasedDate ?? c.createdAt ?? c.publishedAt ?? null,
+        raw: c,
+    }), []);
     const [filters, setFilters] = useState({
         level: "all",
         knowledgeArea: "all",
@@ -19,34 +38,43 @@ const AllCoursesPage = () => {
         });
     };
 
+    // Fetch courses from backend on mount
     useEffect(() => {
-        let filteredCourses = [...dummyCourses];
+        let mounted = true;
+        const load = async () => {
+            setLoading(true);
+            setError(null);
+            try {
+                const res = await fetchAllCourses();
+                const list = Array.isArray(res) ? res : res?.courses || [];
+                if (!mounted) return;
+                setApiCourses(list.map(normalizeCourse));
+            } catch (e) {
+                console.error('Failed to fetch courses', e);
+                if (mounted) setError('Failed to load courses from server');
+                // keep apiCourses empty — UI will fall back to dummyCourses
+            } finally {
+                if (mounted) setLoading(false);
+            }
+        };
+        load();
+        return () => (mounted = false);
+    }, [fetchAllCourses, normalizeCourse]);
 
-        // Apply filters
-        if (filters.level !== "all") {
-            filteredCourses = filteredCourses.filter(
-                (course) => course.level === filters.level
-            );
-        }
-        if (filters.knowledgeArea !== "all") {
-            filteredCourses = filteredCourses.filter(
-                (course) => course.knowledgeArea === filters.knowledgeArea
-            );
-        }
+    // Apply filters and sorting to either API courses (if present) or dummy data
+    useEffect(() => {
+        const source = apiCourses.length > 0 ? apiCourses : dummyCourses.map(normalizeCourse);
+        let filtered = [...source];
 
-        // Apply sorting
-        if (filters.sortBy === "popularity") {
-            filteredCourses.sort((a, b) => b.numEnrolled - a.numEnrolled);
-        } else if (filters.sortBy === "rating") {
-            filteredCourses.sort((a, b) => b.rating - a.rating);
-        } else if (filters.sortBy === "released") {
-            filteredCourses.sort(
-                (a, b) => new Date(b.releasedDate) - new Date(a.releasedDate)
-            );
-        }
+        if (filters.level !== 'all') filtered = filtered.filter((c) => c.level === filters.level);
+        if (filters.knowledgeArea !== 'all') filtered = filtered.filter((c) => c.knowledgeArea === filters.knowledgeArea);
 
-        setCourses(filteredCourses);
-    }, [filters]);
+        if (filters.sortBy === 'popularity') filtered.sort((a, b) => (b.numEnrolled || 0) - (a.numEnrolled || 0));
+        else if (filters.sortBy === 'rating') filtered.sort((a, b) => (b.rating || 0) - (a.rating || 0));
+        else if (filters.sortBy === 'released') filtered.sort((a, b) => new Date(b.releasedDate || 0) - new Date(a.releasedDate || 0));
+
+        setCourses(filtered);
+    }, [filters, apiCourses, normalizeCourse]);
 
     return (
         <div className="search-results-container bg-gray-50 px-6 py-12">
@@ -97,7 +125,14 @@ const AllCoursesPage = () => {
             </div>
 
             {/* ✅ Courses */}
-            {courses.length > 0 ? (
+            {loading && (
+                <div className="text-center py-6">Loading courses...</div>
+            )}
+            {error && (
+                <div className="text-center py-6 text-red-600">{error}</div>
+            )}
+            {!loading && (
+              courses.length > 0 ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
                     {courses.map((course) => (
                         <div
@@ -121,10 +156,11 @@ const AllCoursesPage = () => {
                             </Link>
                         </div>
                     ))}
-                </div>
-            ) : (
-                <p>No courses found.</p>
-            )}
+                                </div>
+                            ) : (
+                                <p>No courses found.</p>
+                            )
+                        )}
         </div>
     );
 };
