@@ -1,5 +1,5 @@
 // src/components/Header.jsx
-import { Avatar, Menu, MenuItem, Button, Box, Typography, Divider } from "@mui/material";
+import { Avatar, Menu, MenuItem, Button, Box, Typography, Divider, Switch, FormControlLabel } from "@mui/material";
 import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
 import SearchIcon from "@mui/icons-material/Search";
 import { Link, useNavigate } from "react-router-dom";
@@ -13,10 +13,18 @@ const Header = () => {
   const [categoryAnchor, setCategoryAnchor] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchCategory, setSearchCategory] = useState("all");
+  const [notificationsEnabled, setNotificationsEnabled] = useState(false); // notification state
 
   const open = Boolean(anchorEl);
   const navigate = useNavigate();
-  const { isLoggedIn, clearUserDataFromState } = useAuth();
+  const { isLoggedIn, clearUserDataFromState, loggedInUser, setUserDataInState, updateUser } = useAuth();
+
+  // Load initial notification state if logged in
+  useState(() => {
+    if (loggedInUser) {
+      setNotificationsEnabled(loggedInUser.notificationsEnabled || false);
+    }
+  });
 
   const getPlaceholder = () => {
     switch (searchCategory) {
@@ -56,10 +64,22 @@ const Header = () => {
     }
   };
 
-  return (
-    // <header className="flex justify-between items-center px-6 py-3 bg-green-500 text-white h-20">
-    //   <div className="container mx-auto flex justify-between items-center max-w-7xl">
+  const handleToggleNotifications = async () => {
+    const newValue = !notificationsEnabled;
+    setNotificationsEnabled(newValue);
 
+    // Optionally, save this to the server if you have updateUser API
+    if (loggedInUser) {
+      try {
+        const updatedUser = await updateUser(loggedInUser.id, { notificationsEnabled: newValue });
+        setUserDataInState(updatedUser);
+      } catch (err) {
+        console.error("Failed to update notifications", err);
+      }
+    }
+  };
+
+  return (
     <header className="fixed top-0 left-0 right-0 z-50 flex justify-between items-center px-6 py-3 bg-green-500 text-white h-20 shadow-md">
       <div className="container mx-auto flex justify-between items-center max-w-7xl">
         {/* Logo + Categories */}
@@ -189,8 +209,20 @@ const Header = () => {
                 <MenuItem onClick={() => navigate("/profilemanagement")}>
                   Edit Profile
                 </MenuItem>
+                
+                {/* Notification Toggle */}
+                <MenuItem>
+                  <div className="flex justify-between items-center w-full">
+                  <span>Notifications</span>
+                  <Switch
+                    checked={notificationsEnabled}
+                    onChange={handleToggleNotifications}
+                    color="success"
+                  />
+                  </div>
+                </MenuItem>
+                
                 <MenuItem onClick={handleLogout}>Logout</MenuItem>
-
               </Menu>
             </>
           ) : (
