@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import registration_image from "../assets/Images/registration_image.png";
 import beforeAuthLayout from "../components/BeforeAuth";
+import useUserApi from "../hooks/useUserApi";
 
 const ResetPasswordPage = () => {
   const [newPassword, setNewPassword] = useState("");
@@ -11,6 +12,7 @@ const ResetPasswordPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const email = location.state?.email;
+  const { resetPassword } = useUserApi();
 
   const togglePasswordVisibility = () => setShowPassword((prev) => !prev);
 
@@ -25,8 +27,7 @@ const ResetPasswordPage = () => {
     }
 
     try {
-      // ✅ Replace with API call to reset password
-      console.log("Password reset for:", email);
+      await resetPassword({ email, newPassword, confirmPassword });
       alert("Password reset successful! Please login.");
       navigate("/login");
     } catch (err) {

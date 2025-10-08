@@ -23,7 +23,7 @@ const NAV_ITEMS = [
     { label: "Course Approvals", to: "/admin/course-approvals", icon: <LibraryBooks /> },
     // { label: "Module Approvals", to: "/admin/module-approvals", icon: <School /> },
     { label: "Quiz Approvals", to: "/admin/quiz-approvals", icon: <Quiz /> },
-    { label: "Pathways Approvals", to: "/admin/pathways", icon: <LibraryBooks /> },
+    // { label: "Pathways Approvals", to: "/admin/pathways", icon: <LibraryBooks /> },
 ];
 
 export default function AdminLayout() {

@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import registration_image from "../assets/Images/registration_image.png";
 import beforeAuthLayout from "../components/BeforeAuth";
+import useUserApi from "../hooks/useUserApi";
 
 const VerifyOtpPage = () => {
   const [otp, setOtp] = useState("");
@@ -10,21 +11,19 @@ const VerifyOtpPage = () => {
   const location = useLocation();
   const email = location.state?.email;
 
+  const { verifyResetOTP } = useUserApi();
+
   const handleVerifySubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
 
     try {
-      // ✅ Dummy OTP check (replace with API call later)
-      if (otp === "123456") {
-        alert("OTP verified successfully!");
-        navigate("/reset-password", { state: { email } });
-      } else {
-        alert("Invalid OTP. Try again.");
-      }
+      await verifyResetOTP(email, otp);
+      alert("OTP verified successfully!");
+      navigate("/reset-password", { state: { email } });
     } catch (err) {
       console.error("❌ OTP verification error:", err);
-      alert("Failed to verify OTP.");
+      alert("Invalid OTP. Try again.");
     } finally {
       setIsSubmitting(false);
     }

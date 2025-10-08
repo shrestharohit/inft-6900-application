@@ -18,6 +18,8 @@ import {
 } from "@mui/material";
 import { KeyboardArrowDown, KeyboardArrowUp } from "@mui/icons-material";
 import useCourseApi from "../../hooks/useCourseApi";
+import { truncateText } from "../../utils/global";
+import { useNavigate } from "react-router-dom";
 
 const MODULES_KEY = "course_owner_modules";
 
@@ -31,6 +33,7 @@ const AdminCourseApproval = () => {
     severity: "success",
     msg: "",
   });
+  const navigate = useNavigate();
 
   useEffect(() => {
     let mounted = true;
@@ -136,18 +139,17 @@ const AdminCourseApproval = () => {
                         </TableCell>
                         <TableCell>{course.title}</TableCell>
                         <TableCell>{course.category}</TableCell>
-                        <TableCell>{course.outline}</TableCell>
+                        <TableCell>{truncateText(course.outline)}</TableCell>
                         {/* <TableCell>{course.duration}</TableCell> */}
                         <TableCell>{statusMapper[course.status]}</TableCell>
                         <TableCell align="right">
                           {course.status === "wait_for_approval" && (
-                            <>
+                            <div className="flex gap-2 items-end flex-col">
                               <Tooltip title="Approve">
                                 <Button
                                   variant="contained"
                                   color="success"
                                   size="small"
-                                  sx={{ mr: 1 }}
                                   onClick={() =>
                                     updateStatus(course.courseID, "active")
                                   }
@@ -167,7 +169,7 @@ const AdminCourseApproval = () => {
                                   Decline
                                 </Button>
                               </Tooltip>
-                            </>
+                            </div>
                           )}
 
                           {course.status === "active" && (
@@ -209,52 +211,18 @@ const AdminCourseApproval = () => {
                             unmountOnExit
                           >
                             <Box sx={{ m: 2 }}>
-                              {course?.modules?.length === 0 ? (
-                                <Typography color="text.secondary">
-                                  No modules for this course.
-                                </Typography>
-                              ) : (
-                                course?.modules?.map((mod, mIdx) => (
-                                  <Box key={mIdx} sx={{ mb: 2 }}>
-                                    <Typography
-                                      variant="subtitle1"
-                                      fontWeight={600}
-                                    >
-                                      Module: {mod.moduleTitle} ({mod.status})
-                                    </Typography>
-                                    {mod?.contents?.length === 0 ? (
-                                      <Typography color="text.secondary" ml={2}>
-                                        No pages in this module.
-                                      </Typography>
-                                    ) : (
-                                      mod?.contents?.map((p, cIdx) => (
-                                        <Box key={cIdx} ml={3} mb={1}>
-                                          <Typography variant="body2">
-                                            {p.pageNumber}. <b>{p.title}</b> –{" "}
-                                            {p.content.substring(0, 80)}
-                                            {p.content.length > 80 && "..."}
-                                          </Typography>
-                                          {p.mediaUrl && (
-                                            <Typography
-                                              variant="caption"
-                                              color="primary"
-                                            >
-                                              Media:{" "}
-                                              <a
-                                                href={p.mediaUrl}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                              >
-                                                {p.mediaUrl}
-                                              </a>
-                                            </Typography>
-                                          )}
-                                        </Box>
-                                      ))
-                                    )}
-                                  </Box>
-                                ))
-                              )}
+                              <div>
+                                More details about the course is available{" "}
+                                <a
+                                  className="cursor-pointer underline text-blue-700"
+                                  onClick={() =>
+                                    navigate(`/courses/${course.courseID}`)
+                                  }
+                                >
+                                  here
+                                </a>
+                                .
+                              </div>
                             </Box>
                           </Collapse>
                         </TableCell>

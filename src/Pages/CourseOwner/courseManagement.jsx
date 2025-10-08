@@ -108,7 +108,7 @@ export default function CourseManagement() {
     const duplicateCourse = courses.some(
       (c, idx) =>
         idx !== editingIndex &&
-        c.name.trim().toLowerCase() === form.name.trim().toLowerCase()
+        c.name?.trim().toLowerCase() === form.name?.trim().toLowerCase()
     );
     if (duplicateCourse) {
       alert("❌ A course with this name already exists.");
