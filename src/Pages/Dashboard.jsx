@@ -53,7 +53,7 @@ const Dashboard = () => {
     const inProgress = total - completed;
 
     return (
-        <div className="p-6 max-w-7xl mx-auto">
+        <div className="p-6 max-w-7xl mx-auto pt-14">
             <h1 className="text-3xl font-bold text-gray-800 mb-6">
                 Welcome back, {loggedInUser.firstName || "Student"} 👋
             </h1>

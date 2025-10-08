@@ -4,6 +4,7 @@ import beforeAuthLayout from "../components/BeforeAuth";
 import { dummyCourses, dummyPathways } from "../Pages/dummyData";
 import { useAuth } from "../contexts/AuthContext"; // ✅
 import useCourseApi from "../hooks/useCourseApi";
+import webdevremovebg from "../assets/Images/webdevremovebg.png"; // Placeholder image
 
 function Home() {
   const [hoveredCourse, setHoveredCourse] = useState(null);
@@ -21,6 +22,7 @@ function Home() {
     const load = async () => {
       try {
         const res = await fetchPopularCoursesAndPathway();
+        console.log("Full API response:", JSON.stringify(res, null, 2));
         if (!mounted) return;
         setApiPopularCourses(res?.popularCourses || null);
         setApiPopularPathways(res?.popularPathways || res?.pathways || null);
@@ -77,7 +79,7 @@ function Home() {
   };
 
   return (
-    <div className="bg-gray-50 font-inter pb-12">
+    <div className="bg-gray-50 font-inter pb-12 pt-12">
       {/* Hero Section */}
       <section className="bg-gradient-to-r from-[#1f2a60] to-[#4856a6] text-white rounded-xl my-8 max-w-[1150px] mx-auto shadow-lg">
         <div className="text-center py-20 px-6 max-w-3xl mx-auto">

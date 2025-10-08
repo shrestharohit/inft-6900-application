@@ -1,27 +1,19 @@
 import React from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
-import { Avatar, Menu, MenuItem, Tooltip, Badge } from "@mui/material";
+import { Avatar, Menu, MenuItem, Tooltip, Badge, Switch } from "@mui/material";
 import {
-    Dashboard,
     LibraryBooks,
     ViewModule,
     Quiz,
-    QuestionAnswer,
-    BarChart,
     Settings,
     ExitToApp,
 } from "@mui/icons-material";
 import { useAuth } from "../../contexts/AuthContext";
 
 const NAV_ITEMS = [
-    // { label: "Dashboard", to: "/courseowner", icon: <Dashboard /> },
     { label: "Courses", to: "/courseowner/courses", icon: <LibraryBooks /> },
     { label: "Modules", to: "/courseowner/modules", icon: <ViewModule /> },
     { label: "Quizzes", to: "/courseowner/quizzes", icon: <Quiz /> },
-    // { label: "Pathways", to: "/courseowner/pathways", icon: <LibraryBooks /> },
-    // { label: "Announcements", to: "/courseowner/announcements", icon: <LibraryBooks /> },
-    // { label: "Discussions", to: "/courseowner/discussions", icon: <BarChart /> },
-    // { label: "Questions", to: "/courseowner/questions", icon: <QuestionAnswer /> }, // ✅ badge target
     { label: "Profile", to: "/courseowner/profile", icon: <Settings /> },
 ];
 
@@ -30,6 +22,14 @@ export default function CourseOwnerLayout() {
     const open = Boolean(anchorEl);
     const navigate = useNavigate();
     const { clearUserDataFromState } = useAuth();
+
+    // Notification toggle state
+    const [notificationsEnabled, setNotificationsEnabled] = React.useState(false);
+    const handleToggleNotifications = () => {
+        setNotificationsEnabled((prev) => !prev);
+        // Optional: persist state in backend or localStorage
+        // localStorage.setItem('notificationsEnabled', !notificationsEnabled);
+    };
 
     const unansweredCount = React.useMemo(() => {
         let total = 0;
@@ -70,31 +70,20 @@ export default function CourseOwnerLayout() {
                 {/* Navigation */}
                 <nav className="flex-1 p-2 overflow-y-auto">
                     {NAV_ITEMS.map((item) => {
-                        const isQuestions = item.label === "Questions";
                         return (
                             <NavLink
                                 key={item.to}
                                 to={item.to}
                                 end
                                 className={({ isActive }) =>
-                                    `flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors ${isActive
-                                        ? "bg-gray-700 text-white"
-                                        : "hover:bg-gray-800 hover:text-white text-gray-300"
+                                    `flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors ${
+                                        isActive
+                                            ? "bg-gray-700 text-white"
+                                            : "hover:bg-gray-800 hover:text-white text-gray-300"
                                     }`
                                 }
                             >
-                                {/* If it's Questions, wrap icon with Badge */}
-                                {isQuestions && unansweredCount > 0 ? (
-                                    <Badge
-                                        badgeContent={unansweredCount}
-                                        color="error"
-                                        overlap="circular"
-                                    >
-                                        <span className="text-gray-400">{item.icon}</span>
-                                    </Badge>
-                                ) : (
-                                    <span className="text-gray-400">{item.icon}</span>
-                                )}
+                                <span className="text-gray-400">{item.icon}</span>
                                 <span>{item.label}</span>
                             </NavLink>
                         );
@@ -119,17 +108,32 @@ export default function CourseOwnerLayout() {
                             }}
                         />
                     </Tooltip>
+
                     <Menu anchorEl={anchorEl} open={open} onClose={handleMenuClose}>
+                        {/* Notification Toggle */}
+                        <MenuItem>
+                            <div className="flex justify-between items-center w-full">
+                                <span>Notifications</span>
+                                <Switch
+                                    checked={notificationsEnabled}
+                                    onChange={handleToggleNotifications}
+                                    color="success"
+                                />
+                            </div>
+                        </MenuItem>
+
                         <MenuItem onClick={handleEditProfile}>
                             <Settings fontSize="small" className="mr-2" />
                             Profile
                         </MenuItem>
+
                         <MenuItem onClick={handleLogout}>
                             <ExitToApp fontSize="small" className="mr-2" />
                             Logout
                         </MenuItem>
                     </Menu>
                 </div>
+
                 <Outlet />
             </main>
         </div>

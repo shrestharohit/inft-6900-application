@@ -1,6 +1,6 @@
 import React from "react";
 import { NavLink, Outlet } from "react-router-dom";
-import { Avatar, Menu, MenuItem, Tooltip } from "@mui/material";
+import { Avatar, Menu, MenuItem, Tooltip, Switch } from "@mui/material";
 import {
     Dashboard,
     School,
@@ -19,7 +19,7 @@ const NAV_ITEMS = [
     // { label: "Enrollments", to: "/admin/enrollments", icon: <School /> },
     { label: "Users", to: "/admin/users", icon: <People /> },
     // { label: "Messages", to: "/admin/messages", icon: <Mail /> },
-    { label: "Profile", to: "/admin/profile", icon: <Settings /> }, // 🔄 updated
+    { label: "Profile", to: "/admin/profile", icon: <Settings /> },
     { label: "Course Approvals", to: "/admin/course-approvals", icon: <LibraryBooks /> },
     // { label: "Module Approvals", to: "/admin/module-approvals", icon: <School /> },
     { label: "Quiz Approvals", to: "/admin/quiz-approvals", icon: <Quiz /> },
@@ -30,6 +30,15 @@ export default function AdminLayout() {
     const [anchorEl, setAnchorEl] = React.useState(null);
     const open = Boolean(anchorEl);
     const { clearUserDataFromState } = useAuth();
+
+    // Notification toggle state
+    const [notificationsEnabled, setNotificationsEnabled] = React.useState(false);
+
+    const handleToggleNotifications = () => {
+        setNotificationsEnabled((prev) => !prev);
+        // Optional: Save preference (localStorage or backend)
+        // localStorage.setItem("notificationsEnabled", !notificationsEnabled);
+    };
 
     const handleMenuOpen = (e) => setAnchorEl(e.currentTarget);
     const handleMenuClose = () => setAnchorEl(null);
@@ -58,9 +67,10 @@ export default function AdminLayout() {
                             to={item.to}
                             end
                             className={({ isActive }) =>
-                                `flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors ${isActive
-                                    ? "bg-gray-700 text-white"
-                                    : "hover:bg-gray-800 hover:text-white text-gray-300"
+                                `flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors ${
+                                    isActive
+                                        ? "bg-gray-700 text-white"
+                                        : "hover:bg-gray-800 hover:text-white text-gray-300"
                                 }`
                             }
                         >
@@ -88,7 +98,20 @@ export default function AdminLayout() {
                             }}
                         />
                     </Tooltip>
+
                     <Menu anchorEl={anchorEl} open={open} onClose={handleMenuClose}>
+                        {/* Notification Toggle */}
+                        <MenuItem>
+                            <div className="flex justify-between items-center w-full">
+                                <span>Notifications</span>
+                                <Switch
+                                    checked={notificationsEnabled}
+                                    onChange={handleToggleNotifications}
+                                    color="success"
+                                />
+                            </div>
+                        </MenuItem>
+
                         <MenuItem onClick={handleLogout}>
                             <ExitToApp fontSize="small" className="mr-2" />
                             Logout
