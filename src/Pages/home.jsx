@@ -4,7 +4,7 @@ import beforeAuthLayout from "../components/BeforeAuth";
 import { dummyCourses, dummyPathways } from "../Pages/dummyData";
 import { useAuth } from "../contexts/AuthContext"; // ✅
 import useCourseApi from "../hooks/useCourseApi";
-import webdevremovebg from "../assets/Images/webdevremovebg.png";
+//import webdevremovebg from "../assets/Images/webdevremovebg.png";
 
 function Home() {
   const [hoveredCourse, setHoveredCourse] = useState(null);
@@ -22,6 +22,7 @@ function Home() {
     const load = async () => {
       try {
         const res = await fetchPopularCoursesAndPathway();
+        console.log("Full API response:", JSON.stringify(res, null, 2));
         if (!mounted) return;
         setApiPopularCourses(res?.popularCourses || null);
         setApiPopularPathways(res?.popularPathways || res?.pathways || null);
