@@ -4,7 +4,7 @@ import beforeAuthLayout from "../components/BeforeAuth";
 import { dummyCourses, dummyPathways } from "../Pages/dummyData";
 import { useAuth } from "../contexts/AuthContext"; // ✅
 import useCourseApi from "../hooks/useCourseApi";
-//import webdevremovebg from "../assets/Images/webdevremovebg.png";
+import webdevremovebg from "../assets/Images/webdevremovebg.png"; // Placeholder image
 
 function Home() {
   const [hoveredCourse, setHoveredCourse] = useState(null);
