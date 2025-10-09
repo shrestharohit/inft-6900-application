@@ -23,7 +23,7 @@ export default function useCourseApi() {
   }, []);
 
   const fetchCourse = useCallback(async (courseID) => {
-    const res = await api.get(`/api/course/${courseID}`);
+    const res = await api.get(`/api/course/${courseID}/detail`);
     return res.data;
   }, []);
 
