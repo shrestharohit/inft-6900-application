@@ -122,7 +122,7 @@ const CourseOwnerDashboardContent = () => {
                 outerRadius={90}
                 label
               >
-                {ratingData.map((_, index) => (
+                {ratingData?.map((_, index) => (
                   <Cell
                     key={`cell-${index}`}
                     fill={COLORS[index % COLORS.length]}

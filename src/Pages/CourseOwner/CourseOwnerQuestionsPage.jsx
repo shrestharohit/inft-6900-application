@@ -3,6 +3,7 @@ import React, { useState, useEffect } from "react";
 import { useAuth } from "../../contexts/AuthContext";
 import { dummyCourses } from "../dummyData";
 import useCourseApi from "../../hooks/useCourseApi";
+import useDms from "../../hooks/useDMs";
 
 const CourseOwnerQuestionsPage = () => {
   const { loggedInUser } = useAuth();
@@ -11,6 +12,8 @@ const CourseOwnerQuestionsPage = () => {
   const [replyText, setReplyText] = useState({}); // map: q.id -> reply
   const [ownerCourses, setOwnerCourses] = useState([]);
   const { fetchAllCourses } = useCourseApi();
+
+  const { getAllDmsForCourse, replyDms } = useDms();
 
   useEffect(() => {
     let mounted = true;
@@ -27,32 +30,42 @@ const CourseOwnerQuestionsPage = () => {
     return () => (mounted = false);
   }, [fetchAllCourses]);
 
-  // Load questions when course changes
-  useEffect(() => {
-    if (!selectedCourseId) return;
-    const saved =
-      JSON.parse(localStorage.getItem(`questions_${selectedCourseId}`)) || [];
-    setQuestions(saved);
-  }, [selectedCourseId]);
-
-  const saveToStorage = (updated) => {
-    setQuestions(updated);
-    localStorage.setItem(
-      `questions_${selectedCourseId}`,
-      JSON.stringify(updated)
-    );
+  const fetchDms = (courseId) => {
+    getAllDmsForCourse(courseId || selectedCourseId)
+      .then((res) => {
+        setQuestions(res.dms);
+      })
+      .catch((err) => {
+        console.error("Failed to fetch announcements", err);
+        setQuestions([]);
+      });
   };
 
   const handleReplyChange = (id, text) => {
     setReplyText((prev) => ({ ...prev, [id]: text }));
   };
 
-  const submitReply = (id) => {
-    const updated = questions.map((q) =>
-      q.id === id ? { ...q, reply: replyText[id] || "" } : q
-    );
-    saveToStorage(updated);
-    setReplyText((prev) => ({ ...prev, [id]: "" }));
+  const submitReply = (dm) => {
+    const payload = {
+      ...dm,
+      reply: replyText[dm.msgID] || "",
+      status: "active",
+    };
+    replyDms(dm.msgID, payload)
+      .then(() => {
+        // Refresh the list after successful reply
+        fetchDms();
+        setReplyText((prev) => ({ ...prev, [dm.msgID]: "" }));
+      })
+      .catch((err) => {
+        console.error("Failed to send reply", err);
+      });
+  };
+
+  const handleCourseSelect = (e) => {
+    const courseId = e.target.value;
+    setSelectedCourseId(courseId);
+    fetchDms(courseId);
   };
 
   return (
@@ -68,7 +81,7 @@ const CourseOwnerQuestionsPage = () => {
         </label>
         <select
           value={selectedCourseId}
-          onChange={(e) => setSelectedCourseId(e.target.value)}
+          onChange={handleCourseSelect}
           className="w-full border p-3 rounded"
         >
           <option value="">-- Choose one of your courses --</option>
@@ -90,11 +103,11 @@ const CourseOwnerQuestionsPage = () => {
             <ul className="space-y-6">
               {questions.map((q) => (
                 <li
-                  key={q.id}
+                  key={q.msgID}
                   className="bg-white p-5 rounded-lg shadow border-l-4 border-blue-500"
                 >
-                  <p className="font-semibold text-gray-800">{q.text}</p>
-                  <p className="text-xs text-gray-400 mb-3">{q.createdAt}</p>
+                  <p className="font-semibold text-gray-800">{q.message}</p>
+                  <p className="text-xs text-gray-400 mb-3">{q.created_at}</p>
 
                   {q.reply ? (
                     <p className="mt-2 text-green-700">
@@ -103,16 +116,16 @@ const CourseOwnerQuestionsPage = () => {
                   ) : (
                     <div className="mt-3">
                       <textarea
-                        value={replyText[q.id] || ""}
+                        value={replyText[q.msgID] || ""}
                         onChange={(e) =>
-                          handleReplyChange(q.id, e.target.value)
+                          handleReplyChange(q.msgID, e.target.value)
                         }
                         placeholder="Type your reply here..."
                         className="w-full p-3 border rounded mb-2 focus:ring-2 focus:ring-green-500"
                         rows="3"
                       />
                       <button
-                        onClick={() => submitReply(q.id)}
+                        onClick={() => submitReply(q)}
                         className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded text-sm font-semibold"
                       >
                         Send Reply
