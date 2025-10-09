@@ -59,13 +59,8 @@ const AdminCourseApproval = () => {
     }
 
     try {
-      const res = await updateCourse(courseID, { status });
-      setCourses((prev) =>
-        prev.map((course) =>
-          course.courseID === courseID ? { ...course, status: status } : course
-        )
-      );
-      setSnack({ open: true, severity: "success", msg });
+      await updateCourse(courseID, { status });
+      setSnack({ open: true, severity: "success", msg: "Course updated successfully." });
     } catch (err) {
       console.error("Failed to update course status", err);
       setSnack({
@@ -74,13 +69,13 @@ const AdminCourseApproval = () => {
         msg: "Failed to update course status",
       });
     }
+    const res = await fetchAllCourses();
+    setCourses(res);
   };
 
   const toggleExpand = (courseID) => {
     setExpanded((prev) => ({ ...prev, [courseID]: !prev[courseID] }));
   };
-
-  const getModulesForCourse = (courseID) => [];
 
   const statusMapper = {
     wait_for_approval: "Wait For Approval",

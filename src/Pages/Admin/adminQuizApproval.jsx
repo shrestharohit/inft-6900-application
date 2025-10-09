@@ -14,40 +14,75 @@ import {
   Snackbar,
   Alert,
 } from "@mui/material";
+import useQuizApi from "../../hooks/useQuizApi";
 
 const STORAGE_KEY = "course_owner_quizzes";
 
 function AdminQuizApproval() {
   const [quizzes, setQuizzes] = useState([]);
-  const [snack, setSnack] = useState({ open: false, severity: "info", msg: "" });
+  const [snack, setSnack] = useState({
+    open: false,
+    severity: "info",
+    msg: "",
+  });
 
-  // Load quizzes from localStorage
+  const { fetchQuizApprovalList, updateQuiz } = useQuizApi();
+
   useEffect(() => {
-    const stored = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
-    setQuizzes(stored);
-  }, []);
+    let mounted = true;
+    const load = async () => {
+      try {
+        const res = await fetchQuizApprovalList();
+        if (!mounted) return;
+        setQuizzes(res);
+      } catch (e) {
+        console.error("Failed to load courses for approval", e);
+        if (mounted) setQuizzes([]);
+        p;
+      }
+    };
 
-  // Persist quizzes to localStorage on change
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(quizzes));
-  }, [quizzes]);
+    load();
+    return () => (mounted = false);
+  }, [fetchQuizApprovalList]);
 
-  // Update status (Approve / Decline / Inactivate)
-  const updateStatus = (idx, status) => {
-    const updated = [...quizzes];
-    updated[idx].status = status;
-    setQuizzes(updated);
-
+  const updateStatus = async (quiz, status) => {
     let msg = "";
-    if (status === "Active") msg = "✅ Quiz approved and now Active.";
-    if (status === "Draft") msg = "❌ Quiz declined and moved back to Draft.";
-    if (status === "Inactive") msg = "⚠️ Quiz deactivated.";
-    setSnack({ open: true, severity: "info", msg });
+    const payload = { ...quiz, status };
+
+    try {
+      await updateQuiz(quiz.quizID, payload);
+      if (status === "active") msg = "✅ Quiz approved and now Active.";
+      if (status === "draft") msg = "❌ Quiz declined and moved back to Draft.";
+      if (status === "inactive") msg = "⚠️ Quiz deactivated.";
+      setSnack((s) => ({ ...s, open: true, severity: "success", msg }));
+    } catch (err) {
+      setSnack({
+        open: true,
+        severity: "error",
+        msg: "Failed to update quiz status",
+      });
+    }
+    const res = await fetchQuizApprovalList();
+    setQuizzes(res);
+  };
+
+  const statusMapper = {
+    wait_for_approval: "Wait For Approval",
+    draft: "Draft",
+    active: "Active",
+    inactive: "Inactive",
   };
 
   return (
     <Box sx={{ maxWidth: 1200, margin: "24px auto", padding: "0 16px" }}>
-      <Paper sx={{ padding: 3, borderRadius: 3, boxShadow: "0 8px 24px rgba(0,0,0,0.08)" }}>
+      <Paper
+        sx={{
+          padding: 3,
+          borderRadius: 3,
+          boxShadow: "0 8px 24px rgba(0,0,0,0.08)",
+        }}
+      >
         <Typography variant="h5" fontWeight={700} mb={3}>
           Quiz Approval
         </Typography>
@@ -56,10 +91,9 @@ function AdminQuizApproval() {
           <Table>
             <TableHead sx={{ background: "#f7f7f9" }}>
               <TableRow>
-                <TableCell>Course</TableCell>
-                <TableCell>Module</TableCell>
+                <TableCell>Index</TableCell>
                 <TableCell>Quiz Title</TableCell>
-                <TableCell>Time Limit</TableCell>
+                <TableCell>Time Limit (mins)</TableCell>
                 <TableCell>Status</TableCell>
                 <TableCell align="right">Actions</TableCell>
               </TableRow>
@@ -67,20 +101,23 @@ function AdminQuizApproval() {
             <TableBody>
               {quizzes.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} align="center" sx={{ py: 4, color: "text.secondary" }}>
+                  <TableCell
+                    colSpan={6}
+                    align="center"
+                    sx={{ py: 4, color: "text.secondary" }}
+                  >
                     No quizzes submitted yet.
                   </TableCell>
                 </TableRow>
               ) : (
                 quizzes.map((quiz, idx) => (
                   <TableRow key={idx} hover>
-                    <TableCell>{quiz.courseTitle}</TableCell>
-                    <TableCell>{quiz.moduleTitle}</TableCell>
-                    <TableCell>{quiz.quizTitle}</TableCell>
-                    <TableCell>{quiz.timeLimit} mins</TableCell>
-                    <TableCell>{quiz.status}</TableCell>
+                    <TableCell>{idx + 1}</TableCell>
+                    <TableCell>{quiz.title}</TableCell>
+                    <TableCell>{quiz.timeLimit}</TableCell>
+                    <TableCell>{statusMapper[quiz.status]}</TableCell>
                     <TableCell align="right">
-                      {quiz.status === "Wait for Approval" && (
+                      {quiz.status === "wait_for_approval" && (
                         <>
                           <Tooltip title="Approve">
                             <Button
@@ -88,7 +125,7 @@ function AdminQuizApproval() {
                               color="success"
                               size="small"
                               sx={{ mr: 1 }}
-                              onClick={() => updateStatus(idx, "Active")}
+                              onClick={() => updateStatus(quiz, "active")}
                             >
                               Approve
                             </Button>
@@ -98,26 +135,27 @@ function AdminQuizApproval() {
                               variant="outlined"
                               color="error"
                               size="small"
-                              onClick={() => updateStatus(idx, "Draft")}
+                              onClick={() => updateStatus(quiz, "draft")}
                             >
                               Decline
                             </Button>
                           </Tooltip>
                         </>
                       )}
-                      {quiz.status === "Active" && (
+                      {quiz.status === "active" && (
                         <Tooltip title="Deactivate">
                           <Button
                             variant="outlined"
                             color="warning"
                             size="small"
-                            onClick={() => updateStatus(idx, "Inactive")}
+                            onClick={() => updateStatus(quiz, "inactive")}
                           >
                             Inactivate
                           </Button>
                         </Tooltip>
                       )}
-                      {(quiz.status === "Draft" || quiz.status === "Inactive") && (
+                      {(quiz.status === "draft" ||
+                        quiz.status === "inactive") && (
                         <Typography variant="body2" color="text.secondary">
                           Waiting for owner update
                         </Typography>

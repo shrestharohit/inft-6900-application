@@ -118,78 +118,36 @@ const AdminUserManagement = () => {
   const handleSave = async () => {
     if (!validate()) return;
 
-    if (editingIndex === null) {
-      // Optimistic update
-      const tempUser = { ...form, userID: `temp-${Date.now()}` };
-      setUsers((prev) => [...prev, tempUser]);
-      handleClose();
+    try {
+      if (editingIndex === null) {
+        await registerPriviledgedUser(form);
+      } else {
+        const originalUser = users[editingIndex];
 
-      try {
-        const res = await registerPriviledgedUser(form);
-        const created = res.user || res;
-        setUsers((prev) =>
-          prev.map((u) => (u.userID === tempUser.userID ? created : u))
-        );
-        setSnack({
-          open: true,
-          severity: "success",
-          msg: "User added successfully.",
-        });
-      } catch (err) {
-        console.error("Add failed:", err);
-        // rollback optimistic change
-        setUsers((prev) => prev.filter((u) => u.userID !== tempUser.userID));
-        setSnack({
-          open: true,
-          severity: "error",
-          msg: "Failed to add user.",
-        });
-      }
-    } else {
-      // Optimistic update for edit
-      const originalUser = users[editingIndex];
-      const updatedUser = { ...originalUser, ...form };
-      setUsers((prev) =>
-        prev.map((u, i) => (i === editingIndex ? updatedUser : u))
-      );
-      handleClose();
-
-      try {
-        const res = await updateUserById({
+        await updateUserById({
           ...form,
           userID: originalUser.userID,
         });
-        const updated = res.user || res;
-        setUsers((prev) =>
-          prev.map((u, i) => (i === editingIndex ? updated : u))
-        );
-        setSnack({
-          open: true,
-          severity: "success",
-          msg: "User updated successfully.",
-        });
-      } catch (err) {
-        console.error("Update failed:", err);
-        // rollback if needed
-        setUsers((prev) =>
-          prev.map((u, i) => (i === editingIndex ? originalUser : u))
-        );
-        setSnack({
-          open: true,
-          severity: "error",
-          msg: "Failed to update user.",
-        });
       }
+      setSnack({
+        open: true,
+        severity: "success",
+        msg: "User added successfully.",
+      });
+    } catch (err) {
+      setSnack({
+        open: true,
+        severity: "error",
+        msg: "Failed to add user.",
+      });
     }
+    handleClose();
+    fetchUsers();
   };
 
   const handleDelete = async (idx) => {
     const u = users[idx];
     if (!window.confirm(`Delete ${u.email}?`)) return;
-
-    const originalUsers = [...users];
-    // Optimistic delete
-    setUsers((prev) => prev.filter((_, i) => i !== idx));
 
     try {
       await deleteUserById(u.userID);
@@ -199,15 +157,13 @@ const AdminUserManagement = () => {
         msg: "User deleted successfully.",
       });
     } catch (err) {
-      console.error("Failed to delete user", err);
-      // rollback
-      setUsers(originalUsers);
       setSnack({
         open: true,
         severity: "error",
         msg: "Failed to delete user.",
       });
     }
+    fetchUsers();
   };
 
   const roleMapper = {
@@ -270,7 +226,9 @@ const AdminUserManagement = () => {
                 ) : (
                   users.map((u, idx) => (
                     <TableRow key={u.userID || idx} hover>
-                      <TableCell>{u.firstName} {u.lastName}</TableCell>
+                      <TableCell>
+                        {u.firstName} {u.lastName}
+                      </TableCell>
                       <TableCell>{u.email}</TableCell>
                       <TableCell>{roleMapper[u.role]}</TableCell>
                       <TableCell align="right">

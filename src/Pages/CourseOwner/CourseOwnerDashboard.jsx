@@ -28,13 +28,13 @@ const CourseOwnerDashboardContent = () => {
 
   const { getCourseOwnerDashboard } = useAnalyticsApi();
 
-  useEffect(async () => {
-    if (loggedInUser?.id) {
-      const res = await getCourseOwnerDashboard(loggedInUser?.id);
-      console.log("Dashboard data:", res);
-      setOwnerCourses(res);
-    }
-  }, [loggedInUser]);
+  // useEffect(async () => {
+  //   if (loggedInUser?.id) {
+  //     const res = await getCourseOwnerDashboard(loggedInUser?.id);
+  //     console.log("Dashboard data:", res);
+  //     setOwnerCourses(res);
+  //   }
+  // }, [loggedInUser]);
 
   useEffect(() => {
     if (loggedInUser?.email) {

@@ -7,21 +7,18 @@ export default function useQuizApi() {
     return res.data;
   }, []);
 
-  const updateQuiz = useCallback(
-    async (courseID, moduleNumber, quizNumber, payload) => {
-      const res = await api.put(
-        `/api/course/${courseID}/module/${moduleNumber}/quiz/${quizNumber}`,
-        payload
-      );
-      return res.data;
-    },
-    []
-  );
+  const updateQuiz = useCallback(async (quizId, payload) => {
+    const res = await api.put(`/api/quiz/update/${quizId}`, payload);
+    return res.data;
+  }, []);
 
-  const fetchQuiz = useCallback(async (courseID, moduleNumber, quizNumber) => {
-    const res = await api.get(
-      `/api/course/${courseID}/module/${moduleNumber}/quiz/${quizNumber}`
-    );
+  const fetchQuizApprovalList = useCallback(async () => {
+    const res = await api.get(`/api/quiz/approval-list`);
+    return res.data;
+  }, []);
+
+  const fetchQuizForCourseOwner = useCallback(async (userId) => {
+    const res = await api.get(`/api/quiz/owner/${userId}`);
     return res.data;
   }, []);
 
@@ -42,7 +39,8 @@ export default function useQuizApi() {
   return {
     registerQuiz,
     updateQuiz,
-    fetchQuiz,
+    fetchQuizApprovalList,
+    fetchQuizForCourseOwner,
     fetchAllQuizzes,
     fetchQuizMeta,
   };
