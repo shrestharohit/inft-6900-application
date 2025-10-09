@@ -53,7 +53,7 @@ export default function ModuleManagement() {
     moduleNumber: "",
     expectedHours: "",
     status: "draft",
-    content: [],
+    contents: [],
   });
 
   const [pageForm, setPageForm] = useState({
@@ -145,7 +145,7 @@ export default function ModuleManagement() {
     }
 
     // Check for duplicate page titles in current module
-    const isDuplicate = moduleForm.content.some(
+    const isDuplicate = moduleForm.contents.some(
       (page, idx) =>
         idx !== editingPageIndex &&
         page.title.trim().toLowerCase() === trimmedTitle.toLowerCase()
@@ -163,17 +163,17 @@ export default function ModuleManagement() {
       pageNumber:
         editingPageIndex !== null
           ? editingPageIndex + 1
-          : moduleForm.content.length + 1,
+          : moduleForm.contents.length + 1,
     };
 
     if (editingPageIndex !== null) {
-      const updatedcontent = [...moduleForm.content];
+      const updatedcontent = [...moduleForm.contents];
       updatedcontent[editingPageIndex] = newPage;
-      setModuleForm((prev) => ({ ...prev, content: updatedcontent }));
+      setModuleForm((prev) => ({ ...prev, contents: updatedcontent }));
     } else {
       setModuleForm((prev) => ({
         ...prev,
-        content: [...prev.content, newPage],
+        contents: [...prev.contents, newPage],
       }));
     }
 
@@ -183,7 +183,7 @@ export default function ModuleManagement() {
   };
 
   const handleEditPage = (pageIndex) => {
-    const page = moduleForm.content[pageIndex];
+    const page = moduleForm.contents[pageIndex];
     setPageForm({
       title: page.title,
       content: page.content,
@@ -194,11 +194,11 @@ export default function ModuleManagement() {
   };
 
   const handleRemovePage = (pageIndex) => {
-    const updatedcontent = moduleForm.content
+    const updatedcontent = moduleForm.contents
       .filter((_, idx) => idx !== pageIndex)
       .map((page, idx) => ({ ...page, pageNumber: idx + 1 }));
 
-    setModuleForm((prev) => ({ ...prev, content: updatedcontent }));
+    setModuleForm((prev) => ({ ...prev, contents: updatedcontent }));
   };
 
   // Module submission
@@ -217,7 +217,7 @@ export default function ModuleManagement() {
       moduleNumber: parseInt(moduleForm.moduleNumber, 10),
       expectedHours: moduleForm.expectedHours.trim() || null,
       status: moduleForm.status,
-      content: moduleForm.content?.map((x, index) => ({
+      contents: moduleForm.contents?.map((x, index) => ({
         ...x,
         description: x.content,
         pageNumber: index + 1,
@@ -235,7 +235,7 @@ export default function ModuleManagement() {
           moduleNumber: payload.moduleNumber,
           expectedHours: payload.expectedHours,
           status: payload.status,
-          content: payload.content,
+          contents: payload.contents,
         });
 
         const updatedModule = response?.module || response || payload;
@@ -279,7 +279,7 @@ export default function ModuleManagement() {
       moduleNumber: module.moduleNumber,
       expectedHours: module.expectedHours || "",
       status: module.status,
-      content: module.content || [],
+      contents: module.contents || [],
     });
     setEditingModuleIndex(index);
   };
@@ -440,9 +440,9 @@ export default function ModuleManagement() {
                 Add Page
               </Button>
 
-              {moduleForm.content.length > 0 ? (
+              {moduleForm.contents.length > 0 ? (
                 <Stack spacing={2}>
-                  {moduleForm.content.map((page, idx) => (
+                  {moduleForm.contents.map((page, idx) => (
                     <Card key={idx} variant="outlined" sx={{ borderRadius: 2 }}>
                       <CardContent>
                         <Box
@@ -477,8 +477,8 @@ export default function ModuleManagement() {
                           color="text.secondary"
                           sx={{ mb: 1 }}
                         >
-                          {page.content.substring(0, 150)}
-                          {page.content.length > 150 && "..."}
+                          {page.content?.substring(0, 150)}
+                          {page.content?.length > 150 && "..."}
                         </Typography>
                         {page.mediaUrl && (
                           <Typography variant="caption" color="primary">
@@ -548,7 +548,7 @@ export default function ModuleManagement() {
                     : "—"}
                 </TableCell>
                 {/* <TableCell>{module.expectedHours || "—"}</TableCell> */}
-                <TableCell>{module.content?.length || 0}</TableCell>
+                <TableCell>{module.contents?.length || 0}</TableCell>
                 <TableCell>
                   <Typography
                     variant="caption"

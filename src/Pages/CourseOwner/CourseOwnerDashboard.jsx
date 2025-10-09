@@ -28,52 +28,33 @@ const CourseOwnerDashboardContent = () => {
 
   const { getCourseOwnerDashboard } = useAnalyticsApi();
 
-  useEffect(async () => {
-    if (loggedInUser?.id) {
-      const res = await getCourseOwnerDashboard(loggedInUser?.id);
-      console.log("Dashboard data:", res);
-      setOwnerCourses(res);
-    }
-  }, [loggedInUser]);
-
   useEffect(() => {
-    if (loggedInUser?.email) {
-      const courses = dummyCourses.filter(
-        (c) => c.ownerEmail === loggedInUser.email
-      );
-      setOwnerCourses(courses);
-    }
-  }, [loggedInUser]);
+    let mounted = true;
+    if (!loggedInUser?.id) return;
+    getCourseOwnerDashboard(loggedInUser?.id)
+      .then((res) => {
+        if (mounted) setOwnerCourses(res);
+      })
+      .catch((err) => {
+        console.error("Failed to fetch courses", err);
+      });
 
-  // Metrics
-  const totalStudents = ownerCourses.reduce(
-    (acc, c) => acc + (c.numEnrolled || 0),
-    0
-  );
-  const avgRating =
-    ownerCourses.length > 0
-      ? (
-          ownerCourses.reduce((acc, c) => acc + (c.rating || 0), 0) /
-          ownerCourses.length
-        ).toFixed(1)
-      : 0;
+    return () => (mounted = false);
+  }, [getCourseOwnerDashboard, loggedInUser]);
 
-  const announcementsCount = ownerCourses.reduce((acc, c) => {
-    const published =
-      JSON.parse(localStorage.getItem(`published_${c.id}`)) || [];
-    return acc + published.length;
-  }, 0);
+  const enrollmentData = ownerCourses?.individualCourseData?.map((x) => {
+    return {
+      name: x.title,
+      enrolled: x.enrolments,
+    };
+  });
 
-  // Chart data
-  const enrollmentData = ownerCourses.map((c) => ({
-    name: c.name,
-    enrolled: c.numEnrolled,
-  }));
-
-  const ratingData = ownerCourses.map((c) => ({
-    name: c.name,
-    rating: c.rating,
-  }));
+  const ratingData = ownerCourses?.individualCourseData?.map((x) => {
+    return {
+      name: x.title,
+      rating: x.avgRating,
+    };
+  });
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
@@ -85,21 +66,25 @@ const CourseOwnerDashboardContent = () => {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
         <div className="bg-white p-5 rounded-lg shadow text-center">
           <h2 className="text-2xl font-bold text-[#1f2a60]">
-            {ownerCourses.length}
+            {ownerCourses?.overallData?.coursesOwned || 0}
           </h2>
           <p className="text-gray-600">Courses Owned</p>
         </div>
         <div className="bg-white p-5 rounded-lg shadow text-center">
-          <h2 className="text-2xl font-bold text-green-600">{totalStudents}</h2>
+          <h2 className="text-2xl font-bold text-green-600">
+            {ownerCourses?.overallData?.enrolments || 0}
+          </h2>
           <p className="text-gray-600">Total Enrolled Students</p>
         </div>
         <div className="bg-white p-5 rounded-lg shadow text-center">
-          <h2 className="text-2xl font-bold text-yellow-500">{avgRating}</h2>
+          <h2 className="text-2xl font-bold text-yellow-500">
+            {ownerCourses?.overallData?.avgRating || 0}
+          </h2>
           <p className="text-gray-600">Average Rating</p>
         </div>
         <div className="bg-white p-5 rounded-lg shadow text-center">
           <h2 className="text-2xl font-bold text-blue-600">
-            {announcementsCount}
+            {ownerCourses?.overallData?.totalPublishedAnnouncement || 0}
           </h2>
           <p className="text-gray-600">Announcements Published</p>
         </div>
@@ -137,7 +122,7 @@ const CourseOwnerDashboardContent = () => {
                 outerRadius={90}
                 label
               >
-                {ratingData.map((_, index) => (
+                {ratingData?.map((_, index) => (
                   <Cell
                     key={`cell-${index}`}
                     fill={COLORS[index % COLORS.length]}
@@ -166,11 +151,11 @@ const CourseOwnerDashboardContent = () => {
               </tr>
             </thead>
             <tbody>
-              {ownerCourses.map((c) => (
+              {ownerCourses?.individualCourseData?.map((c) => (
                 <tr key={c.id} className="hover:bg-gray-50">
-                  <td className="p-3 border font-medium">{c.name}</td>
-                  <td className="p-3 border">{c.numEnrolled}</td>
-                  <td className="p-3 border">{c.rating}</td>
+                  <td className="p-3 border font-medium">{c.title}</td>
+                  <td className="p-3 border">{c.enrolments}</td>
+                  <td className="p-3 border">{c.avgRating}</td>
                   <td className="p-3 border">{c.releasedDate}</td>
                 </tr>
               ))}

@@ -7,6 +7,8 @@ import {
     Quiz,
     Settings,
     ExitToApp,
+    Dashboard,
+    QuestionAnswer
 } from "@mui/icons-material";
 import { useAuth } from "../../contexts/AuthContext";
 

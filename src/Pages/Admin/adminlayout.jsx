@@ -14,7 +14,7 @@ import {
 import { useAuth } from "../../contexts/AuthContext";
 
 const NAV_ITEMS = [
-    // { label: "Dashboard", to: "/admin", icon: <Dashboard /> },
+    { label: "Dashboard", to: "/admin", icon: <Dashboard /> },
     // { label: "Courses", to: "/admin/courses", icon: <LibraryBooks /> },
     // { label: "Enrollments", to: "/admin/enrollments", icon: <School /> },
     { label: "Users", to: "/admin/users", icon: <People /> },
