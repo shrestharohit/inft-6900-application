@@ -13,20 +13,25 @@ const CourseQuestionsPage = () => {
   const [filter, setFilter] = useState("all"); // all | answered | unanswered
   const [editingId, setEditingId] = useState(null);
 
-  // Load from localStorage
-  useEffect(() => {
-    const saved =
-      JSON.parse(localStorage.getItem(`questions_${courseId}`)) || [];
-    setQuestions(saved);
-  }, [courseId]);
+  const { getAllDmsForUser, createDms } = useDms();
+  const { loggedInUser } = useAuth();
 
-  const saveToStorage = (updated) => {
-    setQuestions(updated);
-    localStorage.setItem(`questions_${courseId}`, JSON.stringify(updated));
+  const fetchDms = () => {
+    getAllDmsForUser(loggedInUser?.id)
+      .then((res) => {
+        console.log(res);
+        setQuestions(res.dms)
+      })
+      .catch((err) => {
+        console.error("Failed to fetch announcements", err);
+      });
   };
 
-  const { createDms } = useDms();
-  const { loggedInUser } = useAuth();
+  useEffect(() => {
+    let mounted = true;
+    fetchDms();
+    return () => (mounted = false);
+  }, [getAllDmsForUser, loggedInUser]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -163,11 +168,11 @@ const CourseQuestionsPage = () => {
           <div className="space-y-4">
             {filteredQuestions.map((q) => (
               <div
-                key={q.id}
+                key={q.msgID}
                 className="border p-5 rounded-lg bg-gray-50 shadow-sm relative"
               >
-                <p className="font-semibold text-gray-800">{q.text}</p>
-                <p className="text-xs text-gray-400">{q.createdAt}</p>
+                <p className="font-semibold text-gray-800">{q.message}</p>
+                <p className="text-xs text-gray-400">{q.created_at}</p>
                 {q.reply ? (
                   <p className="mt-2 text-green-700">
                     <span className="font-semibold">Reply:</span> {q.reply}
@@ -178,12 +183,12 @@ const CourseQuestionsPage = () => {
 
                 {/* Controls */}
                 <div className="absolute top-3 right-3 flex gap-3 text-xs">
-                  <button
+                  {/* <button
                     onClick={() => handleEdit(q)}
                     className="text-blue-600 hover:underline"
                   >
                     Edit
-                  </button>
+                  </button> */}
                   <button
                     onClick={() => handleDelete(q.id)}
                     className="text-red-500 hover:underline"

@@ -267,7 +267,7 @@ const CoursePage = () => {
                         rating >= star ? "text-yellow-500" : "text-gray-300"
                       }`}
                       disabled={
-                        !reviews.reviews.find(
+                        !reviews?.reviews?.find(
                           (r) => r.userID == loggedInUser?.id
                         ) || isEditing
                       }
@@ -283,13 +283,13 @@ const CoursePage = () => {
                   placeholder="Write your feedback..."
                   className="w-full p-3 border border-gray-300 rounded-md mb-3 focus:ring-2 focus:ring-blue-500"
                   disabled={
-                    !reviews.reviews.find(
+                    !reviews?.reviews?.find(
                       (r) => r.userID == loggedInUser?.id
                     ) || isEditing
                   }
                 />
 
-                {!reviews.reviews.find((r) => r.userID == loggedInUser?.id) ||
+                {!reviews?.reviews?.find((r) => r.userID == loggedInUser?.id) ||
                 isEditing ? (
                   <button
                     type="submit"

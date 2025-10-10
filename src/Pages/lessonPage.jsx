@@ -1,25 +1,42 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import beforeAuthLayout from "../components/BeforeAuth";
 import { dummyCourses } from "../Pages/dummyData";
 import { dummyModules } from "../Pages/dummyModule";
 import { dummyLessonContent } from "../Pages/dummyLessonContent";
+import useContent from "../hooks/useContent";
 
 const LessonPage = () => {
   const { courseId, moduleId, lessonId } = useParams();
   const [isPlaying, setIsPlaying] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const utteranceRef = useRef(null);
+  const [lessonContent, setLessonContent] = useState(null);
 
-  const course = dummyCourses.find((c) => c.id === courseId);
-  if (!course) return <div className="p-6 text-red-500 text-center font-semibold text-lg">Course not found!</div>;
+  const { getContentDetails } = useContent();
 
-  const modules = dummyModules[courseId] || [];
-  const module = modules.find((m) => m.id.toString() === moduleId);
-  if (!module) return <div className="p-6 text-red-500 text-center font-semibold text-lg">Module not found!</div>;
+  const fetchContent = () => {
+    getContentDetails(lessonId)
+      .then((res) => {
+        setLessonContent(res.content);
+      })
+      .catch((err) => {
+        console.error("Failed to fetch announcements", err);
+      });
+  };
 
-  const lessonContent = dummyLessonContent[courseId]?.[lessonId];
-  if (!lessonContent) return <div className="p-6 text-red-500 text-center font-semibold text-lg">Lesson content not found!</div>;
+  useEffect(() => {
+    let mounted = true;
+    fetchContent();
+    return () => (mounted = false);
+  }, [getContentDetails]);
+
+  if (!lessonContent)
+    return (
+      <div className="p-6 text-red-500 text-center font-semibold text-lg">
+        Lesson content not found!
+      </div>
+    );
 
   // --- TTS Handlers ---
   const handleStartPause = () => {
@@ -29,7 +46,7 @@ const LessonPage = () => {
     }
 
     if (!isPlaying) {
-      const utter = new SpeechSynthesisUtterance(lessonContent.content);
+      const utter = new SpeechSynthesisUtterance(lessonContent.description);
       utter.onend = () => {
         setIsPlaying(false);
         setIsPaused(false);
@@ -65,8 +82,6 @@ const LessonPage = () => {
 
   return (
     <div className="p-6 max-w-5xl mx-auto">
-
-
       {/* Heading + TTS controls aligned */}
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-4xl font-extrabold text-gray-800">
@@ -83,10 +98,11 @@ const LessonPage = () => {
           <button
             onClick={handleStop}
             disabled={!isPlaying}
-            className={`px-4 py-2 rounded-full text-white shadow-md transition ${isPlaying
+            className={`px-4 py-2 rounded-full text-white shadow-md transition ${
+              isPlaying
                 ? "bg-red-600 hover:bg-red-700"
                 : "bg-gray-400 cursor-not-allowed"
-              }`}
+            }`}
           >
             ⏹ Stop
           </button>
@@ -96,7 +112,7 @@ const LessonPage = () => {
       {/* Lesson Content */}
       <div className="bg-white p-6 rounded-lg shadow-md border border-gray-200">
         <p className="text-gray-700 text-lg leading-relaxed">
-          {lessonContent.content}
+          {lessonContent.description}
         </p>
       </div>
     </div>
