@@ -7,14 +7,17 @@ import { dummyPathways } from "../Pages/dummyData"; // ✅ central import
 const PathwayPage = () => {
   const { pathwayId } = useParams();
   const navigate = useNavigate();
-  const { loggedInUser, isLoggedIn, enrollInPathway } = useAuth();
+  const { loggedInUser, isLoggedIn, enrollInPathway, leavePathway } = useAuth();
 
   const [pathway, setPathway] = useState(null);
   const [isEnrolled, setIsEnrolled] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  // ✅ Load pathway and check enrollment status
   useEffect(() => {
-    const selectedPathway = dummyPathways.find((p) => p.id === pathwayId);
+    const selectedPathway = dummyPathways.find(
+      (p) => String(p.id) === String(pathwayId)
+    );
     setPathway(selectedPathway);
 
     if (isLoggedIn && loggedInUser?.enrolledPathways) {
@@ -26,20 +29,48 @@ const PathwayPage = () => {
     return <div>Pathway not found!</div>;
   }
 
-  const handleEnroll = () => {
+  // ✅ Enroll handler
+  const handleEnroll = async () => {
     if (!isLoggedIn) {
       navigate("/login", { state: { from: `/pathway/${pathwayId}` } });
       return;
     }
 
     setLoading(true);
-
-    setTimeout(() => {
-      enrollInPathway(pathwayId);
+    try {
+      await enrollInPathway(pathwayId);
       setIsEnrolled(true);
       alert(`Successfully enrolled in ${pathway.name}`);
+    } catch (error) {
+      console.error("Error enrolling:", error);
+      alert("Something went wrong while enrolling.");
+    } finally {
       setLoading(false);
-    }, 500);
+    }
+  };
+
+  // ✅ Leave handler
+  const handleLeavePathway = async () => {
+    if (window.confirm(`Are you sure you want to leave ${pathway.name}?`)) {
+      setLoading(true);
+      try {
+        // If your AuthContext doesn’t have a `leavePathway` method,
+        // you can just use enrollInPathway(pathwayId, { unenroll: true })
+        if (leavePathway) {
+          await leavePathway(pathwayId);
+        } else {
+          await enrollInPathway(pathwayId, { unenroll: true });
+        }
+
+        setIsEnrolled(false); // ✅ Switch back to "Enroll" button instantly
+        alert(`You have left ${pathway.name}`);
+      } catch (error) {
+        console.error("Error leaving pathway:", error);
+        alert("Failed to leave pathway.");
+      } finally {
+        setLoading(false);
+      }
+    }
   };
 
   return (
@@ -72,7 +103,9 @@ const PathwayPage = () => {
 
         {/* Pathway Info */}
         <div className="md:w-2/3">
-          <h1 className="text-4xl font-extrabold text-gray-900">{pathway.name}</h1>
+          <h1 className="text-4xl font-extrabold text-gray-900">
+            {pathway.name}
+          </h1>
           <p className="text-lg text-gray-600 mt-4">{pathway.description}</p>
 
           <div className="text-gray-500 text-sm mt-6 space-y-2">
@@ -129,7 +162,9 @@ const PathwayPage = () => {
 
           {/* Reviews */}
           <div className="mt-6 bg-gray-100 p-6 rounded-lg shadow-md">
-            <h2 className="text-2xl font-semibold text-gray-800 mb-4">Reviews</h2>
+            <h2 className="text-2xl font-semibold text-gray-800 mb-4">
+              Reviews
+            </h2>
             {pathway.reviews.length > 0 ? (
               pathway.reviews.map((review, index) => (
                 <div key={index} className="mb-4">
@@ -147,21 +182,23 @@ const PathwayPage = () => {
             )}
           </div>
 
-          {/* Enroll / Already Enrolled */}
+          {/* Enroll / Leave Buttons */}
           <div className="mt-6 flex flex-col gap-3">
             {isEnrolled ? (
               <>
-                <button
-                  className="w-full bg-gray-400 text-white py-3 px-6 rounded-md cursor-not-allowed"
-                  disabled
-                >
-                  You are already enrolled
-                </button>
                 <button
                   onClick={() => navigate(`/pathway/${pathwayId}/content`)}
                   className="w-full bg-blue-500 hover:bg-blue-600 text-white py-3 px-6 rounded-md"
                 >
                   Go to Pathway Content
+                </button>
+
+                <button
+                  onClick={handleLeavePathway}
+                  disabled={loading}
+                  className="w-full bg-red-500 hover:bg-red-600 text-white py-3 px-6 rounded-md"
+                >
+                  {loading ? "Leaving..." : "Leave Pathway"}
                 </button>
               </>
             ) : (
