@@ -325,9 +325,10 @@ const Header = () => {
               {/* ✅ shrink logo to fit header */}
               <img
                 src={logo}
-                alt="BrainWave Logo"
-                className="h-10 w-auto cursor-pointer"
+                alt="BrainWave"
+                style={{ height: "80px", width: "auto", objectFit: "contain" }}
               />
+
             </Link>
 
             {/* Categories Dropdown */}
