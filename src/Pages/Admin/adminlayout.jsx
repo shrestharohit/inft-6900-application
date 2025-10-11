@@ -1,6 +1,7 @@
+// src/Pages/Admin/AdminLayout.jsx
 import React from "react";
-import { NavLink, Outlet } from "react-router-dom";
-import { Avatar, Menu, MenuItem, Tooltip, Switch } from "@mui/material";
+import { NavLink, Outlet, useNavigate } from "react-router-dom";
+import { Avatar, Menu, MenuItem, Tooltip, Switch, Divider, ListItemIcon, ListItemText } from "@mui/material";
 import {
     Dashboard,
     School,
@@ -10,38 +11,56 @@ import {
     Settings,
     ExitToApp,
     Quiz,
+    AccountCircle,
+    NotificationsActive,
+    Rule
 } from "@mui/icons-material";
 import { useAuth } from "../../contexts/AuthContext";
 
 const NAV_ITEMS = [
     { label: "Dashboard", to: "/admin", icon: <Dashboard /> },
-    // { label: "Courses", to: "/admin/courses", icon: <LibraryBooks /> },
-    // { label: "Enrollments", to: "/admin/enrollments", icon: <School /> },
     { label: "Users", to: "/admin/users", icon: <People /> },
-    // { label: "Messages", to: "/admin/messages", icon: <Mail /> },
     { label: "Profile", to: "/admin/profile", icon: <Settings /> },
     { label: "Course Approvals", to: "/admin/course-approvals", icon: <LibraryBooks /> },
-    // { label: "Module Approvals", to: "/admin/module-approvals", icon: <School /> },
     { label: "Quiz Approvals", to: "/admin/quiz-approvals", icon: <Quiz /> },
-    // { label: "Pathways Approvals", to: "/admin/pathways", icon: <LibraryBooks /> },
 ];
 
 export default function AdminLayout() {
     const [anchorEl, setAnchorEl] = React.useState(null);
     const open = Boolean(anchorEl);
-    const { clearUserDataFromState } = useAuth();
+    const navigate = useNavigate();
+    const { clearUserDataFromState, loggedInUser } = useAuth();
 
-    // Notification toggle state
+    // Notification toggle state (bootstrap from user if available)
     const [notificationsEnabled, setNotificationsEnabled] = React.useState(false);
+    React.useEffect(() => {
+        if (loggedInUser?.notificationsEnabled != null) {
+            setNotificationsEnabled(!!loggedInUser.notificationsEnabled);
+        }
+    }, [loggedInUser]);
 
     const handleToggleNotifications = () => {
         setNotificationsEnabled((prev) => !prev);
-        // Optional: Save preference (localStorage or backend)
-        // localStorage.setItem("notificationsEnabled", !notificationsEnabled);
+        // TODO: persist to backend if needed
     };
 
     const handleMenuOpen = (e) => setAnchorEl(e.currentTarget);
     const handleMenuClose = () => setAnchorEl(null);
+
+    const handleEditProfile = () => {
+        handleMenuClose();
+        navigate("/admin/profile");
+    };
+
+    const handleGoCourseApprovals = () => {
+        handleMenuClose();
+        navigate("/admin/course-approvals");
+    };
+
+    const handleGoQuizApprovals = () => {
+        handleMenuClose();
+        navigate("/admin/quiz-approvals");
+    };
 
     const handleLogout = () => {
         handleMenuClose();
@@ -50,16 +69,12 @@ export default function AdminLayout() {
 
     return (
         <div className="min-h-screen bg-gray-100 flex">
-            {/* Sidebar */}
+            {/* Sidebar (unchanged) */}
             <aside className="fixed top-0 left-0 bottom-0 w-60 bg-gray-900 text-gray-200 flex flex-col border-r border-white/10">
-                {/* Brand */}
                 <div className="flex items-center gap-3 px-4 py-5 border-b border-white/10">
-                    <span className="font-bold tracking-wide text-white">
-                        BrainWave Admin
-                    </span>
+                    <span className="font-bold tracking-wide text-white">BrainWave Admin</span>
                 </div>
 
-                {/* Navigation */}
                 <nav className="flex-1 p-2 overflow-y-auto">
                     {NAV_ITEMS.map((item) => (
                         <NavLink
@@ -67,10 +82,9 @@ export default function AdminLayout() {
                             to={item.to}
                             end
                             className={({ isActive }) =>
-                                `flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors ${
-                                    isActive
-                                        ? "bg-gray-700 text-white"
-                                        : "hover:bg-gray-800 hover:text-white text-gray-300"
+                                `flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors ${isActive
+                                    ? "bg-gray-700 text-white"
+                                    : "hover:bg-gray-800 hover:text-white text-gray-300"
                                 }`
                             }
                         >
@@ -100,9 +114,20 @@ export default function AdminLayout() {
                     </Tooltip>
 
                     <Menu anchorEl={anchorEl} open={open} onClose={handleMenuClose}>
-                        {/* Notification Toggle */}
-                        <MenuItem>
-                            <div className="flex justify-between items-center w-full">
+                        {/* Profile quick link */}
+                        <MenuItem onClick={handleEditProfile}>
+                            <ListItemIcon>
+                                <AccountCircle fontSize="small" />
+                            </ListItemIcon>
+                            <ListItemText primary="Edit Profile" />
+                        </MenuItem>
+
+                        {/* Notifications toggle */}
+                        <MenuItem disableRipple>
+                            <ListItemIcon>
+                                <NotificationsActive fontSize="small" />
+                            </ListItemIcon>
+                            <div className="flex items-center justify-between w-full">
                                 <span>Notifications</span>
                                 <Switch
                                     checked={notificationsEnabled}
@@ -112,9 +137,16 @@ export default function AdminLayout() {
                             </div>
                         </MenuItem>
 
+                        <Divider />
+
+
+
+                        {/* Logout */}
                         <MenuItem onClick={handleLogout}>
-                            <ExitToApp fontSize="small" className="mr-2" />
-                            Logout
+                            <ListItemIcon>
+                                <ExitToApp fontSize="small" />
+                            </ListItemIcon>
+                            <ListItemText primary="Logout" />
                         </MenuItem>
                     </Menu>
                 </div>

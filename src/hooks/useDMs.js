@@ -17,9 +17,15 @@ export default function useDms() {
     return res.data;
   }, []);
 
+  const getAllDmsForUser = useCallback(async (userId) => {
+    const res = await api.get(`/api/dm/user/${userId}`);
+    return res.data;
+  }, []);
+
   return {
     createDms,
     replyDms,
     getAllDmsForCourse,
+    getAllDmsForUser,
   };
 }

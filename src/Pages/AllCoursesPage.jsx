@@ -157,7 +157,7 @@ const AllCoursesPage = () => {
                 <h3 className="text-xl font-semibold text-gray-800 mb-2">
                   {course.name}
                 </h3>
-                <p className="text-gray-600 text-sm mb-4 h-20 overflow-scroll">
+                <p className="text-gray-600 text-sm mb-4 h-20 overflow-hidden">
                   {course.description}
                 </p>
                 <Link

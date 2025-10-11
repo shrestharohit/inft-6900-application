@@ -36,6 +36,11 @@ export default function useQuizApi() {
     return res.data;
   }, []);
 
+  const fetchQuizForCourse = useCallback(async (courseId) => {
+    const res = await api.get(`/api/quiz/owner/${courseId}`);
+    return res.data;
+  }, []);
+
   return {
     registerQuiz,
     updateQuiz,
@@ -43,5 +48,6 @@ export default function useQuizApi() {
     fetchQuizForCourseOwner,
     fetchAllQuizzes,
     fetchQuizMeta,
+    fetchQuizForCourse,
   };
 }

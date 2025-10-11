@@ -11,18 +11,19 @@ import ResetPasswordPage from "../Pages/resetPasswordPage"; // Step 3
 import ProfileManagement from "../Pages/profilemanagement";
 
 // Dummy pages for footer
-import About from "../Pages/about";
+import About from "../Pages/about"; // no curly braces
 import Contact from "../Pages/contactus";
 import Terms from "../Pages/termsAndCondition";
 
 // Admin imports
 import AdminLayout from "../Pages/Admin/adminlayout";
+import AdminDashboard from "../Pages/Admin/admindashboard";
 import AdminUserManagement from "../Pages/Admin/adminUserManagement";
 import AdminCourseApproval from "../Pages/Admin/adminCourseApproval";
 import AdminModuleApproval from "../Pages/Admin/adminModuleApproval";
 import AdminQuizApproval from "../Pages/Admin/adminQuizApproval";
 import AdminProfile from "../Pages/Admin/AdminProfile";
-import AdminPathwayApproval from "../Pages/Admin/adminPathwayApproval.jsx";
+import AdminPathwayApproval from "../Pages/Admin/adminPathwayManagement.jsx";
 
 // Student imports
 import Dashboard from "../Pages/Dashboard";
@@ -43,7 +44,6 @@ import CertificatePage from "../Pages/certificatePage";
 
 // Admin placeholder pages
 import {
-  DashboardPage,
   PathwaysPage,
   CoursesPage,
   EnrollmentsPage,
@@ -94,9 +94,9 @@ export const router = createBrowserRouter([
   {
     path: "/courses/:courseId",
     children: [
-      { index: true, element: <CoursePage /> }, // overview page (no sidebar)
+      { index: true, element: <CoursePage /> }, // normal page (already has beforeAuthLayout)
       {
-        element: <CourseLayout />, // wrap all sidebar pages
+        element: <CourseLayout />, // layout for nested routes
         children: [
           { path: "content", element: <CourseContentPage /> },
           { path: "questions", element: <CourseQuestionsPage /> },
@@ -111,12 +111,13 @@ export const router = createBrowserRouter([
     ],
   },
 
+
   // Admin routes
   {
     path: "/admin",
     element: <AdminLayout />,
     children: [
-      { index: true, element: <DashboardPage /> },
+      { index: true, element: <AdminDashboard /> },
       { path: "pathways", element: <AdminPathwayApproval /> },
       { path: "courses", element: <CoursesPage /> },
       { path: "enrollments", element: <EnrollmentsPage /> },

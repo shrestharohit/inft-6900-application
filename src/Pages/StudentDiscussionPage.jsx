@@ -294,4 +294,4 @@ const StudentDiscussionPage = () => {
     );
 };
 
-export default beforeAuthLayout(StudentDiscussionPage);
+export default StudentDiscussionPage;

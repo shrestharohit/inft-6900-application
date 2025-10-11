@@ -245,4 +245,4 @@ const QuizPage = () => {
   );
 };
 
-export default beforeAuthLayout(QuizPage);
+export default QuizPage;

@@ -5,6 +5,7 @@ import {
   Button,
   TextField,
   Typography,
+  Grid,
   Stack,
   Paper,
   Table,
@@ -206,6 +207,7 @@ export default function QuizManagement() {
       return;
     }
 
+    const updatedQuestions = questions.filter((_, i) => i !== qIndex);
     setQuestions(updatedQuestions);
 
     if (editingIndex === qIndex) {
@@ -395,25 +397,38 @@ export default function QuizManagement() {
             </Select>
           </FormControl>
 
-          <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
-            <TextField
-              label="Quiz Title"
-              name="title"
-              value={form.title}
-              onChange={handleChange}
-              fullWidth
-            />
-            <LocalizationProvider dateAdapter={AdapterDayjs}>
-              <TimePicker
-                label="Time Limit (HH:mm:ss)"
-                value={normalizeToDayjs(form.timeLimit)}
-                onChange={(newValue) =>
-                  setForm((prev) => ({ ...prev, timeLimit: newValue }))
-                }
-                renderInput={(params) => <TextField {...params} fullWidth />}
+          <Grid container spacing={2}>
+            <Grid item xs={12} md={8}>
+              <TextField
+                label="Quiz Title"
+                name="title"
+                value={form.title}
+                onChange={handleChange}
+                fullWidth
+                size="small"
               />
-            </LocalizationProvider>
-          </Stack>
+            </Grid>
+
+            <Grid item xs={12} md={4}>
+              <LocalizationProvider dateAdapter={AdapterDayjs}>
+                <TimePicker
+                  label="Time Limit (HH:mm:ss)"
+                  ampm={false}
+                  views={["hours", "minutes", "seconds"]}
+                  format="HH:mm:ss"
+                  value={normalizeToDayjs(form.timeLimit)}
+                  onChange={(newValue) =>
+                    setForm((prev) => ({ ...prev, timeLimit: newValue }))
+                  }
+                  slotProps={{
+                    textField: { fullWidth: true, size: "small" },
+                  }}
+                />
+              </LocalizationProvider>
+            </Grid>
+          </Grid>
+
+
 
           {/* Question Card */}
           <Card sx={{ mt: 2, p: 2, backgroundColor: "#f9f9f9" }}>
