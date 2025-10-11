@@ -92,48 +92,56 @@ const CourseOwnerDashboardContent = () => {
 
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-10">
+        {/* Enrollment as PIE */}
         <div className="bg-white p-5 rounded-lg shadow">
           <h2 className="text-lg font-semibold mb-4 text-[#1f2a60]">
             Enrollment per Course
           </h2>
           <ResponsiveContainer width="100%" height={250}>
-            <BarChart data={enrollmentData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" />
-              <YAxis />
-              <Tooltip />
-              <Bar dataKey="enrolled" fill="#22c55e" />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-
-        <div className="bg-white p-5 rounded-lg shadow">
-          <h2 className="text-lg font-semibold mb-4 text-[#1f2a60]">
-            Ratings per Course
-          </h2>
-          <ResponsiveContainer width="100%" height={250}>
             <PieChart>
               <Pie
-                data={ratingData}
-                dataKey="rating"
+                data={enrollmentData}
+                dataKey="enrolled"
                 nameKey="name"
                 cx="50%"
                 cy="50%"
+                innerRadius={40}
                 outerRadius={90}
                 label
               >
-                {ratingData?.map((_, index) => (
-                  <Cell
-                    key={`cell-${index}`}
-                    fill={COLORS[index % COLORS.length]}
-                  />
+                {enrollmentData?.map((_, index) => (
+                  <Cell key={`enroll-cell-${index}`} fill={COLORS[index % COLORS.length]} />
                 ))}
               </Pie>
               <Tooltip />
             </PieChart>
           </ResponsiveContainer>
         </div>
+
+        {/* Ratings as BAR */}
+        <div className="bg-white p-5 rounded-lg shadow">
+          <h2 className="text-lg font-semibold mb-4 text-[#1f2a60]">
+            Ratings per Course
+          </h2>
+          <ResponsiveContainer width="100%" height={250}>
+            <BarChart data={ratingData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis
+                dataKey="name"
+                tickFormatter={(t) => (t?.length > 10 ? `${t.slice(0, 10)}…` : t)}
+              />
+              <YAxis domain={[0, 5]} ticks={[0, 1, 2, 3, 4, 5]} />
+              <Tooltip formatter={(val) => Number(val).toFixed(1)} />
+              <Bar dataKey="rating">
+                {ratingData?.map((_, index) => (
+                  <Cell key={`rating-cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
       </div>
+
 
       {/* Table */}
       <div className="bg-white p-6 rounded-lg shadow">

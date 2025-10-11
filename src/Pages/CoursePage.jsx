@@ -14,6 +14,10 @@ const CoursePage = () => {
 
   const [course, setCourse] = useState(null);
   const [courseFromApi, setCourseFromApi] = useState(null);
+  const [loadingCourse, setLoadingCourse] = useState(true);
+  const [notFound, setNotFound] = useState(false);
+
+  
   const [loading, setLoading] = useState(false);
   const [hasEnrolled, setHasEnrolled] = useState(false);
 
@@ -35,17 +39,34 @@ const CoursePage = () => {
 
   useEffect(() => {
     let mounted = true;
+    setLoadingCourse(true);
+    setNotFound(false);
+
     fetchCourse(courseId)
       .then((res) => {
-        if (mounted) setCourseFromApi(res);
+        if (!mounted) return;
+
+        const valid =
+          res && (res.courseID || res.id) && (res.title || res.name);
+        if (!valid) {
+          setNotFound(true);
+          setCourseFromApi(null);
+        } else {
+          setCourseFromApi(res);
+        }
+        setLoadingCourse(false);
       })
       .catch((err) => {
-        console.error("Failed to fetch courses", err);
-        if (mounted) setCourseFromApi([]);
+        console.error("Failed to fetch course", err);
+        if (mounted) {
+          if (err?.response?.status === 404) setNotFound(true);
+          setLoadingCourse(false);
+        }
       });
 
     return () => (mounted = false);
-  }, [fetchCourse]);
+  }, [fetchCourse, courseId]);
+
 
   useEffect(() => {
     let mounted = true;
@@ -82,7 +103,24 @@ const CoursePage = () => {
     fetchEnrolledCourses();
   }, [loggedInUser?.id]); // Only re-run if user ID changes
 
-  if (!courseFromApi) return <div>Course not found!</div>;
+  if (loadingCourse) {
+    return (
+      <div className="max-w-7xl mx-auto p-6 animate-pulse">
+        <div className="h-8 w-64 bg-gray-200 rounded mb-4" />
+        <div className="h-4 w-96 bg-gray-200 rounded mb-6" />
+        <div className="h-64 bg-gray-100 rounded-lg shadow" />
+      </div>
+    );
+  }
+
+  if (notFound) {
+    return (
+      <div className="flex items-center justify-center min-h-[50vh] text-red-600 font-semibold">
+        Course not found.
+      </div>
+    );
+  }
+
 
   const handleEnroll = async () => {
     if (!isLoggedIn) {

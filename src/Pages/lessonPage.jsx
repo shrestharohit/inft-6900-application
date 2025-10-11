@@ -119,4 +119,4 @@ const LessonPage = () => {
   );
 };
 
-export default beforeAuthLayout(LessonPage);
+export default LessonPage;

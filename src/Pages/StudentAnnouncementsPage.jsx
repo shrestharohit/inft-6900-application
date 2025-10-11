@@ -102,4 +102,4 @@ const StudentAnnouncementsPageContent = () => {
 };
 
 // ✅ wrap with Header + Footer layout
-export default beforeAuthLayout(StudentAnnouncementsPageContent);
+export default StudentAnnouncementsPageContent;

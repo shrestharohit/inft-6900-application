@@ -89,7 +89,7 @@ function Home() {
       ?.map((c, i) => {
         return {
           id: String(c.courseID || c.id),
-          name: c.title || c.name || `Course ${id}`,
+          name: c.title || c.name || `Course ${c.courseID || c.id}`,
           img: webdevremovebg,
           meta: c,
         };

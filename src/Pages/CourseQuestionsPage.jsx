@@ -205,4 +205,4 @@ const CourseQuestionsPage = () => {
   );
 };
 
-export default beforeAuthLayout(CourseQuestionsPage);
+export default CourseQuestionsPage;

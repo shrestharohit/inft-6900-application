@@ -2,11 +2,13 @@ import { NavLink, Outlet, useParams } from "react-router-dom";
 import React, { useEffect, useState } from "react";
 import useQuizApi from "../hooks/useQuizApi";
 import useModuleApi from "../hooks/useModuleApi";
+import beforeAuthLayout from "../components/BeforeAuth";
 
-export default function CourseLayout() {
+function CourseLayout() {
   const { courseId } = useParams();
-  const [modules, setModules] = useState(null);
-  const [quiz, setQuiz] = useState(null);
+  const [modules, setModules] = useState([]);
+  const [quiz, setQuiz] = useState([]);
+  const [openModule, setOpenModule] = useState(null);
 
   const { fetchAllModulesInACourse } = useModuleApi();
   const { fetchQuizForCourse } = useQuizApi();
@@ -15,53 +17,39 @@ export default function CourseLayout() {
     let mounted = true;
     fetchAllModulesInACourse(courseId)
       .then((res) => {
-        if (mounted) setModules(res);
+        if (mounted) setModules(Array.isArray(res) ? res : res?.modules || []);
       })
-      .catch((err) => {
-        console.error("Failed to fetch modules", err);
-        if (mounted) setModules([]);
-      });
-
+      .catch(() => mounted && setModules([]));
     return () => (mounted = false);
-  }, [fetchAllModulesInACourse]);
+  }, [fetchAllModulesInACourse, courseId]);
 
   useEffect(() => {
     let mounted = true;
-    fetchQuizForCourse(7)
+    fetchQuizForCourse(courseId)
       .then((res) => {
-        if (mounted) setQuiz(res);
+        if (mounted) setQuiz(Array.isArray(res) ? res : res?.quizzes || []);
       })
-      .catch((err) => {
-        console.error("Failed to fetch quiz", err);
-        if (mounted) setQuiz([]);
-      });
-
+      .catch(() => mounted && setQuiz([]));
     return () => (mounted = false);
-  }, [fetchQuizForCourse]);
-
-  const [openModule, setOpenModule] = useState(null);
+  }, [fetchQuizForCourse, courseId]);
 
   return (
-    <div className="flex">
-      {/* Sidebar */}
-      <aside className="fixed top-20 left-0 w-64 bg-white border-r shadow-sm h-[calc(100vh-5rem)] overflow-y-auto">
-        {/* Course Menu link that goes to course content page */}
+    <div className="flex bg-gray-50 min-h-screen">
+      {/* Sidebar — sits below global header */}
+      <aside className="fixed top-[88px] left-0 w-64 bg-white border-r shadow-sm h-[calc(100vh-88px)] overflow-y-auto">
         <NavLink
-          to={`/courses/${courseId}/content`}
+          to="."
           className="block text-lg font-bold px-4 py-3 border-b hover:bg-gray-100 text-blue-600 cursor-pointer"
         >
-          Course Menu
+          Course Overview
         </NavLink>
 
         <nav className="flex flex-col space-y-1 p-2">
-          {/* Expandable Modules */}
           {modules?.map((module) => (
             <div key={module.moduleID}>
               <button
                 onClick={() =>
-                  setOpenModule(
-                    openModule === module.moduleID ? null : module.moduleID
-                  )
+                  setOpenModule(openModule === module.moduleID ? null : module.moduleID)
                 }
                 className="w-full text-left px-4 py-2 rounded hover:bg-gray-100 font-medium flex justify-between items-center"
               >
@@ -83,10 +71,8 @@ export default function CourseLayout() {
                   ))}
                   <li>
                     <NavLink
-                      to={`quizzes/${
-                        quiz?.find((x) => (x.moduleID = module.moduleID))
-                          ?.quizID
-                      }`}
+                      to={`quizzes/${quiz?.find((x) => x.moduleID === module.moduleID)?.quizID || ""
+                        }`}
                       className="block px-3 py-1 text-sm rounded hover:bg-gray-100"
                     >
                       Quiz
@@ -97,32 +83,23 @@ export default function CourseLayout() {
             </div>
           ))}
 
-          {/* Other fixed links */}
-          <NavLink
-            to="announcements"
-            className="px-4 py-2 rounded hover:bg-gray-100"
-          >
+          <NavLink to="announcements" className="px-4 py-2 rounded hover:bg-gray-100">
             Announcements
           </NavLink>
-          <NavLink
-            to="discussions"
-            className="px-4 py-2 rounded hover:bg-gray-100"
-          >
+          <NavLink to="discussions" className="px-4 py-2 rounded hover:bg-gray-100">
             Discussion Board
           </NavLink>
-          <NavLink
-            to="questions"
-            className="px-4 py-2 rounded hover:bg-gray-100"
-          >
+          <NavLink to="questions" className="px-4 py-2 rounded hover:bg-gray-100">
             Ask Question
           </NavLink>
         </nav>
       </aside>
 
-      {/* Main Content */}
-      <main className="flex-1 ml-64 mt-20 p-6">
+      <main className="flex-1 ml-64 mt-[88px] p-6">
         <Outlet />
       </main>
     </div>
   );
 }
+
+export default beforeAuthLayout(CourseLayout);
