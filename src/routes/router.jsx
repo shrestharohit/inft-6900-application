@@ -38,6 +38,7 @@ import PathwayContentPage from "../Pages/PathwayContentPage";
 import CourseQuestionsPage from "../Pages/CourseQuestionsPage";
 import StudentAnnouncementsPage from "../Pages/StudentAnnouncementsPage";
 import StudentDiscussionPage from "../Pages/StudentDiscussionPage";
+import SchedulePage from "../pages/SchedulePage";
 
 import SearchResults from "../Pages/SearchResults";
 import CertificatePage from "../Pages/certificatePage";
@@ -110,7 +111,7 @@ export const router = createBrowserRouter([
       },
     ],
   },
-
+{ path: "/schedule/:courseId", element: <SchedulePage /> },
 
   // Admin routes
   {
