@@ -37,9 +37,17 @@ export default function useQuizApi() {
   }, []);
 
   const fetchQuizForCourse = useCallback(async (courseId) => {
-    const endpoint = `/api/quiz/owner/7`;
-    // const endpoint = `/api/quiz/course/${courseId}`;
-    const res = await api.get(endpoint);
+    const res = await api.get(`/api/quiz/course/${courseId}`);
+    return res.data;
+  }, []);
+
+  const startQuiz = useCallback(async (quizId, payload) => {
+    const res = await api.post(`/api/quiz/${quizId}/start`, payload);
+    return res.data;
+  }, []);
+
+  const submitQuiz = useCallback(async (quizId, payload) => {
+    const res = await api.put(`/api/quiz/${quizId}/submit`, payload);
     return res.data;
   }, []);
 
@@ -51,5 +59,7 @@ export default function useQuizApi() {
     fetchAllQuizzes,
     fetchQuizMeta,
     fetchQuizForCourse,
+    startQuiz,
+    submitQuiz,
   };
 }

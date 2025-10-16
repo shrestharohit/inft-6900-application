@@ -3,6 +3,8 @@ import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import beforeAuthLayout from "../components/BeforeAuth";
 import useQuizApi from "../hooks/useQuizApi";
+import { useAuth } from "../contexts/AuthContext";
+import useEnrollment from "../hooks/useEnrollment";
 
 // Dummy quiz data
 const dummyQuiz = [
@@ -48,24 +50,27 @@ const dummyQuiz = [
 
 const QuizPage = () => {
   const navigate = useNavigate();
-  const { courseId } = useParams(); // ✅ get the courseId from URL
+  const { courseId, moduleId } = useParams(); // ✅ get the courseId from URL
   const [answers, setAnswers] = useState({});
   const [attempts, setAttempts] = useState([]);
   const [showResult, setShowResult] = useState(false);
   const [currentAttempt, setCurrentAttempt] = useState(null);
   const [quizStarted, setQuizStarted] = useState(false);
+  const [quiz, setQuiz] = useState(null); // Placeholder for fetched quiz
+  const [enrolmentID, setEnrolmentID] = useState(null);
+  const [attemptID, setAttemptID] = useState(null);
 
-  const handleOptionChange = (questionId, optionId) => {
-    setAnswers({ ...answers, [questionId]: optionId });
-  };
-
+  const { startQuiz, submitQuiz } = useQuizApi();
   const { fetchQuizForCourse } = useQuizApi();
+  const { getEnrolledCoursesById } = useEnrollment();
+  const { loggedInUser } = useAuth();
 
   useEffect(() => {
     let mounted = true;
     fetchQuizForCourse(courseId)
       .then((res) => {
-        if (mounted) setQuiz(res);
+        const activeQuiz = res?.find((x) => x.moduleID == moduleId);
+        if (mounted) setQuiz(activeQuiz);
       })
       .catch((err) => {
         console.error("Failed to fetch quiz", err);
@@ -75,35 +80,52 @@ const QuizPage = () => {
     return () => (mounted = false);
   }, [fetchQuizForCourse]);
 
-  const calculateResult = () => {
-    let correctCount = 0;
-    const feedback = dummyQuiz.map((q) => {
-      const selectedOptionId = answers[q.id];
-      const selectedOption = q.options.find((o) => o.id === selectedOptionId);
-      if (selectedOption?.correct) correctCount++;
-      return {
-        question: q.question,
-        selectedOption: selectedOption?.text,
-        correct: selectedOption?.correct || false,
-        feedback: selectedOption?.feedback,
-      };
-    });
+  useEffect(() => {
+    let mounted = true;
+    getEnrolledCoursesById(loggedInUser?.id)
+      .then((res) => {
+        const activeEnrollment = res?.enrolments?.find(
+          (x) => x.courseID == courseId
+        );
+        if (mounted) setEnrolmentID(activeEnrollment?.enrolmentID);
+      })
+      .catch((err) => {
+        console.error("Failed to fetch quiz", err);
+        if (mounted) setEnrolmentID(null);
+      });
 
-    const score = Math.round((correctCount / dummyQuiz.length) * 100);
-    const passed = score >= 80;
+    return () => (mounted = false);
+  }, [getEnrolledCoursesById]);
 
-    const attempt = {
-      id: attempts.length + 1,
-      score,
-      passed,
-      feedback,
-      date: new Date(),
+  function mapAnswers() {
+    return {
+      enrolmentID: enrolmentID,
+      attemptID: attemptID,
+      answers: Object.entries(answers).map(([questionID, optionID]) => ({
+        questionID: Number(questionID),
+        optionID: Number(optionID),
+      })),
     };
-    setAttempts([...attempts, attempt]);
-    setCurrentAttempt(attempt);
+  }
+
+  const calculateResult = async () => {
+    const payload = mapAnswers();
+    await submitQuiz(quiz.quizID, payload);
+    setCurrentAttempt(quiz.attemptID);
     setShowResult(true);
-    setAnswers({});
+    setQuiz(null);
     setQuizStarted(false);
+    setAttemptID(null);
+  };
+
+  const handleOptionChange = (questionId, optionId) => {
+    setAnswers({ ...answers, [questionId]: optionId });
+  };
+
+  const handleStartQuiz = async () => {
+    setQuizStarted(true);
+    const res = await startQuiz(quiz.quizID, { enrolmentID });
+    setAttemptID(res.attempt.attemptID);
   };
 
   return (
@@ -120,8 +142,8 @@ const QuizPage = () => {
               Ready to test your knowledge?
             </h2>
             <p className="text-gray-600 mb-3">
-              <strong>{dummyQuiz.length}</strong> questions | Passing score:{" "}
-              <strong>80%</strong>
+              <strong>{quiz?.questions?.length}</strong> questions | Passing
+              score: <strong>80%</strong>
             </p>
             <p className="text-gray-600 mb-6">
               Attempts made:{" "}
@@ -130,7 +152,7 @@ const QuizPage = () => {
               </span>
             </p>
             <button
-              onClick={() => setQuizStarted(true)}
+              onClick={handleStartQuiz}
               className="px-10 py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold text-lg shadow-lg transition"
             >
               Start Quiz
@@ -141,33 +163,35 @@ const QuizPage = () => {
         {/* Quiz Screen */}
         {quizStarted && !showResult && (
           <div className="space-y-6">
-            {dummyQuiz.map((q, idx) => (
+            {quiz?.questions?.map((q, idx) => (
               <div
-                key={q.id}
+                key={q.questionID}
                 className="p-6 bg-white rounded-xl shadow-lg border border-gray-200"
               >
                 <p className="text-lg font-semibold mb-4 text-gray-800">
-                  Q{idx + 1}. {q.question}
+                  Q{idx + 1}. {q.questionText}
                 </p>
                 <div className="space-y-3">
                   {q.options.map((o) => (
                     <label
-                      key={o.id}
+                      key={o.optionID}
                       className={`block cursor-pointer p-4 rounded-lg border transition ${
-                        answers[q.id] === o.id
+                        answers[q.questionID] === o.optionID
                           ? "border-blue-500 bg-blue-50 text-blue-700"
                           : "border-gray-300 bg-gray-50 hover:bg-gray-100"
                       }`}
                     >
                       <input
                         type="radio"
-                        name={`question-${q.id}`}
-                        value={o.id}
-                        checked={answers[q.id] === o.id}
-                        onChange={() => handleOptionChange(q.id, o.id)}
+                        name={`question-${q.questionID}`}
+                        value={o.optionID}
+                        checked={answers[q.questionID] === o.optionID}
+                        onChange={() =>
+                          handleOptionChange(q.questionID, o.optionID)
+                        }
                         className="mr-3 accent-blue-600"
                       />
-                      {o.text}
+                      {o.optionText}
                     </label>
                   ))}
                 </div>

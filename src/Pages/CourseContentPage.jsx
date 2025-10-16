@@ -144,7 +144,7 @@ const CourseContentPage = () => {
 
                 <li>
                   <Link
-                    to={`/courses/${courseId}/quizzes/${quizzes.find((x) => x.moduleID === module.moduleID)?.quizID ||
+                    to={`/courses/${courseId}/modules/${module.moduleID}/quizzes/${quizzes.find((x) => x.moduleID === module.moduleID)?.quizID ||
                       ""
                       }`}
                     className="text-gray-700 hover:text-blue-600 hover:underline"
