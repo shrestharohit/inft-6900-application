@@ -37,7 +37,9 @@ export default function useQuizApi() {
   }, []);
 
   const fetchQuizForCourse = useCallback(async (courseId) => {
-    const res = await api.get(`/api/quiz/owner/${courseId}`);
+    const endpoint = `/api/quiz/owner/7`;
+    // const endpoint = `/api/quiz/course/${courseId}`;
+    const res = await api.get(endpoint);
     return res.data;
   }, []);
 

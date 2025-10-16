@@ -1,7 +1,8 @@
 // src/Pages/QuizPage.jsx
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import beforeAuthLayout from "../components/BeforeAuth";
+import useQuizApi from "../hooks/useQuizApi";
 
 // Dummy quiz data
 const dummyQuiz = [
@@ -9,7 +10,12 @@ const dummyQuiz = [
     id: 1,
     question: "What is 2 + 2?",
     options: [
-      { id: 1, text: "3", correct: false, feedback: "2 + 2 equals 4, so 3 is incorrect." },
+      {
+        id: 1,
+        text: "3",
+        correct: false,
+        feedback: "2 + 2 equals 4, so 3 is incorrect.",
+      },
       { id: 2, text: "4", correct: true, feedback: "Correct! 2 + 2 = 4." },
       { id: 3, text: "5", correct: false, feedback: "2 + 2 equals 4, not 5." },
     ],
@@ -18,9 +24,24 @@ const dummyQuiz = [
     id: 2,
     question: "What is the capital of France?",
     options: [
-      { id: 1, text: "Berlin", correct: false, feedback: "Berlin is the capital of Germany." },
-      { id: 2, text: "Paris", correct: true, feedback: "Correct! Paris is the capital of France." },
-      { id: 3, text: "London", correct: false, feedback: "London is the capital of the UK." },
+      {
+        id: 1,
+        text: "Berlin",
+        correct: false,
+        feedback: "Berlin is the capital of Germany.",
+      },
+      {
+        id: 2,
+        text: "Paris",
+        correct: true,
+        feedback: "Correct! Paris is the capital of France.",
+      },
+      {
+        id: 3,
+        text: "London",
+        correct: false,
+        feedback: "London is the capital of the UK.",
+      },
     ],
   },
 ];
@@ -37,6 +58,22 @@ const QuizPage = () => {
   const handleOptionChange = (questionId, optionId) => {
     setAnswers({ ...answers, [questionId]: optionId });
   };
+
+  const { fetchQuizForCourse } = useQuizApi();
+
+  useEffect(() => {
+    let mounted = true;
+    fetchQuizForCourse(courseId)
+      .then((res) => {
+        if (mounted) setQuiz(res);
+      })
+      .catch((err) => {
+        console.error("Failed to fetch quiz", err);
+        if (mounted) setQuiz([]);
+      });
+
+    return () => (mounted = false);
+  }, [fetchQuizForCourse]);
 
   const calculateResult = () => {
     let correctCount = 0;
@@ -55,7 +92,13 @@ const QuizPage = () => {
     const score = Math.round((correctCount / dummyQuiz.length) * 100);
     const passed = score >= 80;
 
-    const attempt = { id: attempts.length + 1, score, passed, feedback, date: new Date() };
+    const attempt = {
+      id: attempts.length + 1,
+      score,
+      passed,
+      feedback,
+      date: new Date(),
+    };
     setAttempts([...attempts, attempt]);
     setCurrentAttempt(attempt);
     setShowResult(true);
@@ -77,10 +120,14 @@ const QuizPage = () => {
               Ready to test your knowledge?
             </h2>
             <p className="text-gray-600 mb-3">
-              <strong>{dummyQuiz.length}</strong> questions | Passing score: <strong>80%</strong>
+              <strong>{dummyQuiz.length}</strong> questions | Passing score:{" "}
+              <strong>80%</strong>
             </p>
             <p className="text-gray-600 mb-6">
-              Attempts made: <span className="font-semibold text-blue-600">{attempts.length}</span>
+              Attempts made:{" "}
+              <span className="font-semibold text-blue-600">
+                {attempts.length}
+              </span>
             </p>
             <button
               onClick={() => setQuizStarted(true)}
@@ -95,7 +142,10 @@ const QuizPage = () => {
         {quizStarted && !showResult && (
           <div className="space-y-6">
             {dummyQuiz.map((q, idx) => (
-              <div key={q.id} className="p-6 bg-white rounded-xl shadow-lg border border-gray-200">
+              <div
+                key={q.id}
+                className="p-6 bg-white rounded-xl shadow-lg border border-gray-200"
+              >
                 <p className="text-lg font-semibold mb-4 text-gray-800">
                   Q{idx + 1}. {q.question}
                 </p>
@@ -138,7 +188,9 @@ const QuizPage = () => {
           <div className="space-y-6">
             <div
               className={`p-6 rounded-xl shadow-lg border ${
-                currentAttempt.passed ? "border-green-500 bg-green-50" : "border-red-500 bg-red-50"
+                currentAttempt.passed
+                  ? "border-green-500 bg-green-50"
+                  : "border-red-500 bg-red-50"
               }`}
             >
               <h2
@@ -146,10 +198,12 @@ const QuizPage = () => {
                   currentAttempt.passed ? "text-green-700" : "text-red-700"
                 }`}
               >
-                Attempt #{currentAttempt.id} - {currentAttempt.passed ? "Passed ✅" : "Failed ❌"}
+                Attempt #{currentAttempt.id} -{" "}
+                {currentAttempt.passed ? "Passed ✅" : "Failed ❌"}
               </h2>
               <p className="text-gray-700 font-medium">
-                Score: <span className="font-bold">{currentAttempt.score}%</span>
+                Score:{" "}
+                <span className="font-bold">{currentAttempt.score}%</span>
               </p>
             </div>
 
@@ -163,7 +217,8 @@ const QuizPage = () => {
                   <strong>Q:</strong> {f.question}
                 </p>
                 <p className="text-gray-600">
-                  <strong>Your answer:</strong> {f.selectedOption || "No answer"}
+                  <strong>Your answer:</strong>{" "}
+                  {f.selectedOption || "No answer"}
                 </p>
                 <p className="italic text-gray-700">{f.feedback}</p>
               </div>
@@ -211,7 +266,9 @@ const QuizPage = () => {
         {/* Previous Attempts */}
         {attempts.length > 0 && (
           <div className="mt-12">
-            <h2 className="text-2xl font-bold text-blue-700 mb-4">Previous Attempts</h2>
+            <h2 className="text-2xl font-bold text-blue-700 mb-4">
+              Previous Attempts
+            </h2>
             <div className="space-y-3">
               {attempts.map((a) => (
                 <div
@@ -221,9 +278,13 @@ const QuizPage = () => {
                   <p className="text-gray-700 font-medium">
                     Attempt #{a.id} — Score: {a.score}% —{" "}
                     {a.passed ? (
-                      <span className="text-green-600 font-semibold">Passed ✅</span>
+                      <span className="text-green-600 font-semibold">
+                        Passed ✅
+                      </span>
                     ) : (
-                      <span className="text-red-600 font-semibold">Failed ❌</span>
+                      <span className="text-red-600 font-semibold">
+                        Failed ❌
+                      </span>
                     )}
                   </p>
                   <button
