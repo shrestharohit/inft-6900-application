@@ -6,48 +6,6 @@ import useQuizApi from "../hooks/useQuizApi";
 import { useAuth } from "../contexts/AuthContext";
 import useEnrollment from "../hooks/useEnrollment";
 
-// Dummy quiz data
-const dummyQuiz = [
-  {
-    id: 1,
-    question: "What is 2 + 2?",
-    options: [
-      {
-        id: 1,
-        text: "3",
-        correct: false,
-        feedback: "2 + 2 equals 4, so 3 is incorrect.",
-      },
-      { id: 2, text: "4", correct: true, feedback: "Correct! 2 + 2 = 4." },
-      { id: 3, text: "5", correct: false, feedback: "2 + 2 equals 4, not 5." },
-    ],
-  },
-  {
-    id: 2,
-    question: "What is the capital of France?",
-    options: [
-      {
-        id: 1,
-        text: "Berlin",
-        correct: false,
-        feedback: "Berlin is the capital of Germany.",
-      },
-      {
-        id: 2,
-        text: "Paris",
-        correct: true,
-        feedback: "Correct! Paris is the capital of France.",
-      },
-      {
-        id: 3,
-        text: "London",
-        correct: false,
-        feedback: "London is the capital of the UK.",
-      },
-    ],
-  },
-];
-
 const QuizPage = () => {
   const navigate = useNavigate();
   const { courseId, moduleId } = useParams(); // ✅ get the courseId from URL
@@ -61,16 +19,25 @@ const QuizPage = () => {
   const [attemptID, setAttemptID] = useState(null);
 
   const { startQuiz, submitQuiz } = useQuizApi();
-  const { fetchQuizForCourse } = useQuizApi();
+  const { fetchQuizForCourse, getQuizResultForUser } = useQuizApi();
   const { getEnrolledCoursesById } = useEnrollment();
   const { loggedInUser } = useAuth();
 
   useEffect(() => {
     let mounted = true;
     fetchQuizForCourse(courseId)
-      .then((res) => {
+      .then(async (res) => {
         const activeQuiz = res?.find((x) => x.moduleID == moduleId);
         if (mounted) setQuiz(activeQuiz);
+        const resp = await getQuizResultForUser(
+          activeQuiz?.quizID,
+          loggedInUser?.id
+        );
+        setAttempts(resp);
+        if (resp.length > 0) {
+          setShowResult(true);
+          setCurrentAttempt(resp?.[0]);
+        }
       })
       .catch((err) => {
         console.error("Failed to fetch quiz", err);
@@ -80,11 +47,12 @@ const QuizPage = () => {
     return () => (mounted = false);
   }, [fetchQuizForCourse]);
 
+  console.log({ currentAttempt });
   useEffect(() => {
     let mounted = true;
     getEnrolledCoursesById(loggedInUser?.id)
-      .then((res) => {
-        const activeEnrollment = res?.enrolments?.find(
+      .then((resp) => {
+        const activeEnrollment = resp?.enrolments?.find(
           (x) => x.courseID == courseId
         );
         if (mounted) setEnrolmentID(activeEnrollment?.enrolmentID);
@@ -101,7 +69,7 @@ const QuizPage = () => {
     return {
       enrolmentID: enrolmentID,
       attemptID: attemptID,
-      answers: Object.entries(answers).map(([questionID, optionID]) => ({
+      answers: Object.entries(answers)?.map(([questionID, optionID]) => ({
         questionID: Number(questionID),
         optionID: Number(optionID),
       })),
@@ -110,8 +78,8 @@ const QuizPage = () => {
 
   const calculateResult = async () => {
     const payload = mapAnswers();
-    await submitQuiz(quiz.quizID, payload);
-    setCurrentAttempt(quiz.attemptID);
+    const res = await submitQuiz(quiz.quizID, payload);
+    setCurrentAttempt(res.attempt);
     setShowResult(true);
     setQuiz(null);
     setQuizStarted(false);
@@ -123,6 +91,7 @@ const QuizPage = () => {
   };
 
   const handleStartQuiz = async () => {
+    setShowResult(false);
     setQuizStarted(true);
     const res = await startQuiz(quiz.quizID, { enrolmentID });
     setAttemptID(res.attempt.attemptID);
@@ -136,7 +105,7 @@ const QuizPage = () => {
         </h1>
 
         {/* Pre-Quiz Info */}
-        {!quizStarted && !showResult && (
+        {!quizStarted && !showResult && !attempts?.length && (
           <div className="bg-white p-10 rounded-2xl shadow-xl border border-gray-200 text-center">
             <h2 className="text-2xl font-bold text-gray-700 mb-4">
               Ready to test your knowledge?
@@ -172,7 +141,7 @@ const QuizPage = () => {
                   Q{idx + 1}. {q.questionText}
                 </p>
                 <div className="space-y-3">
-                  {q.options.map((o) => (
+                  {q.options?.map((o) => (
                     <label
                       key={o.optionID}
                       className={`block cursor-pointer p-4 rounded-lg border transition ${
@@ -232,7 +201,7 @@ const QuizPage = () => {
             </div>
 
             <h3 className="text-lg font-semibold text-gray-800">Feedback</h3>
-            {currentAttempt.feedback.map((f, idx) => (
+            {currentAttempt?.feedback?.map((f, idx) => (
               <div
                 key={idx}
                 className="p-5 bg-white rounded-lg border-l-4 shadow-sm mb-3 border-l-gray-300 hover:shadow-md transition"
@@ -267,10 +236,7 @@ const QuizPage = () => {
                 </button>
               ) : (
                 <button
-                  onClick={() => {
-                    setShowResult(false);
-                    setQuizStarted(true);
-                  }}
+                  onClick={handleStartQuiz}
                   className="flex-1 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold shadow-md"
                 >
                   Retake Quiz
@@ -294,13 +260,13 @@ const QuizPage = () => {
               Previous Attempts
             </h2>
             <div className="space-y-3">
-              {attempts.map((a) => (
+              {attempts?.map((a) => (
                 <div
-                  key={a.id}
+                  key={a.attemptID}
                   className="flex justify-between items-center p-4 bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition"
                 >
                   <p className="text-gray-700 font-medium">
-                    Attempt #{a.id} — Score: {a.score}% —{" "}
+                    Attempt #{a.attemptID} — Score: {a.score || 0}% —{" "}
                     {a.passed ? (
                       <span className="text-green-600 font-semibold">
                         Passed ✅
