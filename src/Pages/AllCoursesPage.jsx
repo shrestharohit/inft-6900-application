@@ -1,17 +1,17 @@
-import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import React, { useState, useEffect, useCallback } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import beforeAuthLayout from "../components/BeforeAuth";
-import { dummyCourses } from "../Pages/dummyData"; // ✅ central source
 import useCourseApi from "../hooks/useCourseApi";
-import { useCallback } from "react";
+import { useAuth } from "../contexts/AuthContext";
 import webdevremovebg from "../assets/Images/webdevremovebg.png";
 
 const AllCoursesPage = () => {
   const [courses, setCourses] = useState([]);
-  const [apiCourses, setApiCourses] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const { fetchAllCourses } = useCourseApi();
+  const { isLoggedIn } = useAuth();
+  const navigate = useNavigate();
 
   const normalizeCourse = useCallback(
     (c) => ({
@@ -24,25 +24,13 @@ const AllCoursesPage = () => {
       numEnrolled: c.numEnrolled ?? c.enrolments ?? c.enrolledCount ?? 0,
       rating: c.rating ?? c.avgRating ?? 0,
       releasedDate: c.releasedDate ?? c.createdAt ?? c.publishedAt ?? null,
-      raw: c,
     }),
     []
   );
-  const [filters, setFilters] = useState({
-    level: "all",
-    knowledgeArea: "all",
-    sortBy: "popularity",
-  });
 
-  const resetFilters = () => {
-    setFilters({
-      level: "all",
-      knowledgeArea: "all",
-      sortBy: "popularity",
-    });
-  };
+  const [filters, setFilters] = useState({ level: "all", sortBy: "released" });
+  const resetFilters = () => setFilters({ level: "all", sortBy: "released" });
 
-  // Fetch courses from backend on mount
   useEffect(() => {
     let mounted = true;
     const load = async () => {
@@ -52,11 +40,12 @@ const AllCoursesPage = () => {
         const res = await fetchAllCourses();
         const list = Array.isArray(res) ? res : res?.courses || [];
         if (!mounted) return;
-        setApiCourses(list.map(normalizeCourse));
+
+        if (list.length === 0) setError("No courses available at the moment.");
+        setCourses(list.map(normalizeCourse));
       } catch (e) {
         console.error("Failed to fetch courses", e);
-        if (mounted) setError("Failed to load courses from server");
-        // keep apiCourses empty — UI will fall back to dummyCourses
+        if (mounted) setError("Failed to load courses from the server.");
       } finally {
         if (mounted) setLoading(false);
       }
@@ -65,36 +54,38 @@ const AllCoursesPage = () => {
     return () => (mounted = false);
   }, [fetchAllCourses, normalizeCourse]);
 
-  // Apply filters and sorting to either API courses (if present) or dummy data
+  // Filter and sort
   useEffect(() => {
-    const source =
-      apiCourses.length > 0 ? apiCourses : dummyCourses.map(normalizeCourse);
-    let filtered = [...source];
+    if (!courses.length) return;
 
+    let filtered = [...courses];
     if (filters.level !== "all")
       filtered = filtered.filter(
-        (c) => c.level === filters.level.toLowerCase()
+        (c) => c.level.toLowerCase() === filters.level.toLowerCase()
       );
-    if (filters.knowledgeArea !== "all")
-      filtered = filtered.filter((c) => c.category === filters.knowledgeArea);
-
-    if (filters.sortBy === "popularity")
-      filtered.sort((a, b) => (b.numEnrolled || 0) - (a.numEnrolled || 0));
-    else if (filters.sortBy === "rating")
-      filtered.sort((a, b) => (b.rating || 0) - (a.rating || 0));
-    else if (filters.sortBy === "released")
+    if (filters.sortBy === "released")
       filtered.sort(
-        (a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0)
+        (a, b) =>
+          new Date(b.releasedDate || 0) - new Date(a.releasedDate || 0)
       );
 
     setCourses(filtered);
-  }, [filters, apiCourses, normalizeCourse]);
+  }, [filters]);
+
+  // Handle Schedule Timing
+  const handleScheduleClick = (courseId) => {
+    if (!isLoggedIn) {
+      navigate("/login", { state: { from: `/schedule/${courseId}` } });
+      return;
+    }
+    navigate(`/schedule/${courseId}`);
+  };
 
   return (
-    <div className="search-results-container bg-gray-50 px-6 py-12">
+    <div className="search-results-container bg-gray-50 px-6 py-12 min-h-screen">
       <h1 className="text-3xl font-bold text-gray-900 mb-6">All Courses</h1>
 
-      {/* ✅ Filters */}
+      {/* Filters */}
       <div className="filters mb-8 flex flex-wrap gap-4 justify-start">
         <select
           value={filters.level}
@@ -107,26 +98,11 @@ const AllCoursesPage = () => {
           <option value="Advanced">Advanced</option>
         </select>
 
-        {/* <select
-          value={filters.knowledgeArea}
-          onChange={(e) =>
-            setFilters({ ...filters, knowledgeArea: e.target.value })
-          }
-          className="px-3 py-2 border rounded-md shadow-sm"
-        >
-          <option value="all">All Knowledge Areas</option>
-          <option value="Tech Skills">Tech Skills</option>
-          <option value="Analytical Skills">Analytical Skills</option>
-          <option value="Business Skills">Business Skills</option>
-        </select> */}
-
         <select
           value={filters.sortBy}
           onChange={(e) => setFilters({ ...filters, sortBy: e.target.value })}
           className="px-3 py-2 border rounded-md shadow-sm"
         >
-          {/* <option value="popularity">Sort by Popularity</option> */}
-          {/* <option value="rating">Sort by Rating</option> */}
           <option value="released">Sort by Release Date</option>
         </select>
 
@@ -138,17 +114,20 @@ const AllCoursesPage = () => {
         </button>
       </div>
 
-      {/* ✅ Courses */}
+      {/* Course list */}
       {loading && <div className="text-center py-6">Loading courses...</div>}
-      {error && <div className="text-center py-6 text-red-600">{error}</div>}
-      {!loading &&
-        (courses.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-            {courses.map((course) => (
-              <div
-                key={course.id}
-                className="bg-white p-6 px-4 rounded-lg shadow-md hover:shadow-xl transition-all h-96 overflow-hidden"
-              >
+      {!loading && error && (
+        <div className="text-center py-6 text-red-600">{error}</div>
+      )}
+
+      {!loading && !error && courses.length > 0 && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+          {courses.map((course) => (
+            <div
+              key={course.id}
+              className="bg-white p-6 rounded-lg shadow-md hover:shadow-xl transition-all h-96 flex flex-col justify-between"
+            >
+              <div>
                 <img
                   src={webdevremovebg}
                   alt={course.name}
@@ -158,20 +137,29 @@ const AllCoursesPage = () => {
                   {course.name}
                 </h3>
                 <p className="text-gray-600 text-sm mb-4 h-20 overflow-hidden">
-                  {course.description}
+                  {course.description || "No description available."}
                 </p>
+              </div>
+
+              <div className="flex justify-between mt-2">
                 <Link
                   to={`/courses/${course.id}`}
                   className="text-green-600 hover:text-green-700 font-semibold"
                 >
                   View Course
                 </Link>
+
+                <button
+                  onClick={() => handleScheduleClick(course.id)}
+                  className="text-green-600 hover:text-green-700 font-semibold"
+                >
+                  Schedule Timing
+                </button>
               </div>
-            ))}
-          </div>
-        ) : (
-          <p>No courses found.</p>
-        ))}
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 };

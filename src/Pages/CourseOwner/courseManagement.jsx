@@ -12,23 +12,24 @@ import {
   TableCell,
   TableBody,
   Autocomplete,
-  Tooltip,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   FormControl,
   InputLabel,
   Select,
   MenuItem,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
 } from "@mui/material";
 import useCourseApi from "../../hooks/useCourseApi";
+import usePathwayApi from "../../hooks/usePathwayApi";
 import { useAuth } from "../../contexts/AuthContext";
-import usePathwayApi from "../../hooks/usePathwayApi"; // ✅ NEW
 
 const MODULES_KEY = "course_owner_modules";
+const COURSES_KEY = "course_owner_courses";
+const PATHWAYS_KEY = "course_owner_pathways";
 
-// UI mappers
+// UI labels
 const STATUS_LABEL = {
   wait_for_approval: "Wait For Approval",
   draft: "Draft",
@@ -42,18 +43,12 @@ const LEVEL_LABEL = {
 };
 
 export default function CourseManagement() {
+  const { loggedInUser } = useAuth();
+  const { fetchAllCourses, registerCourse, updateCourse } = useCourseApi();
+  const { fetchAllPathways } = usePathwayApi();
+
   const [courses, setCourses] = useState([]);
-  const [pathways, setPathways] = useState([]); // ✅ pathways list
-
-  const [form, setForm] = useState({
-    name: "",
-    category: "",
-    outline: "",
-    level: "",
-    pathwayId: "", // ✅ selected pathway
-  });
-
-  const [editingIndex, setEditingIndex] = useState(null);
+  const [pathways, setPathways] = useState([]);
   const [categories, setCategories] = useState([
     "Business Analysis",
     "Data Analysis",
@@ -61,56 +56,101 @@ export default function CourseManagement() {
     "Programming",
     "Finance",
   ]);
-
   const [modules, setModules] = useState([]);
-  const { registerCourse, updateCourse, fetchAllCourses } = useCourseApi();
-  const { fetchAllPathways } = usePathwayApi(); // ✅ pathway API hook
-  const { loggedInUser } = useAuth();
+  const [form, setForm] = useState({
+    name: "",
+    category: "",
+    outline: "",
+    level: "",
+    pathwayId: "",
+  });
+  const [editingIndex, setEditingIndex] = useState(null);
 
+  // Outline dialog
   const [outlineDialogOpen, setOutlineDialogOpen] = useState(false);
   const [outlinedraft, setOutlinedraft] = useState("");
   const outlineFieldRef = useRef(null);
   const focusGuardRef = useRef(false);
 
-  // ---- Load courses + pathways ----
+  // ---- Load courses + pathways + modules ----
   useEffect(() => {
     let mounted = true;
-    (async () => {
+
+    const loadData = async () => {
+      // --- Load COURSES ---
       try {
-        const res = await fetchAllCourses();
-        const list = Array.isArray(res) ? res : res?.courses || [];
+        const resCourses = await fetchAllCourses();
+        let listCourses = Array.isArray(resCourses)
+          ? resCourses
+          : resCourses?.courses || [];
+
+        // If API gives no data, fallback to localStorage
+        if (!Array.isArray(listCourses) || listCourses.length === 0) {
+          console.warn("⚠️ Course API empty, loading from localStorage...");
+          const raw = localStorage.getItem(COURSES_KEY);
+          if (raw) listCourses = JSON.parse(raw);
+        } else {
+          // API success → save to localStorage
+          localStorage.setItem(COURSES_KEY, JSON.stringify(listCourses));
+        }
+
         if (mounted) {
-          const normalized = list.map((c) => ({
+          const normalized = listCourses.map((c, idx) => ({
             ...c,
             level: (c.level || "").toLowerCase(),
             status: (c.status || "draft").toLowerCase(),
+            pathwayID: c.pathwayID?.toString() || "",
+            courseID: c.courseID || idx + 1,
           }));
           setCourses(normalized);
         }
       } catch (err) {
-        console.error("Failed to fetch courses", err);
-        if (mounted) setCourses([]);
+        console.error("❌ Failed to load courses:", err);
+        // Fallback to localStorage on total failure
+        const raw = localStorage.getItem(COURSES_KEY);
+        if (raw && mounted) setCourses(JSON.parse(raw));
       }
 
-      // ✅ Load pathways
+      // --- Load PATHWAYS ---
       try {
-        const res = await fetchAllPathways();
-        const list = res?.pathways || [];
-        if (mounted) setPathways(list);
+        const resPathways = await fetchAllPathways();
+        let listPathways = Array.isArray(resPathways)
+          ? resPathways
+          : resPathways?.pathways || [];
+
+        // If API gives no data, fallback to localStorage
+        if (!Array.isArray(listPathways) || listPathways.length === 0) {
+          console.warn("⚠️ Pathway API empty, loading from localStorage...");
+          const raw = localStorage.getItem(PATHWAYS_KEY);
+          if (raw) listPathways = JSON.parse(raw);
+        } else {
+          // API success → save to localStorage
+          localStorage.setItem(PATHWAYS_KEY, JSON.stringify(listPathways));
+        }
+
+        if (mounted) {
+          setPathways(
+            listPathways.map((p, idx) => ({
+              ...p,
+              pathwayID: p.pathwayID?.toString() || String(idx + 1),
+            }))
+          );
+        }
       } catch (err) {
-        console.error("Failed to load pathways", err);
-        const raw = localStorage.getItem("course_owner_pathways");
+        console.error("❌ Failed to load pathways:", err);
+        // Fallback to localStorage on total failure
+        const raw = localStorage.getItem(PATHWAYS_KEY);
         if (raw && mounted) setPathways(JSON.parse(raw));
       }
 
+      // --- Load MODULES from localStorage only ---
       try {
         const raw = localStorage.getItem(MODULES_KEY);
         if (raw && mounted) setModules(JSON.parse(raw));
-      } catch {
-        setModules([]);
-      }
-    })();
+      } catch {}
+    };
 
+    loadData();
     return () => {
       mounted = false;
     };
@@ -127,7 +167,7 @@ export default function CourseManagement() {
       );
       localStorage.setItem(MODULES_KEY, JSON.stringify(updated));
       setModules(updated);
-    } catch { }
+    } catch {}
   };
 
   const handleChange = (e) => {
@@ -159,8 +199,7 @@ export default function CourseManagement() {
     const duplicate = courses.some(
       (c, idx) =>
         idx !== editingIndex &&
-        (c.title || c.name || "").trim().toLowerCase() ===
-        name.trim().toLowerCase()
+        (c.title || "").trim().toLowerCase() === name.trim().toLowerCase()
     );
     if (duplicate) {
       alert("❌ A course with this name already exists.");
@@ -172,36 +211,58 @@ export default function CourseManagement() {
       category,
       level,
       outline,
-      userID: loggedInUser?.id,
-      pathwayId: pathwayId || null,
+      userID: loggedInUser?.id || 1, // fallback
+      pathwayID: pathwayId || null,
       status: "draft",
     };
 
     try {
+      let savedCourse;
       if (editingIndex !== null) {
+        // --- UPDATE ---
         const courseId = courses[editingIndex]?.courseID;
         if (!courseId) return alert("Missing course ID");
 
-        const res = await updateCourse(courseId, payload);
-        const updated = res?.course || res || { ...payload, courseID: courseId };
+        try {
+          const res = await updateCourse(courseId, payload);
+          savedCourse = res?.course || res || { ...payload, courseID: courseId };
+        } catch {
+          console.warn("⚠️ API update failed, saving locally");
+          savedCourse = { ...payload, courseID: courses[editingIndex].courseID };
+        }
+
         const normalized = {
-          ...updated,
-          level: (updated.level || "").toLowerCase(),
-          status: (updated.status || "draft").toLowerCase(),
+          ...savedCourse,
+          level: (savedCourse.level || "").toLowerCase(),
+          status: (savedCourse.status || "draft").toLowerCase(),
+          pathwayID: savedCourse.pathwayID?.toString() || "",
         };
-        setCourses((prev) =>
-          prev.map((c, i) => (i === editingIndex ? normalized : c))
+
+        const updatedCourses = courses.map((c, i) =>
+          i === editingIndex ? normalized : c
         );
+        setCourses(updatedCourses);
+        localStorage.setItem(COURSES_KEY, JSON.stringify(updatedCourses));
         syncModulesForCourse(name, "draft");
       } else {
-        const res = await registerCourse(payload);
-        const created = res?.course || res || payload;
+        // --- CREATE ---
+        try {
+          const res = await registerCourse(payload);
+          savedCourse = res?.course || res || payload;
+        } catch {
+          console.warn("⚠️ API register failed, saving locally");
+          savedCourse = { ...payload, courseID: Date.now() };
+        }
+
         const normalized = {
-          ...created,
-          level: (created.level || "").toLowerCase(),
-          status: (created.status || "draft").toLowerCase(),
+          ...savedCourse,
+          level: (savedCourse.level || "").toLowerCase(),
+          status: (savedCourse.status || "draft").toLowerCase(),
+          pathwayID: savedCourse.pathwayID?.toString() || "",
         };
-        setCourses((prev) => [...prev, normalized]);
+        const updatedCourses = [...courses, normalized];
+        setCourses(updatedCourses);
+        localStorage.setItem(COURSES_KEY, JSON.stringify(updatedCourses));
       }
 
       if (category && !categories.includes(category)) {
@@ -238,11 +299,42 @@ export default function CourseManagement() {
         ...updated,
         level: (updated.level || "").toLowerCase(),
         status: (updated.status || "inactive").toLowerCase(),
+        pathwayID: updated.pathwayID?.toString() || "",
       };
-      setCourses((prev) => prev.map((c, i) => (i === index ? normalized : c)));
+      const updatedCourses = courses.map((c, i) =>
+        i === index ? normalized : c
+      );
+      setCourses(updatedCourses);
+      localStorage.setItem(COURSES_KEY, JSON.stringify(updatedCourses));
+      syncModulesForCourse(target.title, "inactive");
     } catch (err) {
       console.error("Failed to inactivate", err);
       alert("Failed to inactivate course");
+    }
+  };
+
+  const handleRequestApproval = async (index) => {
+    const target = courses[index];
+    const courseId = target?.courseID;
+    if (!courseId) return alert("Missing course id");
+    try {
+      const res = await updateCourse(courseId, { status: "wait_for_approval" });
+      const updated = res?.course || res || { ...target, status: "wait_for_approval" };
+      const normalized = {
+        ...updated,
+        level: (updated.level || "").toLowerCase(),
+        status: (updated.status || "wait_for_approval").toLowerCase(),
+        pathwayID: updated.pathwayID?.toString() || "",
+      };
+      const updatedCourses = courses.map((c, i) =>
+        i === index ? normalized : c
+      );
+      setCourses(updatedCourses);
+      localStorage.setItem(COURSES_KEY, JSON.stringify(updatedCourses));
+      syncModulesForCourse(target.title, "wait_for_approval");
+    } catch (err) {
+      console.error("Failed to request approval", err);
+      alert("Failed to request approval");
     }
   };
 
@@ -279,38 +371,22 @@ export default function CourseManagement() {
       </Typography>
 
       {/* --- Form --- */}
-      <Paper
-        sx={{
-          padding: "1.5rem",
-          marginBottom: "2rem",
-          borderRadius: 3,
-          boxShadow: "0 6px 16px rgba(0,0,0,0.08)",
-        }}
-      >
+      <Paper sx={{ padding: "1.5rem", marginBottom: "2rem", borderRadius: 3, boxShadow: "0 6px 16px rgba(0,0,0,0.08)" }}>
         <form onSubmit={handleSubmit}>
           <Stack spacing={2}>
-            <TextField
-              label="Course Name"
-              name="name"
-              value={form.name}
-              onChange={handleChange}
-              required
-            />
+            <TextField label="Course Name" name="name" value={form.name} onChange={handleChange} required />
 
             <Autocomplete
               freeSolo
               options={categories}
               value={form.category}
               onChange={(_, newValue) => {
-                if (typeof newValue === "string")
-                  setForm((prev) => ({ ...prev, category: newValue }));
+                if (typeof newValue === "string") setForm((prev) => ({ ...prev, category: newValue }));
               }}
               onInputChange={(_, newInputValue) =>
                 setForm((prev) => ({ ...prev, category: newInputValue || "" }))
               }
-              renderInput={(params) => (
-                <TextField {...params} label="Category" required />
-              )}
+              renderInput={(params) => <TextField {...params} label="Category" required />}
             />
 
             <FormControl fullWidth>
@@ -322,7 +398,7 @@ export default function CourseManagement() {
                 label="Pathway"
               >
                 {pathways.map((p) => (
-                  <MenuItem key={p.pathwayID} value={p.pathwayID}>
+                  <MenuItem key={p.pathwayID} value={String(p.pathwayID)}>
                     {p.name}
                   </MenuItem>
                 ))}
@@ -346,12 +422,7 @@ export default function CourseManagement() {
 
             <FormControl fullWidth required>
               <InputLabel>Level</InputLabel>
-              <Select
-                name="level"
-                value={form.level}
-                onChange={handleChange}
-                label="Level"
-              >
+              <Select name="level" value={form.level} onChange={handleChange} label="Level">
                 <MenuItem value="beginner">Beginner</MenuItem>
                 <MenuItem value="intermediate">Intermediate</MenuItem>
                 <MenuItem value="advanced">Advanced</MenuItem>
@@ -362,11 +433,7 @@ export default function CourseManagement() {
               <Button type="submit" variant="contained">
                 {editingIndex !== null ? "Update Course" : "Add Course"}
               </Button>
-              {editingIndex !== null && (
-                <Button variant="outlined" onClick={clearForm}>
-                  Cancel
-                </Button>
-              )}
+              {editingIndex !== null && <Button variant="outlined" onClick={clearForm}>Cancel</Button>}
             </Stack>
           </Stack>
         </form>
@@ -411,12 +478,7 @@ export default function CourseManagement() {
                       {pathwayName}
                     </TableCell> */}
                     <TableCell
-                      sx={{
-                        maxWidth: 240,
-                        whiteSpace: "nowrap",
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                      }}
+                      sx={{ maxWidth: 240, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}
                       title={course.outline}
                     >
                       {course.outline}
@@ -425,20 +487,16 @@ export default function CourseManagement() {
                     <TableCell>{STATUS_LABEL[statusKey] || "-"}</TableCell>
                     <TableCell align="right">
                       <Stack direction="row" spacing={1} justifyContent="flex-end">
-                        <Button
-                          variant="outlined"
-                          size="small"
-                          onClick={() => handleEdit(index)}
-                        >
-                          Edit
-                        </Button>
+                        <Button variant="outlined" size="small" onClick={() => handleEdit(index)}>Edit</Button>
+
+                        {statusKey === "draft" && (
+                          <Button variant="outlined" size="small" color="primary" onClick={() => handleRequestApproval(index)}>
+                            Request for Approval
+                          </Button>
+                        )}
+
                         {statusKey === "active" && (
-                          <Button
-                            variant="outlined"
-                            size="small"
-                            color="error"
-                            onClick={() => handleInactivate(index)}
-                          >
+                          <Button variant="outlined" size="small" color="error" onClick={() => handleInactivate(index)}>
                             Inactivate
                           </Button>
                         )}
@@ -468,9 +526,7 @@ export default function CourseManagement() {
         </DialogContent>
         <DialogActions>
           <Button onClick={handleOutlineCancel}>Cancel</Button>
-          <Button onClick={handleOutlineSave} variant="contained">
-            Save
-          </Button>
+          <Button onClick={handleOutlineSave} variant="contained">Save</Button>
         </DialogActions>
       </Dialog>
     </Box>
