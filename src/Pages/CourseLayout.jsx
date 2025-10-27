@@ -71,7 +71,7 @@ function CourseLayout() {
                   ))}
                   <li>
                     <NavLink
-                      to={`quizzes/${quiz?.find((x) => x.moduleID === module.moduleID)?.quizID || ""
+                      to={`modules/${module.moduleID}/quizzes/${quiz?.find((x) => x.moduleID === module.moduleID)?.quizID || ""
                         }`}
                       className="block px-3 py-1 text-sm rounded hover:bg-gray-100"
                     >

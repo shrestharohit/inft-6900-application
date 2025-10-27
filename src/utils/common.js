@@ -54,7 +54,7 @@ export const trendingPathways = [
 ];
 
 export const ROUTES = {
-  DEFAULT: "/",
+  DEFAULT: "/dashboard",
   ADMIN: "/admin",
   COURSE_OWNER: "/courseowner",
 };

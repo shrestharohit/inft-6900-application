@@ -397,7 +397,6 @@ export default function CourseManagement() {
                 onChange={handleChange}
                 label="Pathway"
               >
-                <MenuItem value="">None</MenuItem>
                 {pathways.map((p) => (
                   <MenuItem key={p.pathwayID} value={String(p.pathwayID)}>
                     {p.name}
@@ -450,7 +449,7 @@ export default function CourseManagement() {
             <TableRow>
               <TableCell>Course Name</TableCell>
               <TableCell>Category</TableCell>
-              <TableCell>Pathway</TableCell>
+              {/* <TableCell>Pathway</TableCell> */}
               <TableCell>Outline</TableCell>
               <TableCell>Level</TableCell>
               <TableCell>Status</TableCell>
@@ -468,17 +467,16 @@ export default function CourseManagement() {
               courses.map((course, index) => {
                 const levelKey = (course.level || "").toLowerCase();
                 const statusKey = (course.status || "draft").toLowerCase();
-                const pathwayName =
-                  pathways.find((p) => String(p.pathwayID) === String(course.pathwayID))?.name ||
-                  "—";
-
+                // const pathwayName =
+                //   pathways.find((p) => p.pathwayID === course.pathwayID)?.name ||
+                //   "—";
                 return (
                   <TableRow key={course.courseID || index} hover>
                     <TableCell>{course.title}</TableCell>
                     <TableCell>{course.category}</TableCell>
-                    <TableCell sx={{ fontStyle: pathwayName === "—" ? "italic" : "normal" }}>
+                    {/* <TableCell sx={{ fontStyle: pathwayName === "—" ? "italic" : "normal" }}>
                       {pathwayName}
-                    </TableCell>
+                    </TableCell> */}
                     <TableCell
                       sx={{ maxWidth: 240, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}
                       title={course.outline}
