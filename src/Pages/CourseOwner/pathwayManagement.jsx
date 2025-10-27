@@ -21,7 +21,7 @@ import {
   InputLabel,
 } from "@mui/material";
 
-const STORAGE_KEY = "course_owner_pathways";
+import usePathwayApi from "../../hooks/usePathwayApi";
 
 // Allowed statuses without approval flow
 const STATUS_OPTIONS = ["draft", "active", "inactive"];
@@ -34,34 +34,29 @@ const PathwayManagement = () => {
     status: "draft",
   });
   const [editingIndex, setEditingIndex] = useState(null);
+  const [editingPathwayId, setEditingPathwayId] = useState(null);
   const [descDialogOpen, setDescDialogOpen] = useState(false);
   const [descDraft, setDescDraft] = useState("");
 
-  // Load from localStorage (frontend-only for now)
-  useEffect(() => {
-    const rawPathways = localStorage.getItem(STORAGE_KEY);
-    if (rawPathways) {
-      try {
-        const parsed = JSON.parse(rawPathways);
-        // migrate old shape (title/description/duration/courses) -> new (name/outline/status)
-        const migrated = (parsed || []).map((p) => ({
-          name: p.name || p.title || "",
-          outline: p.outline || p.description || "",
-          status:
-            p.status?.toLowerCase?.() === "request for approval"
-              ? "draft"
-              : (p.status?.toLowerCase?.() || "draft"),
-        }));
-        setPathways(migrated);
-      } catch {
-        setPathways([]);
-      }
-    }
-  }, []);
+  const { fetchAllPathways, registerPathway, updatePathway } = usePathwayApi();
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(pathways));
-  }, [pathways]);
+    let mounted = true;
+    const load = async () => {
+      try {
+        const res = await fetchAllPathways();
+        if (!mounted) return;
+        setPathways(res.pathways);
+      } catch (err) {
+        console.error("Failed to load pathways", err);
+        if (mounted) setPathways([]);
+      }
+    };
+    load();
+    return () => {
+      mounted = false;
+    };
+  }, [fetchAllPathways]);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -80,23 +75,14 @@ const PathwayManagement = () => {
   const clearForm = () => {
     setForm({ name: "", outline: "", status: "draft" });
     setEditingIndex(null);
+    setEditingPathwayId(null);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (!form.name.trim() || !form.outline.trim()) {
       alert("❌ Please fill pathway name and outline.");
-      return;
-    }
-
-    const duplicate = pathways.some(
-      (p, idx) =>
-        idx !== editingIndex &&
-        (p.name || "").trim().toLowerCase() === form.name.trim().toLowerCase()
-    );
-    if (duplicate) {
-      alert("❌ A pathway with this name already exists.");
       return;
     }
 
@@ -106,31 +92,31 @@ const PathwayManagement = () => {
       status: form.status,
     };
 
-    if (editingIndex !== null) {
-      const updated = [...pathways];
-      updated[editingIndex] = cleaned;
-      setPathways(updated);
+    try {
+      if (editingIndex !== null && editingPathwayId) {
+        await updatePathway(editingPathwayId, form);
+      } else {
+        await registerPathway(cleaned);
+      }
       clearForm();
-    } else {
-      setPathways([...pathways, cleaned]);
-      clearForm();
+      const res = await fetchAllPathways();
+      setPathways(res.pathways);
+    } catch (err) {
+      console.error("Failed to save pathway", err);
+      alert("Failed to save pathway. Please try again.");
     }
   };
 
-  const handleEdit = (index) => {
-    const { name, outline, status } = pathways[index];
-    setForm({ name, outline, status: STATUS_OPTIONS.includes(status) ? status : "draft" });
-    setEditingIndex(index);
+  const handleEdit = (pathway) => {
+    setForm(pathway);
+    setEditingIndex(pathway.pathwayID);
+    setEditingPathwayId(pathway.pathwayID);
   };
 
-  const toggleActive = (index) => {
-    const updated = [...pathways];
-    const curr = updated[index];
-    updated[index] = {
-      ...curr,
-      status: curr.status === "active" ? "inactive" : "active",
-    };
-    setPathways(updated);
+  const toggleActive = async (pathway) => {
+    await updatePathway(pathway.pathwayID, { ...pathway, status: pathway.status === "active" ? "inactive" : "active" });
+    const res = await fetchAllPathways();
+    setPathways(res.pathways);
   };
 
   return (
@@ -172,29 +158,16 @@ const PathwayManagement = () => {
               helperText="Click to open full editor"
             />
 
-            {/* Status select (no approval flow) */}
-            <FormControl fullWidth>
-              <InputLabel>Status</InputLabel>
-              <Select
-                label="Status"
-                name="status"
-                value={form.status}
-                onChange={handleChange}
-              >
-                {STATUS_OPTIONS.map((s) => (
-                  <MenuItem key={s} value={s}>
-                    {s.toUpperCase()}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-
             <Stack direction="row" spacing={2}>
               <Button type="submit" variant="contained" color="primary">
                 {editingIndex !== null ? "Update Pathway" : "Add Pathway"}
               </Button>
               {editingIndex !== null && (
-                <Button variant="outlined" color="secondary" onClick={clearForm}>
+                <Button
+                  variant="outlined"
+                  color="secondary"
+                  onClick={clearForm}
+                >
                   Cancel
                 </Button>
               )}
@@ -244,17 +217,27 @@ const PathwayManagement = () => {
                   >
                     {p.outline}
                   </TableCell>
-                  <TableCell sx={{ textTransform: "uppercase" }}>{p.status}</TableCell>
+                  <TableCell sx={{ textTransform: "uppercase" }}>
+                    {p.status}
+                  </TableCell>
                   <TableCell align="right">
-                    <Stack direction="row" spacing={1} justifyContent="flex-end">
-                      <Button variant="outlined" size="small" onClick={() => handleEdit(index)}>
+                    <Stack
+                      direction="row"
+                      spacing={1}
+                      justifyContent="flex-end"
+                    >
+                      <Button
+                        variant="outlined"
+                        size="small"
+                        onClick={() => handleEdit(p)}
+                      >
                         Edit
                       </Button>
                       <Button
                         variant="outlined"
                         size="small"
                         color={p.status === "active" ? "warning" : "success"}
-                        onClick={() => toggleActive(index)}
+                        onClick={() => toggleActive(p)}
                       >
                         {p.status === "active" ? "Inactivate" : "Activate"}
                       </Button>
@@ -268,7 +251,13 @@ const PathwayManagement = () => {
       </Paper>
 
       {/* Outline Dialog */}
-      <Dialog open={descDialogOpen} onClose={closeDescDialog} maxWidth="md" fullWidth scroll="paper">
+      <Dialog
+        open={descDialogOpen}
+        onClose={closeDescDialog}
+        maxWidth="md"
+        fullWidth
+        scroll="paper"
+      >
         <DialogTitle>Edit Outline</DialogTitle>
         <DialogContent dividers>
           <TextField

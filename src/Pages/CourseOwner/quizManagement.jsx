@@ -679,7 +679,7 @@ export default function QuizManagement() {
                         <>
                           <Button
                             size="small"
-                            onClick={() => handleEditQuiz(idx)}
+                            onClick={() => handleEditQuiz(idx, quiz.quizID)}
                           >
                             Edit
                           </Button>

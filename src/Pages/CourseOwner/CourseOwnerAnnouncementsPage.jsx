@@ -30,7 +30,7 @@ const CourseOwnerAnnouncementsPage = () => {
       })
       .catch((err) => {
         console.error("Failed to fetch courses", err);
-        if (mounted) setCourses([]);
+        if (mounted) setOwnerCourses([]);
       });
 
     return () => (mounted = false);

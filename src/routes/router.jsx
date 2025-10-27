@@ -5,8 +5,8 @@ import Home from "../Pages/Home";
 import RegistrationForm from "../Pages/registration";
 import LoginForm from "../Pages/login";
 import Login2FA from "../Pages/login2fa";
-import ForgotPassword from "../Pages/forgotpassword";       // Step 1
-import VerifyOtpPage from "../Pages/verifyOtpPage";        // Step 2
+import ForgotPassword from "../Pages/forgotpassword"; // Step 1
+import VerifyOtpPage from "../Pages/verifyOtpPage"; // Step 2
 import ResetPasswordPage from "../Pages/resetPasswordPage"; // Step 3
 import ProfileManagement from "../Pages/profilemanagement";
 
@@ -74,9 +74,9 @@ export const router = createBrowserRouter([
   { path: "/login2fa", element: <Login2FA /> },
 
   // Forgot password 3-step flow
-  { path: "/forgotpassword", element: <ForgotPassword /> },       // Step 1
-  { path: "/verify-otp", element: <VerifyOtpPage /> },           // Step 2
-  { path: "/reset-password", element: <ResetPasswordPage /> },   // Step 3
+  { path: "/forgotpassword", element: <ForgotPassword /> }, // Step 1
+  { path: "/verify-otp", element: <VerifyOtpPage /> }, // Step 2
+  { path: "/reset-password", element: <ResetPasswordPage /> }, // Step 3
 
   { path: "/profilemanagement", element: <ProfileManagement /> },
 
@@ -101,8 +101,11 @@ export const router = createBrowserRouter([
           { path: "content", element: <CourseContentPage /> },
           { path: "questions", element: <CourseQuestionsPage /> },
           { path: "modules/:moduleId", element: <ModulePage /> },
-          { path: "modules/:moduleId/lessons/:lessonId", element: <LessonPage /> },
-          { path: "quizzes/:quizId", element: <QuizPage /> },
+          {
+            path: "modules/:moduleId/lessons/:lessonId",
+            element: <LessonPage />,
+          },
+          { path: "modules/:moduleId/quizzes/:quizId", element: <QuizPage /> },
           { path: "announcements", element: <StudentAnnouncementsPage /> },
           { path: "discussions", element: <StudentDiscussionPage /> },
           { path: "certificate", element: <CertificatePage /> },
@@ -110,7 +113,6 @@ export const router = createBrowserRouter([
       },
     ],
   },
-
 
   // Admin routes
   {
@@ -153,5 +155,10 @@ export const router = createBrowserRouter([
   { path: "/all-pathways", element: <AllPathwaysPage /> },
 
   // fallback route
-  { path: "*", element: <h1 className="text-center mt-20 text-3xl">404 - Page Not Found</h1> },
+  {
+    path: "*",
+    element: (
+      <h1 className="text-center mt-20 text-3xl">404 - Page Not Found</h1>
+    ),
+  },
 ]);

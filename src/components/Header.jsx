@@ -209,7 +209,7 @@
 //                 <MenuItem onClick={() => navigate("/profilemanagement")}>
 //                   Edit Profile
 //                 </MenuItem>
-                
+
 //                 {/* Notification Toggle */}
 //                 <MenuItem>
 //                   <div className="flex justify-between items-center w-full">
@@ -221,7 +221,7 @@
 //                   />
 //                   </div>
 //                 </MenuItem>
-                
+
 //                 <MenuItem onClick={handleLogout}>Logout</MenuItem>
 //               </Menu>
 //             </>
@@ -240,13 +240,23 @@
 
 // export default Header;
 
-import { Avatar, Menu, MenuItem, Button, Box, Typography, Divider, Switch } from "@mui/material";
+import {
+  Avatar,
+  Menu,
+  MenuItem,
+  Button,
+  Box,
+  Typography,
+  Divider,
+  Switch,
+} from "@mui/material";
 import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
 import SearchIcon from "@mui/icons-material/Search";
 import { Link, useNavigate } from "react-router-dom";
 import logo from "../assets/Images/logo.png";
 import { useState, useEffect } from "react";
 import { useAuth } from "../contexts/AuthContext";
+import useUserApi from "../hooks/useUserApi";
 import { dummyCourses, dummyPathways } from "../Pages/dummyData";
 
 const Header = () => {
@@ -258,11 +268,19 @@ const Header = () => {
 
   const open = Boolean(anchorEl);
   const navigate = useNavigate();
-  const { isLoggedIn, clearUserDataFromState, loggedInUser, setUserDataInState, updateUser } = useAuth();
+  const {
+    isLoggedIn,
+    clearUserDataFromState,
+    loggedInUser,
+    setUserDataInState,
+  } = useAuth();
+  const { updateUserById } = useUserApi();
 
   // ✅ useEffect (was mistakenly useState) to initialize notification toggle
   useEffect(() => {
-    if (loggedInUser) setNotificationsEnabled(!!loggedInUser.notificationsEnabled);
+    if (loggedInUser) {
+      setNotificationsEnabled(!!loggedInUser.notificationEnabled);
+    }
   }, [loggedInUser]);
 
   const getPlaceholder = () => {
@@ -296,7 +314,11 @@ const Header = () => {
   const handleSearch = (e) => {
     e.preventDefault();
     if (searchQuery.trim()) {
-      navigate(`/search?query=${encodeURIComponent(searchQuery)}&category=${searchCategory}`);
+      navigate(
+        `/search?query=${encodeURIComponent(
+          searchQuery
+        )}&category=${searchCategory}`
+      );
       setSearchQuery("");
     }
   };
@@ -304,16 +326,22 @@ const Header = () => {
   const handleToggleNotifications = async () => {
     const newValue = !notificationsEnabled;
     setNotificationsEnabled(newValue);
-    if (loggedInUser) {
-      try {
-        const updatedUser = await updateUser(loggedInUser.id, { notificationsEnabled: newValue });
-        setUserDataInState(updatedUser);
-      } catch (err) {
-        console.error("Failed to update notifications", err);
-      }
+    if (!loggedInUser) return;
+
+    try {
+      const response = await updateUserById({
+        userID: loggedInUser.id,
+        notificationEnabled: newValue,
+      });
+      const updatedUser = response?.user || response;
+      if (updatedUser) setUserDataInState(updatedUser);
+    } catch (err) {
+      console.error("Failed to update notifications", err);
+      setNotificationsEnabled((prev) => !prev);
     }
   };
 
+  console.log("notificationsEnabled:", notificationsEnabled);
   return (
     // ✅ sticky keeps header in the normal flow (no overlap), but still pins to top
     <header className="sticky top-0 z-50 bg-green-500 text-white shadow-md">
@@ -328,7 +356,6 @@ const Header = () => {
                 alt="BrainWave"
                 style={{ height: "80px", width: "auto", objectFit: "contain" }}
               />
-
             </Link>
 
             {/* Categories Dropdown */}
@@ -360,11 +387,18 @@ const Header = () => {
               >
                 {/* Pathways */}
                 <Box display="flex" flexDirection="column" mr={4}>
-                  <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
+                  <Typography
+                    variant="subtitle1"
+                    fontWeight="bold"
+                    gutterBottom
+                  >
                     Pathways
                   </Typography>
                   {dummyPathways.map((pathway) => (
-                    <MenuItem key={pathway.id} onClick={() => goTo(`/pathway/${pathway.id}`)}>
+                    <MenuItem
+                      key={pathway.id}
+                      onClick={() => goTo(`/pathway/${pathway.id}`)}
+                    >
                       {pathway.name}
                     </MenuItem>
                   ))}
@@ -376,11 +410,18 @@ const Header = () => {
 
                 {/* Courses */}
                 <Box display="flex" flexDirection="column">
-                  <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
+                  <Typography
+                    variant="subtitle1"
+                    fontWeight="bold"
+                    gutterBottom
+                  >
                     Individual Courses
                   </Typography>
                   {dummyCourses.map((course) => (
-                    <MenuItem key={course.id} onClick={() => goTo(`/courses/${course.id}`)}>
+                    <MenuItem
+                      key={course.id}
+                      onClick={() => goTo(`/courses/${course.id}`)}
+                    >
                       {course.name}
                     </MenuItem>
                   ))}

@@ -16,6 +16,7 @@ import {
     Rule
 } from "@mui/icons-material";
 import { useAuth } from "../../contexts/AuthContext";
+import useUserApi from "../../hooks/useUserApi";
 
 const NAV_ITEMS = [
     { label: "Dashboard", to: "/admin", icon: <Dashboard /> },
@@ -33,15 +34,27 @@ export default function AdminLayout() {
 
     // Notification toggle state (bootstrap from user if available)
     const [notificationsEnabled, setNotificationsEnabled] = React.useState(false);
+    const { updateUserById } = useUserApi();
+    const { setUserDataInState } = useAuth();
+
     React.useEffect(() => {
-        if (loggedInUser?.notificationsEnabled != null) {
-            setNotificationsEnabled(!!loggedInUser.notificationsEnabled);
+        if (loggedInUser?.notificationEnabled != null) {
+            setNotificationsEnabled(!!loggedInUser.notificationEnabled);
         }
     }, [loggedInUser]);
 
-    const handleToggleNotifications = () => {
-        setNotificationsEnabled((prev) => !prev);
-        // TODO: persist to backend if needed
+    const handleToggleNotifications = async () => {
+        const newValue = !notificationsEnabled;
+        setNotificationsEnabled(newValue);
+        if (!loggedInUser) return;
+        try {
+            const response = await updateUserById({ userID: loggedInUser.id, notificationEnabled: newValue });
+            const updatedUser = response?.user || response;
+            if (updatedUser) setUserDataInState(updatedUser);
+        } catch (err) {
+            console.error("Failed to update notifications", err);
+            setNotificationsEnabled((prev) => !prev);
+        }
     };
 
     const handleMenuOpen = (e) => setAnchorEl(e.currentTarget);
