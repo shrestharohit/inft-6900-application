@@ -5,24 +5,25 @@ import Home from "../Pages/Home";
 import RegistrationForm from "../Pages/registration";
 import LoginForm from "../Pages/login";
 import Login2FA from "../Pages/login2fa";
-import ForgotPassword from "../Pages/forgotpassword";       // Step 1
-import VerifyOtpPage from "../Pages/verifyOtpPage";        // Step 2
+import ForgotPassword from "../Pages/forgotpassword"; // Step 1
+import VerifyOtpPage from "../Pages/verifyOtpPage"; // Step 2
 import ResetPasswordPage from "../Pages/resetPasswordPage"; // Step 3
 import ProfileManagement from "../Pages/profilemanagement";
 
 // Dummy pages for footer
-import About from "../Pages/about";
+import About from "../Pages/about"; // no curly braces
 import Contact from "../Pages/contactus";
 import Terms from "../Pages/termsAndCondition";
 
 // Admin imports
 import AdminLayout from "../Pages/Admin/adminlayout";
+import AdminDashboard from "../Pages/Admin/admindashboard";
 import AdminUserManagement from "../Pages/Admin/adminUserManagement";
 import AdminCourseApproval from "../Pages/Admin/adminCourseApproval";
 import AdminModuleApproval from "../Pages/Admin/adminModuleApproval";
 import AdminQuizApproval from "../Pages/Admin/adminQuizApproval";
 import AdminProfile from "../Pages/Admin/AdminProfile";
-import AdminPathwayApproval from "../Pages/Admin/adminPathwayApproval.jsx";
+import AdminPathwayApproval from "../Pages/Admin/adminPathwayManagement.jsx";
 
 // Student imports
 import Dashboard from "../Pages/Dashboard";
@@ -37,13 +38,14 @@ import PathwayContentPage from "../Pages/PathwayContentPage";
 import CourseQuestionsPage from "../Pages/CourseQuestionsPage";
 import StudentAnnouncementsPage from "../Pages/StudentAnnouncementsPage";
 import StudentDiscussionPage from "../Pages/StudentDiscussionPage";
+import SchedulePage from "../pages/SchedulePage";
+import PomodoroSettings from "../Pages/PomodoroSettings.jsx";
 
 import SearchResults from "../Pages/SearchResults";
 import CertificatePage from "../Pages/certificatePage";
 
 // Admin placeholder pages
 import {
-  DashboardPage,
   PathwaysPage,
   CoursesPage,
   EnrollmentsPage,
@@ -74,9 +76,9 @@ export const router = createBrowserRouter([
   { path: "/login2fa", element: <Login2FA /> },
 
   // Forgot password 3-step flow
-  { path: "/forgotpassword", element: <ForgotPassword /> },       // Step 1
-  { path: "/verify-otp", element: <VerifyOtpPage /> },           // Step 2
-  { path: "/reset-password", element: <ResetPasswordPage /> },   // Step 3
+  { path: "/forgotpassword", element: <ForgotPassword /> }, // Step 1
+  { path: "/verify-otp", element: <VerifyOtpPage /> }, // Step 2
+  { path: "/reset-password", element: <ResetPasswordPage /> }, // Step 3
 
   { path: "/profilemanagement", element: <ProfileManagement /> },
 
@@ -94,29 +96,35 @@ export const router = createBrowserRouter([
   {
     path: "/courses/:courseId",
     children: [
-      { index: true, element: <CoursePage /> }, // overview page (no sidebar)
+      { index: true, element: <CoursePage /> }, // normal page (already has beforeAuthLayout)
       {
-        element: <CourseLayout />, // wrap all sidebar pages
+        element: <CourseLayout />, // layout for nested routes
         children: [
           { path: "content", element: <CourseContentPage /> },
           { path: "questions", element: <CourseQuestionsPage /> },
           { path: "modules/:moduleId", element: <ModulePage /> },
-          { path: "modules/:moduleId/lessons/:lessonId", element: <LessonPage /> },
-          { path: "quizzes/:quizId", element: <QuizPage /> },
+          {
+            path: "modules/:moduleId/lessons/:lessonId",
+            element: <LessonPage />,
+          },
+          { path: "modules/:moduleId/quizzes/:quizId", element: <QuizPage /> },
           { path: "announcements", element: <StudentAnnouncementsPage /> },
           { path: "discussions", element: <StudentDiscussionPage /> },
           { path: "certificate", element: <CertificatePage /> },
+          { path: "pomodoro-settings", element: <PomodoroSettings />}
+          
         ],
       },
     ],
   },
+  { path: "/schedule/:courseId", element: <SchedulePage /> },
 
   // Admin routes
   {
     path: "/admin",
     element: <AdminLayout />,
     children: [
-      { index: true, element: <DashboardPage /> },
+      { index: true, element: <AdminDashboard /> },
       { path: "pathways", element: <AdminPathwayApproval /> },
       { path: "courses", element: <CoursesPage /> },
       { path: "enrollments", element: <EnrollmentsPage /> },
@@ -152,5 +160,10 @@ export const router = createBrowserRouter([
   { path: "/all-pathways", element: <AllPathwaysPage /> },
 
   // fallback route
-  { path: "*", element: <h1 className="text-center mt-20 text-3xl">404 - Page Not Found</h1> },
+  {
+    path: "*",
+    element: (
+      <h1 className="text-center mt-20 text-3xl">404 - Page Not Found</h1>
+    ),
+  },
 ]);

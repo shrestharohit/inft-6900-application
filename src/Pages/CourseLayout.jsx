@@ -1,61 +1,95 @@
 import { NavLink, Outlet, useParams } from "react-router-dom";
-import React, { useState } from "react";
-import { dummyModules } from "../Pages/dummyModule";
+import React, { useEffect, useState } from "react";
+import useQuizApi from "../hooks/useQuizApi";
+import useModuleApi from "../hooks/useModuleApi";
+import beforeAuthLayout from "../components/BeforeAuth";
 
-export default function CourseLayout() {
+function CourseLayout() {
   const { courseId } = useParams();
+  const [modules, setModules] = useState([]);
+  const [quiz, setQuiz] = useState([]);
   const [openModule, setOpenModule] = useState(null);
 
-  const modules = dummyModules[courseId] || [];
+  const { fetchAllModulesInACourse } = useModuleApi();
+  const { fetchQuizForCourse } = useQuizApi();
+
+  // ✅ Load modules
+  useEffect(() => {
+    let mounted = true;
+    fetchAllModulesInACourse(courseId)
+      .then((res) => {
+        if (mounted) setModules(Array.isArray(res) ? res : res?.modules || []);
+      })
+      .catch(() => mounted && setModules([]));
+    return () => (mounted = false);
+  }, [fetchAllModulesInACourse, courseId]);
+
+  // ✅ Load quizzes
+  useEffect(() => {
+    let mounted = true;
+    fetchQuizForCourse(courseId)
+      .then((res) => {
+        if (mounted) setQuiz(Array.isArray(res) ? res : res?.quizzes || []);
+      })
+      .catch(() => mounted && setQuiz([]));
+    return () => (mounted = false);
+  }, [fetchQuizForCourse, courseId]);
 
   return (
-    <div className="flex">
-      {/* Sidebar */}
-      <aside className="fixed top-20 left-0 w-64 bg-white border-r shadow-sm h-[calc(100vh-5rem)] overflow-y-auto">
-        {/* Course Menu link that goes to course content page */}
+    <div className="flex bg-gray-50 min-h-screen">
+      {/* Sidebar — sits below global header */}
+      <aside className="fixed top-[88px] left-0 w-64 bg-white border-r shadow-sm h-[calc(100vh-88px)] overflow-y-auto">
         <NavLink
-          to={`/courses/${courseId}/content`}
+          to="."
           className="block text-lg font-bold px-4 py-3 border-b hover:bg-gray-100 text-blue-600 cursor-pointer"
         >
-          Course Menu
+          Course Overview
         </NavLink>
 
         <nav className="flex flex-col space-y-1 p-2">
           {/* Expandable Modules */}
-          {modules.map((module) => (
-            <div key={module.id}>
+          {modules?.map((module) => (
+            <div key={module.moduleID}>
               <button
                 onClick={() =>
-                  setOpenModule(openModule === module.id ? null : module.id)
+                  setOpenModule(
+                    openModule === module.moduleID ? null : module.moduleID
+                  )
                 }
                 className="w-full text-left px-4 py-2 rounded hover:bg-gray-100 font-medium flex justify-between items-center"
               >
                 {module.title}
-                <span>{openModule === module.id ? "▲" : "▼"}</span>
+                <span>{openModule === module.moduleID ? "▲" : "▼"}</span>
               </button>
 
-              {openModule === module.id && (
+              {openModule === module.moduleID && (
                 <ul className="ml-4 mt-1 space-y-1">
-                  {module.lessons.map((lesson) => (
-                    <li key={lesson.id}>
+                  {module.contents?.map((content) => (
+                    <li key={content.contentID}>
                       <NavLink
-                        to={
-                          lesson.title.toLowerCase().includes("quiz")
-                            ? `quizzes/${lesson.id}`
-                            : `modules/${module.id}/lessons/${lesson.id}`
-                        }
+                        to={`modules/${module.moduleID}/lessons/${content.contentID}`}
                         className="block px-3 py-1 text-sm rounded hover:bg-gray-100"
                       >
-                        {lesson.title}
+                        {content.title}
                       </NavLink>
                     </li>
                   ))}
+                  <li>
+                    <NavLink
+                      to={`modules/${module.moduleID}/quizzes/${quiz?.find((x) => x.moduleID === module.moduleID)
+                          ?.quizID || ""
+                        }`}
+                      className="block px-3 py-1 text-sm rounded hover:bg-gray-100"
+                    >
+                      Quiz
+                    </NavLink>
+                  </li>
                 </ul>
               )}
             </div>
           ))}
 
-          {/* Other fixed links */}
+          {/* Static Links */}
           <NavLink
             to="announcements"
             className="px-4 py-2 rounded hover:bg-gray-100"
@@ -74,13 +108,33 @@ export default function CourseLayout() {
           >
             Ask Question
           </NavLink>
+
+        
+          <NavLink
+            to={`/schedule/${courseId}`}
+            className="px-4 py-2 rounded hover:bg-gray-100"
+          >
+            Schedule a Session
+          </NavLink>
+          <NavLink
+            to="pomodoro-settings"
+            className="px-4 py-2 rounded hover:bg-gray-100"
+          >
+            Pomodoro Settings
+          </NavLink>
+
+      
         </nav>
+
+
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 ml-64 mt-20 p-6">
+      <main className="flex-1 ml-64 mt-[88px] p-6">
         <Outlet />
       </main>
     </div>
   );
 }
+
+export default beforeAuthLayout(CourseLayout);

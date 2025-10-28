@@ -1,12 +1,11 @@
-import React, { useState, useRef } from "react";
-import { useParams, Link } from "react-router-dom";
+import React, { useState, useRef, useEffect } from "react";
+import { useParams } from "react-router-dom";
 import beforeAuthLayout from "../components/BeforeAuth";
-import { dummyCourses } from "../Pages/dummyData";
-import { dummyModules } from "../Pages/dummyModule";
-import { dummyLessonContent } from "../Pages/dummyLessonContent";
+import useContent from "../hooks/useContent";
+import PomodoroTimer from "../components/PomodoroTimer";
 
 const LessonPage = () => {
-  const { courseId, moduleId, lessonId } = useParams();
+  const { lessonId } = useParams();
   const [isPlaying, setIsPlaying] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const utteranceRef = useRef(null);
@@ -14,14 +13,26 @@ const LessonPage = () => {
   const course = dummyCourses.find((c) => c.id === courseId);
   if (!course) return <div className="p-6 text-red-500 text-center font-semibold text-lg">Course not found!</div>;
 
-  const modules = dummyModules[courseId] || [];
-  const module = modules.find((m) => m.id.toString() === moduleId);
-  if (!module) return <div className="p-6 text-red-500 text-center font-semibold text-lg">Module not found!</div>;
+  useEffect(() => {
+    let mounted = true;
+    getContentDetails(lessonId)
+      .then((res) => {
+        if (mounted) setLessonContent(res.content);
+      })
+      .catch((err) => {
+        console.error("Failed to fetch lesson content:", err);
+      });
+    return () => (mounted = false);
+  }, [getContentDetails, lessonId]);
 
-  const lessonContent = dummyLessonContent[courseId]?.[lessonId];
-  if (!lessonContent) return <div className="p-6 text-red-500 text-center font-semibold text-lg">Lesson content not found!</div>;
+  if (!lessonContent)
+    return (
+      <div className="p-6 text-red-500 text-center font-semibold text-lg">
+        Lesson content not found!
+      </div>
+    );
 
-  // --- TTS Handlers ---
+  // --- Text-to-Speech Handlers ---
   const handleStartPause = () => {
     if (!window.speechSynthesis) {
       alert("Text-to-Speech is not supported in this browser.");
@@ -65,10 +76,8 @@ const LessonPage = () => {
 
   return (
     <div className="p-6 max-w-5xl mx-auto">
-
-
-      {/* Heading + TTS controls aligned */}
-      <div className="flex items-center justify-between mb-6">
+      {/* Heading & Speech controls */}
+      <div className="flex items-center justify-between mb-8">
         <h1 className="text-4xl font-extrabold text-gray-800">
           {lessonContent.title}
         </h1>
@@ -93,10 +102,22 @@ const LessonPage = () => {
         </div>
       </div>
 
+      {/* Pomodoro Section — now below title area */}
+      <div className="mb-10 border-t pt-6">
+        <h2 className="text-xl font-semibold mb-3 text-gray-800">
+          🧠 Stay Focused with Pomodoro
+        </h2>
+        <p className="text-gray-600 mb-4">
+          Use this timer to maintain structured focus and take mindful breaks.
+        </p>
+        <PomodoroTimer />
+      </div>
+
+
       {/* Lesson Content */}
       <div className="bg-white p-6 rounded-lg shadow-md border border-gray-200">
-        <p className="text-gray-700 text-lg leading-relaxed">
-          {lessonContent.content}
+        <p className="text-gray-700 text-lg leading-relaxed whitespace-pre-line">
+          {lessonContent.description}
         </p>
       </div>
     </div>
