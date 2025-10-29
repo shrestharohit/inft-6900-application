@@ -5,6 +5,7 @@ import { dummyCourses, dummyPathways } from "../Pages/dummyData";
 import { useAuth } from "../contexts/AuthContext"; // ✅
 import useCourseApi from "../hooks/useCourseApi";
 import webdevremovebg from "../assets/Images/webdevremovebg.png"; // Placeholder image
+import useReview from "../hooks/useReviews";
 
 function Home() {
   const [hoveredCourse, setHoveredCourse] = useState(null);
@@ -13,9 +14,52 @@ function Home() {
   const { isLoggedIn } = useAuth(); // ✅ check login state
 
   const { fetchPopularCoursesAndPathway } = useCourseApi();
+  const { getTop3Reviews } = useReview();
 
   const [apiPopularCourses, setApiPopularCourses] = useState(null);
   const [apiPopularPathways, setApiPopularPathways] = useState(null);
+  const [apiPopularReviews, setApiPopularReviews] = useState(null);
+
+  useEffect(() => {
+    let mounted = true;
+    const load = async () => {
+      try {
+        const res = await fetchPopularCoursesAndPathway();
+        console.log("Full API response:", JSON.stringify(res, null, 2));
+        if (!mounted) return;
+        setApiPopularCourses(res?.popularCourses || null);
+        setApiPopularPathways(res?.popularPathways || res?.pathways || null);
+      } catch (e) {
+        console.error("Failed to load popular courses/pathways", e);
+        if (mounted) {
+          setApiPopularCourses(null);
+          setApiPopularPathways(null);
+        }
+      }
+    };
+
+    load();
+    return () => (mounted = false);
+  }, [fetchPopularCoursesAndPathway]);
+
+  useEffect(() => {
+    let mounted = true;
+    const load = async () => {
+      try {
+        const res = await getTop3Reviews();
+        if (!mounted) return;
+        setApiPopularReviews(res?.reviews || null);
+      } catch (e) {
+        console.error("Failed to load popular reviews", e);
+        if (mounted) {
+          setApiPopularReviews(null);
+        }
+      }
+    };
+
+    load();
+    return () => (mounted = false);
+  }, [getTop3Reviews]);
 
   useEffect(() => {
     let mounted = true;
@@ -45,7 +89,7 @@ function Home() {
       ?.map((c, i) => {
         return {
           id: String(c.courseID || c.id),
-          name: c.title || c.name || `Course ${id}`,
+          name: c.title || c.name || `Course ${c.courseID || c.id}`,
           img: webdevremovebg,
           meta: c,
         };
@@ -79,7 +123,7 @@ function Home() {
   };
 
   return (
-    <div className="bg-gray-50 font-inter pb-12 pt-12">
+    <div className="bg-gray-50 font-inter pb-12 ">
       {/* Hero Section */}
       <section className="bg-gradient-to-r from-[#1f2a60] to-[#4856a6] text-white rounded-xl my-8 max-w-[1150px] mx-auto shadow-lg">
         <div className="text-center py-20 px-6 max-w-3xl mx-auto">
@@ -219,25 +263,15 @@ function Home() {
           What Learners Say
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-          {[
-            {
-              name: "Alex",
-              text: "This platform really helped me grow my career.",
-            },
-            { name: "Sarah", text: "Amazing courses with practical projects." },
-            {
-              name: "John",
-              text: "The user experience is smooth and motivating.",
-            },
-          ].map((review, idx) => (
+          {apiPopularReviews?.map((review, idx) => (
             <div
               key={idx}
               className="bg-white rounded-xl p-6 flex flex-col justify-between items-center text-center shadow h-56"
             >
-              <p className="italic text-gray-700">"{review.text}"</p>
+              <p className="italic text-gray-700">"{review.comment}"</p>
               <div>
                 <span className="block font-bold text-[#1f2a60]">
-                  – {review.name}
+                  – {review.firstName}
                 </span>
                 <div className="mt-2 text-yellow-500">⭐⭐⭐⭐⭐</div>
               </div>

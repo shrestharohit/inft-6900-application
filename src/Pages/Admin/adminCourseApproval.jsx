@@ -1,53 +1,55 @@
-// src/Pages/Admin/adminCourseApproval.jsx
 import React, { useEffect, useState } from "react";
 import {
-  Box,
-  Typography,
-  Paper,
   Table,
   TableHead,
   TableRow,
   TableCell,
   TableBody,
-  Button,
   Tooltip,
   Snackbar,
   Alert,
   Collapse,
   IconButton,
+  Button,
+  Typography,
 } from "@mui/material";
 import { KeyboardArrowDown, KeyboardArrowUp } from "@mui/icons-material";
 import useCourseApi from "../../hooks/useCourseApi";
-
-const MODULES_KEY = "course_owner_modules";
+import usePathwayApi from "../../hooks/usePathwayApi";
+import { truncateText } from "../../utils/global";
+import { useNavigate } from "react-router-dom";
 
 const AdminCourseApproval = () => {
   const [courses, setCourses] = useState([]);
-  const [modules, setModules] = useState([]);
-  const { fetchAllCourses, updateCourse } = useCourseApi();
+  const [pathways, setPathways] = useState([]);
   const [expanded, setExpanded] = useState({});
-  const [snack, setSnack] = useState({
-    open: false,
-    severity: "success",
-    msg: "",
-  });
+  const [snack, setSnack] = useState({ open: false, severity: "success", msg: "" });
+  const { fetchAllCourses, updateCourse } = useCourseApi();
+  const { fetchAllPathways } = usePathwayApi();
+  const navigate = useNavigate();
 
   useEffect(() => {
     let mounted = true;
     const load = async () => {
       try {
-        const res = await fetchAllCourses();
+        const [courseRes, pathwayRes] = await Promise.all([
+          fetchAllCourses(),
+          fetchAllPathways(),
+        ]);
         if (!mounted) return;
-        setCourses(res);
+        setCourses(courseRes || []);
+        setPathways(pathwayRes?.pathways || []);
       } catch (e) {
-        console.error("Failed to load courses for approval", e);
-        if (mounted) setCourses([]);
+        console.error("Failed to load data", e);
+        if (mounted) {
+          setCourses([]);
+          setPathways([]);
+        }
       }
     };
-
     load();
     return () => (mounted = false);
-  }, [fetchAllCourses]);
+  }, [fetchAllCourses, fetchAllPathways]);
 
   const updateStatus = async (courseID, status) => {
     if (!courseID) {
@@ -56,28 +58,18 @@ const AdminCourseApproval = () => {
     }
 
     try {
-      const res = await updateCourse(courseID, { status });
-      setCourses((prev) =>
-        prev.map((course) =>
-          course.courseID === courseID ? { ...course, status: status } : course
-        )
-      );
-      setSnack({ open: true, severity: "success", msg });
+      await updateCourse(courseID, { status });
+      setSnack({ open: true, severity: "success", msg: "✅ Course status updated." });
+      const res = await fetchAllCourses();
+      setCourses(res || []);
     } catch (err) {
-      console.error("Failed to update course status", err);
-      setSnack({
-        open: true,
-        severity: "error",
-        msg: "Failed to update course status",
-      });
+      console.error("Failed to update course", err);
+      setSnack({ open: true, severity: "error", msg: "❌ Update failed." });
     }
   };
 
-  const toggleExpand = (courseID) => {
+  const toggleExpand = (courseID) =>
     setExpanded((prev) => ({ ...prev, [courseID]: !prev[courseID] }));
-  };
-
-  const getModulesForCourse = (courseID) => [];
 
   const statusMapper = {
     wait_for_approval: "Wait For Approval",
@@ -86,42 +78,52 @@ const AdminCourseApproval = () => {
     inactive: "Inactive",
   };
 
-  return (
-    <Box sx={styles.page}>
-      <Box sx={styles.card}>
-        <Typography variant="h5" fontWeight={700} mb={2}>
-          Course Approval
-        </Typography>
+  const getPathwayName = (id) =>
+    pathways.find((p) => p.pathwayID === id)?.name || "—";
 
-        <Paper variant="outlined">
-          <Table>
-            <TableHead sx={{ background: "#f7f7f9" }}>
-              <TableRow>
+  return (
+    <div className="max-w-6xl mx-auto mt-6 px-4">
+      <div className="bg-white shadow-lg rounded-2xl p-6">
+        <h2 className="text-2xl font-bold mb-4">Course Approval</h2>
+
+        <div className="overflow-x-auto rounded-xl border border-gray-200">
+          <Table className="min-w-full border-collapse">
+            <TableHead>
+              <TableRow className="bg-gray-100 text-gray-800">
                 <TableCell />
-                <TableCell>Course Name</TableCell>
-                <TableCell>Category</TableCell>
-                <TableCell>Outline</TableCell>
-                {/* <TableCell>Duration</TableCell> */}
-                <TableCell>Status</TableCell>
-                <TableCell align="right">Actions</TableCell>
+                <TableCell className="font-semibold">Course Name</TableCell>
+                <TableCell className="font-semibold">Category</TableCell>
+                <TableCell className="font-semibold">Pathway</TableCell>
+                <TableCell className="font-semibold">Outline</TableCell>
+                <TableCell className="font-semibold">Status</TableCell>
+                <TableCell align="right" className="font-semibold">
+                  Actions
+                </TableCell>
               </TableRow>
             </TableHead>
+
             <TableBody>
               {courses.length === 0 ? (
                 <TableRow>
                   <TableCell
                     colSpan={7}
                     align="center"
-                    sx={{ py: 4, color: "text.secondary" }}
+                    className="py-8 text-gray-500 italic"
                   >
                     No courses submitted yet.
                   </TableCell>
                 </TableRow>
               ) : (
                 courses.map((course, idx) => {
+                  const status = statusMapper[course.status] || "—";
                   return (
                     <React.Fragment key={idx}>
-                      <TableRow hover>
+                      <TableRow
+                        className={`hover:bg-gray-50 transition ${course.status === "wait_for_approval"
+                            ? "border-l-4 border-yellow-500"
+                            : ""
+                          }`}
+                      >
                         <TableCell>
                           <IconButton
                             size="small"
@@ -134,20 +136,25 @@ const AdminCourseApproval = () => {
                             )}
                           </IconButton>
                         </TableCell>
-                        <TableCell>{course.title}</TableCell>
+
+                        <TableCell className="font-medium text-gray-800">
+                          {course.title}
+                        </TableCell>
                         <TableCell>{course.category}</TableCell>
-                        <TableCell>{course.outline}</TableCell>
-                        {/* <TableCell>{course.duration}</TableCell> */}
-                        <TableCell>{statusMapper[course.status]}</TableCell>
+                        <TableCell className="italic text-gray-600">
+                          {getPathwayName(course.pathwayID)}
+                        </TableCell>
+                        <TableCell>{truncateText(course.outline)}</TableCell>
+                        <TableCell>{status}</TableCell>
+
                         <TableCell align="right">
                           {course.status === "wait_for_approval" && (
-                            <>
+                            <div className="flex flex-col gap-2 items-end">
                               <Tooltip title="Approve">
                                 <Button
                                   variant="contained"
                                   color="success"
                                   size="small"
-                                  sx={{ mr: 1 }}
                                   onClick={() =>
                                     updateStatus(course.courseID, "active")
                                   }
@@ -167,7 +174,7 @@ const AdminCourseApproval = () => {
                                   Decline
                                 </Button>
                               </Tooltip>
-                            </>
+                            </div>
                           )}
 
                           {course.status === "active" && (
@@ -187,75 +194,39 @@ const AdminCourseApproval = () => {
 
                           {course.status === "inactive" && (
                             <Typography variant="body2" color="text.secondary">
-                              Course is inactive. Owner can edit & request
-                              approval.
+                              Inactive — owner can edit & resubmit.
                             </Typography>
                           )}
 
                           {course.status === "draft" && (
                             <Typography variant="body2" color="text.secondary">
-                              Pending owner submission
+                              Pending owner submission.
                             </Typography>
                           )}
                         </TableCell>
                       </TableRow>
 
-                      {/* Expanded content: modules + pages */}
+                      {/* Expanded details */}
                       <TableRow>
-                        <TableCell colSpan={7} sx={{ py: 0 }}>
+                        <TableCell colSpan={7} className="p-0">
                           <Collapse
                             in={expanded[course.courseID]}
                             timeout="auto"
                             unmountOnExit
                           >
-                            <Box sx={{ m: 2 }}>
-                              {course?.modules?.length === 0 ? (
-                                <Typography color="text.secondary">
-                                  No modules for this course.
-                                </Typography>
-                              ) : (
-                                course?.modules?.map((mod, mIdx) => (
-                                  <Box key={mIdx} sx={{ mb: 2 }}>
-                                    <Typography
-                                      variant="subtitle1"
-                                      fontWeight={600}
-                                    >
-                                      Module: {mod.moduleTitle} ({mod.status})
-                                    </Typography>
-                                    {mod?.contents?.length === 0 ? (
-                                      <Typography color="text.secondary" ml={2}>
-                                        No pages in this module.
-                                      </Typography>
-                                    ) : (
-                                      mod?.contents?.map((p, cIdx) => (
-                                        <Box key={cIdx} ml={3} mb={1}>
-                                          <Typography variant="body2">
-                                            {p.pageNumber}. <b>{p.title}</b> –{" "}
-                                            {p.content.substring(0, 80)}
-                                            {p.content.length > 80 && "..."}
-                                          </Typography>
-                                          {p.mediaUrl && (
-                                            <Typography
-                                              variant="caption"
-                                              color="primary"
-                                            >
-                                              Media:{" "}
-                                              <a
-                                                href={p.mediaUrl}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                              >
-                                                {p.mediaUrl}
-                                              </a>
-                                            </Typography>
-                                          )}
-                                        </Box>
-                                      ))
-                                    )}
-                                  </Box>
-                                ))
-                              )}
-                            </Box>
+                            <div className="m-4 bg-gray-50 p-4 rounded-xl border border-gray-200">
+                              <p className="text-gray-700 text-sm mb-2">
+                                <strong>Full Outline:</strong> {course.outline}
+                              </p>
+                              <a
+                                className="text-blue-600 underline cursor-pointer"
+                                onClick={() =>
+                                  navigate(`/courses/${course.courseID}`)
+                                }
+                              >
+                                View course details →
+                              </a>
+                            </div>
                           </Collapse>
                         </TableCell>
                       </TableRow>
@@ -265,8 +236,8 @@ const AdminCourseApproval = () => {
               )}
             </TableBody>
           </Table>
-        </Paper>
-      </Box>
+        </div>
+      </div>
 
       <Snackbar
         open={snack.open}
@@ -278,22 +249,8 @@ const AdminCourseApproval = () => {
           {snack.msg}
         </Alert>
       </Snackbar>
-    </Box>
+    </div>
   );
-};
-
-const styles = {
-  page: {
-    maxWidth: 1200,
-    margin: "24px auto",
-    padding: "0 16px",
-  },
-  card: {
-    background: "#fff",
-    borderRadius: 10,
-    padding: 20,
-    boxShadow: "0 8px 24px rgba(0,0,0,0.08)",
-  },
 };
 
 export default AdminCourseApproval;

@@ -47,14 +47,11 @@ function CourseLayout() {
         </NavLink>
 
         <nav className="flex flex-col space-y-1 p-2">
-          {/* Expandable Modules */}
           {modules?.map((module) => (
             <div key={module.moduleID}>
               <button
                 onClick={() =>
-                  setOpenModule(
-                    openModule === module.moduleID ? null : module.moduleID
-                  )
+                  setOpenModule(openModule === module.moduleID ? null : module.moduleID)
                 }
                 className="w-full text-left px-4 py-2 rounded hover:bg-gray-100 font-medium flex justify-between items-center"
               >
@@ -76,8 +73,7 @@ function CourseLayout() {
                   ))}
                   <li>
                     <NavLink
-                      to={`modules/${module.moduleID}/quizzes/${quiz?.find((x) => x.moduleID === module.moduleID)
-                          ?.quizID || ""
+                      to={`modules/${module.moduleID}/quizzes/${quiz?.find((x) => x.moduleID === module.moduleID)?.quizID || ""
                         }`}
                       className="block px-3 py-1 text-sm rounded hover:bg-gray-100"
                     >
@@ -89,23 +85,13 @@ function CourseLayout() {
             </div>
           ))}
 
-          {/* Static Links */}
-          <NavLink
-            to="announcements"
-            className="px-4 py-2 rounded hover:bg-gray-100"
-          >
+          <NavLink to="announcements" className="px-4 py-2 rounded hover:bg-gray-100">
             Announcements
           </NavLink>
-          <NavLink
-            to="discussions"
-            className="px-4 py-2 rounded hover:bg-gray-100"
-          >
+          <NavLink to="discussions" className="px-4 py-2 rounded hover:bg-gray-100">
             Discussion Board
           </NavLink>
-          <NavLink
-            to="questions"
-            className="px-4 py-2 rounded hover:bg-gray-100"
-          >
+          <NavLink to="questions" className="px-4 py-2 rounded hover:bg-gray-100">
             Ask Question
           </NavLink>
 
@@ -129,7 +115,6 @@ function CourseLayout() {
 
       </aside>
 
-      {/* Main Content */}
       <main className="flex-1 ml-64 mt-[88px] p-6">
         <Outlet />
       </main>

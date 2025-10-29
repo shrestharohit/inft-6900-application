@@ -31,6 +31,7 @@ const ResetPasswordPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const email = location.state?.email;
+  const { resetPassword } = useUserApi();
 
   const togglePasswordVisibility = () => setShowPassword((prev) => !prev);
 

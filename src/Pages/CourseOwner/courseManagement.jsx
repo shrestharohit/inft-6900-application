@@ -316,13 +316,7 @@ export default function CourseManagement() {
       >
         <form onSubmit={handleSubmit}>
           <Stack spacing={2}>
-            <TextField
-              label="Course Name"
-              name="name"
-              value={form.name}
-              onChange={handleChange}
-              required
-            />
+            <TextField label="Course Name" name="name" value={form.name} onChange={handleChange} required />
 
             <Autocomplete
               freeSolo
@@ -414,6 +408,7 @@ export default function CourseManagement() {
             <TableRow>
               <TableCell>Course Name</TableCell>
               <TableCell>Category</TableCell>
+              {/* <TableCell>Pathway</TableCell> */}
               <TableCell>Outline</TableCell>
               <TableCell>Level</TableCell>
               <TableCell>Status</TableCell>
@@ -491,13 +486,7 @@ export default function CourseManagement() {
       </Paper>
 
       {/* Outline Dialog */}
-      <Dialog
-        open={outlineDialogOpen}
-        onClose={handleOutlineCancel}
-        maxWidth="md"
-        fullWidth
-        scroll="paper"
-      >
+      <Dialog open={outlineDialogOpen} onClose={handleOutlineCancel} maxWidth="md" fullWidth scroll="paper">
         <DialogTitle>Edit Course Outline</DialogTitle>
         <DialogContent dividers>
           <TextField
@@ -512,9 +501,7 @@ export default function CourseManagement() {
         </DialogContent>
         <DialogActions>
           <Button onClick={handleOutlineCancel}>Cancel</Button>
-          <Button onClick={handleOutlineSave} variant="contained">
-            Save
-          </Button>
+          <Button onClick={handleOutlineSave} variant="contained">Save</Button>
         </DialogActions>
       </Dialog>
     </Box>

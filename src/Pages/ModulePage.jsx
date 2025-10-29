@@ -64,7 +64,7 @@ const ModulePage = () => {
           return isQuiz ? (
             <Link
               key={lesson.id}
-              to={`/courses/${courseId}/quizzes/${lesson.id}`}
+              to={`/courses/${courseId}/modules/${moduleId}/quizzes/${lesson.id}`}
               className="block"
             >
               {cardContent}

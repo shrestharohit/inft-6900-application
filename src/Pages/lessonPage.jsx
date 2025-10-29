@@ -1,29 +1,35 @@
 import React, { useState, useRef, useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 import beforeAuthLayout from "../components/BeforeAuth";
+import { dummyCourses } from "../Pages/dummyData";
+import { dummyModules } from "../Pages/dummyModule";
+import { dummyLessonContent } from "../Pages/dummyLessonContent";
 import useContent from "../hooks/useContent";
-import PomodoroTimer from "../components/PomodoroTimer";
 
 const LessonPage = () => {
   const { lessonId } = useParams();
   const [isPlaying, setIsPlaying] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const utteranceRef = useRef(null);
+  const [lessonContent, setLessonContent] = useState(null);
 
-  const course = dummyCourses.find((c) => c.id === courseId);
-  if (!course) return <div className="p-6 text-red-500 text-center font-semibold text-lg">Course not found!</div>;
+  const { getContentDetails } = useContent();
+
+  const fetchContent = () => {
+    getContentDetails(lessonId)
+      .then((res) => {
+        setLessonContent(res.content);
+      })
+      .catch((err) => {
+        console.error("Failed to fetch announcements", err);
+      });
+  };
 
   useEffect(() => {
     let mounted = true;
-    getContentDetails(lessonId)
-      .then((res) => {
-        if (mounted) setLessonContent(res.content);
-      })
-      .catch((err) => {
-        console.error("Failed to fetch lesson content:", err);
-      });
+    fetchContent();
     return () => (mounted = false);
-  }, [getContentDetails, lessonId]);
+  }, [getContentDetails]);
 
   if (!lessonContent)
     return (
@@ -40,7 +46,7 @@ const LessonPage = () => {
     }
 
     if (!isPlaying) {
-      const utter = new SpeechSynthesisUtterance(lessonContent.content);
+      const utter = new SpeechSynthesisUtterance(lessonContent.description);
       utter.onend = () => {
         setIsPlaying(false);
         setIsPaused(false);
@@ -76,8 +82,8 @@ const LessonPage = () => {
 
   return (
     <div className="p-6 max-w-5xl mx-auto">
-      {/* Heading & Speech controls */}
-      <div className="flex items-center justify-between mb-8">
+      {/* Heading + TTS controls aligned */}
+      <div className="flex items-center justify-between mb-6">
         <h1 className="text-4xl font-extrabold text-gray-800">
           {lessonContent.title}
         </h1>
@@ -92,10 +98,11 @@ const LessonPage = () => {
           <button
             onClick={handleStop}
             disabled={!isPlaying}
-            className={`px-4 py-2 rounded-full text-white shadow-md transition ${isPlaying
+            className={`px-4 py-2 rounded-full text-white shadow-md transition ${
+              isPlaying
                 ? "bg-red-600 hover:bg-red-700"
                 : "bg-gray-400 cursor-not-allowed"
-              }`}
+            }`}
           >
             ⏹ Stop
           </button>
@@ -116,7 +123,7 @@ const LessonPage = () => {
 
       {/* Lesson Content */}
       <div className="bg-white p-6 rounded-lg shadow-md border border-gray-200">
-        <p className="text-gray-700 text-lg leading-relaxed whitespace-pre-line">
+        <p className="text-gray-700 text-lg leading-relaxed">
           {lessonContent.description}
         </p>
       </div>
@@ -124,4 +131,4 @@ const LessonPage = () => {
   );
 };
 
-export default beforeAuthLayout(LessonPage);
+export default LessonPage;

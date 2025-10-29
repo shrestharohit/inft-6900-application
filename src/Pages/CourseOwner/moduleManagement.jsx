@@ -26,6 +26,11 @@ import {
   Alert,
   CircularProgress,
 } from "@mui/material";
+
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { TimePicker } from "@mui/x-date-pickers/TimePicker";
+import dayjs from "dayjs";
 import { Add, Delete, Edit } from "@mui/icons-material";
 import Autocomplete from "@mui/material/Autocomplete";
 
@@ -33,7 +38,8 @@ import useModuleApi from "../../hooks/useModuleApi";
 import useCourseApi from "../../hooks/useCourseApi";
 import { useAuth } from "../../contexts/AuthContext";
 
-const STATUS_OPTIONS = ["draft", "wait_for_approval", "active", "inactive"];
+// Status kept in submit logic (default draft / preserve on edit) but not shown in UI
+const DEFAULT_STATUS = "draft";
 
 export default function ModuleManagement() {
   const [modules, setModules] = useState([]);
@@ -44,28 +50,25 @@ export default function ModuleManagement() {
 
   const { registerModule, updateModule } = useModuleApi();
   const { fetchAllModules, fetchAllCourses } = useCourseApi();
-    const { loggedInUser } = useAuth();
+  const { loggedInUser } = useAuth();
 
   const [moduleForm, setModuleForm] = useState({
     courseID: "",
     title: "",
     description: "",
     moduleNumber: "",
-    expectedHours: "",
-    status: "draft",
-    content: [],
+    expectedHours: "", // HH:MM (we convert to HH:MM:00 on submit)
+    contents: [],
   });
 
   const [pageForm, setPageForm] = useState({
     title: "",
     content: "",
-    mediaUrl: "",
   });
 
   const [editingPageIndex, setEditingPageIndex] = useState(null);
   const [contentDialogOpen, setContentDialogOpen] = useState(false);
 
-  // Load courses and modules on mount
   useEffect(() => {
     let mounted = true;
 
@@ -106,7 +109,17 @@ export default function ModuleManagement() {
     return () => {
       mounted = false;
     };
-  }, [fetchAllCourses, fetchAllModules]);
+  }, [fetchAllCourses, fetchAllModules, loggedInUser?.id]);
+
+  // Helpers
+  const toHHMMSS = (hhmm) => {
+    if (!hhmm) return null;
+    // Accepts "H:MM" or "HH:MM"
+    const [hh = "00", mm = "00"] = hhmm.split(":");
+    const HH = String(hh).padStart(2, "0");
+    const MM = String(mm).padStart(2, "0");
+    return `${HH}:${MM}:00`;
+  };
 
   // Module form handlers
   const handleModuleFormChange = (e) => {
@@ -131,7 +144,7 @@ export default function ModuleManagement() {
   const handleClosePageDialog = () => {
     setContentDialogOpen(false);
     if (editingPageIndex === null) {
-      setPageForm({ title: "", content: "", mediaUrl: "" });
+      setPageForm({ title: "", content: "" });
     }
   };
 
@@ -144,11 +157,13 @@ export default function ModuleManagement() {
       return;
     }
 
-    // Check for duplicate page titles in current module
-    const isDuplicate = moduleForm.content.some(
+    // duplicate title check within the module
+    const isDuplicate = moduleForm.contents.some(
       (page, idx) =>
         idx !== editingPageIndex &&
-        page.title.trim().toLowerCase() === trimmedTitle.toLowerCase()
+        (page.title || "")
+          .trim()
+          .toLowerCase() === trimmedTitle.toLowerCase()
     );
 
     if (isDuplicate) {
@@ -158,50 +173,63 @@ export default function ModuleManagement() {
 
     const newPage = {
       title: trimmedTitle,
-      content: trimmedContent,
-      mediaUrl: pageForm.mediaUrl.trim(),
+      content: trimmedContent, // keep content in FE; we map to description on submit
       pageNumber:
         editingPageIndex !== null
           ? editingPageIndex + 1
-          : moduleForm.content.length + 1,
+          : moduleForm.contents.length + 1,
     };
 
     if (editingPageIndex !== null) {
-      const updatedcontent = [...moduleForm.content];
-      updatedcontent[editingPageIndex] = newPage;
-      setModuleForm((prev) => ({ ...prev, content: updatedcontent }));
+      const updated = [...moduleForm.contents];
+      updated[editingPageIndex] = newPage;
+      setModuleForm((prev) => ({ ...prev, contents: updated }));
     } else {
       setModuleForm((prev) => ({
         ...prev,
-        content: [...prev.content, newPage],
+        contents: [...prev.contents, newPage],
       }));
     }
 
-    setPageForm({ title: "", content: "", mediaUrl: "" });
+    setPageForm({ title: "", content: "" });
     setEditingPageIndex(null);
     setContentDialogOpen(false);
   };
 
   const handleEditPage = (pageIndex) => {
-    const page = moduleForm.content[pageIndex];
+    const page = moduleForm.contents[pageIndex];
+    // Fix: backend often returns description instead of content
+    const safeContent = page?.content ?? page?.description ?? "";
     setPageForm({
-      title: page.title,
-      content: page.content,
-      mediaUrl: page.mediaUrl || "",
+      title: page?.title || "",
+      content: safeContent,
     });
     setEditingPageIndex(pageIndex);
     setContentDialogOpen(true);
   };
 
   const handleRemovePage = (pageIndex) => {
-    const updatedcontent = moduleForm.content
+    const updated = moduleForm.contents
       .filter((_, idx) => idx !== pageIndex)
       .map((page, idx) => ({ ...page, pageNumber: idx + 1 }));
-
-    setModuleForm((prev) => ({ ...prev, content: updatedcontent }));
+    setModuleForm((prev) => ({ ...prev, contents: updated }));
   };
 
-  // Module submission
+  const resetForm = () => {
+    setModuleForm({
+      courseID: "",
+      title: "",
+      description: "",
+      moduleNumber: "",
+      expectedHours: "",
+      contents: [],
+    });
+    setPageForm({ title: "", content: "" });
+    setEditingModuleIndex(null);
+    setEditingPageIndex(null);
+  };
+
+  // Submit
   const handleSubmitModule = async (e) => {
     e.preventDefault();
 
@@ -215,11 +243,15 @@ export default function ModuleManagement() {
       title: moduleForm.title.trim(),
       description: moduleForm.description.trim(),
       moduleNumber: parseInt(moduleForm.moduleNumber, 10),
-      expectedHours: moduleForm.expectedHours.trim() || null,
-      status: moduleForm.status,
-      content: moduleForm.content?.map((x, index) => ({
+      expectedHours: toHHMMSS(moduleForm.expectedHours) || null, // convert HH:MM -> HH:MM:00
+      // UI doesn't show status; keep existing when editing, else default draft
+      status:
+        editingModuleIndex !== null
+          ? modules[editingModuleIndex]?.status ?? DEFAULT_STATUS
+          : DEFAULT_STATUS,
+      contents: moduleForm.contents?.map((x, index) => ({
         ...x,
-        description: x.content,
+        description: x.content, // backend expects description
         pageNumber: index + 1,
         status: "inactive",
       })),
@@ -229,18 +261,19 @@ export default function ModuleManagement() {
       if (editingModuleIndex !== null) {
         const moduleToUpdate = modules[editingModuleIndex];
 
-        const response = await updateModule(moduleToUpdate.moduleNumber, {
+        const response = await updateModule(moduleToUpdate.moduleID, {
           title: payload.title,
           description: payload.description,
           moduleNumber: payload.moduleNumber,
           expectedHours: payload.expectedHours,
           status: payload.status,
-          content: payload.content,
+          contents: payload.contents,
         });
 
         const updatedModule = response?.module || response || payload;
         const courseName =
-          courses.find((c) => c.id === payload.courseID)?.title || "";
+          courses.find((c) => (c.courseID ?? c.id) === payload.courseID)
+            ?.title || "";
 
         setModules((prev) =>
           prev.map((mod, idx) =>
@@ -253,18 +286,18 @@ export default function ModuleManagement() {
         const response = await registerModule(payload);
         const createdModule = response?.module || response || payload;
         const courseName =
-          courses.find((c) => c.id === payload.courseID)?.title || "";
+          courses.find((c) => (c.courseID ?? c.id) === payload.courseID)
+            ?.title || "";
 
         setModules((prev) => [...prev, { ...createdModule, courseName }]);
         alert("Module created successfully!");
       }
 
-      // resetForm();
+      // stay in current mode; user can use Cancel Edit to switch
     } catch (err) {
       console.error("Failed to save module", err);
       alert(
-        `Failed to ${
-          editingModuleIndex !== null ? "update" : "create"
+        `Failed to ${editingModuleIndex !== null ? "update" : "create"
         } module. Please try again.`
       );
     }
@@ -272,34 +305,28 @@ export default function ModuleManagement() {
 
   const handleEditModule = (index) => {
     const module = modules[index];
+
+    // Normalize contents: ensure .content exists (fallback to .description)
+    const normalizedContents = (module.contents || []).map((p, i) => ({
+      ...p,
+      content: p?.content ?? p?.description ?? "",
+      pageNumber: p?.pageNumber ?? i + 1,
+    }));
+
     setModuleForm({
       courseID: module.courseID,
-      title: module.title,
+      title: module.title || "",
       description: module.description || "",
       moduleNumber: module.moduleNumber,
-      expectedHours: module.expectedHours || "",
-      status: module.status,
-      content: module.content || [],
+      expectedHours: (module.expectedHours || "")
+        .slice(0, 5) // accept "HH:MM:SS" -> "HH:MM"
+        .replace(/^$/, ""),
+      contents: normalizedContents,
     });
     setEditingModuleIndex(index);
   };
 
-  // const resetForm = () => {
-  //   setModuleForm({
-  //     courseID: "",
-  //     title: "",
-  //     description: "",
-  //     moduleNumber: "",
-  //     expectedHours: "",
-  //     status: "draft",
-  //     content: [],
-  //   });
-  //   setPageForm({ title: "", content: "", mediaUrl: "" });
-  //   setEditingModuleIndex(null);
-  //   setEditingPageIndex(null);
-  // };
-
-  // Get existing module titles for autocomplete
+  // Existing module titles for autocomplete (same course)
   const existingModuleTitles = modules
     .filter((mod) => mod.courseID === moduleForm.courseID)
     .map((mod) => mod.title);
@@ -340,9 +367,22 @@ export default function ModuleManagement() {
           boxShadow: "0 6px 16px rgba(0,0,0,0.08)",
         }}
       >
-        <Typography variant="h6" gutterBottom>
-          {editingModuleIndex !== null ? "Edit Module" : "Create New Module"}
-        </Typography>
+        <Stack
+          direction="row"
+          alignItems="center"
+          justifyContent="space-between"
+          sx={{ mb: 1 }}
+        >
+          <Typography variant="h6">
+            {editingModuleIndex !== null ? "Edit Module" : "Create New Module"}
+          </Typography>
+
+          {editingModuleIndex !== null && (
+            <Button variant="text" color="secondary" onClick={resetForm}>
+              Cancel Edit (Create New)
+            </Button>
+          )}
+        </Stack>
 
         <form onSubmit={handleSubmitModule}>
           <Stack spacing={2.5}>
@@ -355,7 +395,10 @@ export default function ModuleManagement() {
                 disabled={editingModuleIndex !== null}
               >
                 {courses.map((course) => (
-                  <MenuItem key={course.courseID} value={course.courseID}>
+                  <MenuItem
+                    key={course.courseID ?? course.id}
+                    value={course.courseID ?? course.id}
+                  >
                     {course.title || course.name}
                   </MenuItem>
                 ))}
@@ -370,6 +413,7 @@ export default function ModuleManagement() {
               onChange={handleModuleFormChange}
               required
               fullWidth
+              inputProps={{ min: 1 }}
             />
 
             <Autocomplete
@@ -397,35 +441,29 @@ export default function ModuleManagement() {
               fullWidth
             />
 
-            <TextField
-              label="Expected Hours (HH:MM:SS)"
-              name="expectedHours"
-              value={moduleForm.expectedHours}
-              onChange={handleModuleFormChange}
-              placeholder="e.g., 02:30:00"
-              fullWidth
-              helperText="Format: HH:MM:SS (optional)"
-            />
-
-            <FormControl fullWidth required>
-              <InputLabel>Status</InputLabel>
-              <Select
-                name="status"
-                value={moduleForm.status}
-                label="Status"
-                onChange={handleModuleFormChange}
-              >
-                {STATUS_OPTIONS.map((status) => (
-                  <MenuItem key={status} value={status}>
-                    {status.replace(/_/g, " ").toUpperCase()}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
+            {/* Expected Hours using TimePicker */}
+            <LocalizationProvider dateAdapter={AdapterDayjs}>
+              <TimePicker
+                ampm={false}
+                views={["hours", "minutes", "seconds"]}
+                format="HH:mm:ss"
+                label="Expected Hours (HH:mm:ss)"
+                value={moduleForm.expectedHours ? dayjs(moduleForm.expectedHours, "HH:mm:ss") : null}
+                onChange={(newValue) => {
+                  setModuleForm((prev) => ({
+                    ...prev,
+                    expectedHours: newValue ? newValue.format("HH:mm:ss") : "",
+                  }));
+                }}
+                renderInput={(params) => (
+                  <TextField {...params} fullWidth helperText="Optional duration for this module." />
+                )}
+              />
+            </LocalizationProvider>
 
             <Divider sx={{ my: 2 }} />
 
-            {/* content Section */}
+            {/* Pages Section */}
             <Box>
               <Typography variant="h6" gutterBottom>
                 Module Pages
@@ -440,9 +478,9 @@ export default function ModuleManagement() {
                 Add Page
               </Button>
 
-              {moduleForm.content.length > 0 ? (
+              {moduleForm.contents.length > 0 ? (
                 <Stack spacing={2}>
-                  {moduleForm.content.map((page, idx) => (
+                  {moduleForm.contents.map((page, idx) => (
                     <Card key={idx} variant="outlined" sx={{ borderRadius: 2 }}>
                       <CardContent>
                         <Box
@@ -477,14 +515,14 @@ export default function ModuleManagement() {
                           color="text.secondary"
                           sx={{ mb: 1 }}
                         >
-                          {page.content.substring(0, 150)}
-                          {page.content.length > 150 && "..."}
+                          {(page.content ?? page.description ?? "").substring(
+                            0,
+                            150
+                          )}
+                          {((page.content ?? page.description ?? "").length >
+                            150) &&
+                            "..."}
                         </Typography>
-                        {page.mediaUrl && (
-                          <Typography variant="caption" color="primary">
-                            Media: {page.mediaUrl}
-                          </Typography>
-                        )}
                       </CardContent>
                     </Card>
                   ))}
@@ -502,9 +540,11 @@ export default function ModuleManagement() {
                   ? "Update Module"
                   : "Create Module"}
               </Button>
-              {/* <Button variant="outlined" color="secondary" onClick={resetForm}>
-                {editingModuleIndex !== null ? "Cancel Edit" : "Clear Form"}
-              </Button> */}
+              {editingModuleIndex !== null && (
+                <Button variant="outlined" color="secondary" onClick={resetForm}>
+                  Cancel Edit
+                </Button>
+              )}
             </Stack>
           </Stack>
         </form>
@@ -524,10 +564,9 @@ export default function ModuleManagement() {
           <TableHead>
             <TableRow>
               <TableCell>Course</TableCell>
-              <TableCell>Module</TableCell>
+              <TableCell>Module #</TableCell>
               <TableCell>Title</TableCell>
               <TableCell>Description</TableCell>
-              {/* <TableCell>Expected Hours</TableCell> */}
               <TableCell>No of Pages</TableCell>
               <TableCell>Status</TableCell>
               <TableCell align="right">Actions</TableCell>
@@ -539,16 +578,16 @@ export default function ModuleManagement() {
                 <TableCell>
                   {courses?.find((x) => x.courseID === module.courseID)?.title}
                 </TableCell>
-                <TableCell>{module.moduleID}</TableCell>
+                {/* Show moduleNumber instead of PK */}
+                <TableCell>{module.moduleNumber}</TableCell>
                 <TableCell>{module.title}</TableCell>
                 <TableCell>
                   {module.description
                     ? module.description.substring(0, 50) +
-                      (module.description.length > 50 ? "..." : "")
+                    (module.description.length > 50 ? "..." : "")
                     : "—"}
                 </TableCell>
-                {/* <TableCell>{module.expectedHours || "—"}</TableCell> */}
-                <TableCell>{module.content?.length || 0}</TableCell>
+                <TableCell>{module.contents?.length || 0}</TableCell>
                 <TableCell>
                   <Typography
                     variant="caption"
@@ -560,17 +599,19 @@ export default function ModuleManagement() {
                         module.status === "active"
                           ? "success.light"
                           : module.status === "draft"
-                          ? "grey.300"
-                          : "warning.light",
+                            ? "grey.300"
+                            : "warning.light",
                       color:
                         module.status === "active"
                           ? "success.dark"
                           : module.status === "draft"
-                          ? "grey.700"
-                          : "warning.dark",
+                            ? "grey.700"
+                            : "warning.dark",
                     }}
                   >
-                    {module.status.replace(/_/g, " ").toUpperCase()}
+                    {String(module.status || DEFAULT_STATUS)
+                      .replace(/_/g, " ")
+                      .toUpperCase()}
                   </Typography>
                 </TableCell>
                 <TableCell align="right">
@@ -624,14 +665,6 @@ export default function ModuleManagement() {
               rows={12}
               fullWidth
               required
-            />
-            <TextField
-              label="Media URL (optional)"
-              name="mediaUrl"
-              value={pageForm.mediaUrl}
-              onChange={handlePageFormChange}
-              fullWidth
-              placeholder="https://example.com/media.jpg"
             />
           </Stack>
         </DialogContent>

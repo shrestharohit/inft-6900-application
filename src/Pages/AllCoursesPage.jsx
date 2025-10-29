@@ -53,6 +53,25 @@ const AllCoursesPage = () => {
     return () => (mounted = false);
   }, [fetchAllCourses, normalizeCourse]);
 
+  // Filter and sort
+  useEffect(() => {
+    if (!courses.length) return;
+
+    let filtered = [...courses];
+    if (filters.level !== "all")
+      filtered = filtered.filter(
+        (c) => c.level.toLowerCase() === filters.level.toLowerCase()
+      );
+    if (filters.sortBy === "released")
+      filtered.sort(
+        (a, b) =>
+          new Date(b.releasedDate || 0) - new Date(a.releasedDate || 0)
+      );
+
+    setCourses(filtered);
+  }, [filters]);
+
+  // Handle Schedule Timing
   const handleScheduleClick = (courseId) => {
     if (!isLoggedIn) {
       navigate("/login", { state: { from: `/schedule/${courseId}` } });
@@ -62,93 +81,84 @@ const AllCoursesPage = () => {
   };
 
   return (
-    <div className="bg-gray-50 px-6 py-12 min-h-screen">
-      <div className="max-w-7xl mx-auto">
-        <h1 className="text-3xl font-bold text-gray-900 mb-8 text-center md:text-left">
-          All Courses
-        </h1>
+    <div className="search-results-container bg-gray-50 px-6 py-12 min-h-screen">
+      <h1 className="text-3xl font-bold text-gray-900 mb-6">All Courses</h1>
 
-        {/* Filters */}
-        <div className="flex flex-wrap gap-4 mb-10 justify-start">
-          <select
-            value={filters.level}
-            onChange={(e) => setFilters({ ...filters, level: e.target.value })}
-            className="px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-white focus:ring-2 focus:ring-green-500"
-          >
-            <option value="all">All Levels</option>
-            <option value="Beginner">Beginner</option>
-            <option value="Intermediate">Intermediate</option>
-            <option value="Advanced">Advanced</option>
-          </select>
+      {/* Filters */}
+      <div className="filters mb-8 flex flex-wrap gap-4 justify-start">
+        <select
+          value={filters.level}
+          onChange={(e) => setFilters({ ...filters, level: e.target.value })}
+          className="px-3 py-2 border rounded-md shadow-sm"
+        >
+          <option value="all">All Levels</option>
+          <option value="Beginner">Beginner</option>
+          <option value="Intermediate">Intermediate</option>
+          <option value="Advanced">Advanced</option>
+        </select>
 
-          <select
-            value={filters.sortBy}
-            onChange={(e) => setFilters({ ...filters, sortBy: e.target.value })}
-            className="px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-white focus:ring-2 focus:ring-green-500"
-          >
-            <option value="released">Sort by Release Date</option>
-          </select>
+        <select
+          value={filters.sortBy}
+          onChange={(e) => setFilters({ ...filters, sortBy: e.target.value })}
+          className="px-3 py-2 border rounded-md shadow-sm"
+        >
+          <option value="released">Sort by Release Date</option>
+        </select>
 
-          <button
-            onClick={resetFilters}
-            className="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-md shadow-sm font-medium"
-          >
-            Reset
-          </button>
-        </div>
-
-        {/* Loading / Error / List */}
-        {loading && (
-          <div className="text-center py-10 text-gray-600">Loading courses...</div>
-        )}
-
-        {!loading && error && (
-          <div className="text-center py-10 text-red-600">{error}</div>
-        )}
-
-        {!loading && !error && courses.length > 0 && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-            {courses.map((course) => (
-              <div
-                key={course.id}
-                className="bg-white rounded-lg shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden flex flex-col"
-              >
-                <img
-                  src={course.img}
-                  alt={course.name}
-                  className="w-full h-44 object-cover"
-                />
-
-                <div className="flex-1 flex flex-col p-6">
-                  <h3 className="text-xl font-semibold text-gray-800 mb-2 line-clamp-1">
-                    {course.name}
-                  </h3>
-
-                  <p className="text-gray-600 text-sm flex-1 mb-4 line-clamp-3">
-                    {course.description || "No description available."}
-                  </p>
-
-                  <div className="flex justify-between items-center mt-auto pt-4 border-t">
-                    <Link
-                      to={`/courses/${course.id}`}
-                      className="text-green-600 hover:text-green-700 font-semibold text-sm"
-                    >
-                      View Course
-                    </Link>
-
-                    <button
-                      onClick={() => handleScheduleClick(course.id)}
-                      className="bg-green-500 text-white text-sm font-medium px-3 py-1.5 rounded-md hover:bg-green-600 transition"
-                    >
-                      Schedule
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
+        <button
+          onClick={resetFilters}
+          className="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-md shadow-sm"
+        >
+          Reset
+        </button>
       </div>
+
+      {/* Course list */}
+      {loading && <div className="text-center py-6">Loading courses...</div>}
+      {!loading && error && (
+        <div className="text-center py-6 text-red-600">{error}</div>
+      )}
+
+      {!loading && !error && courses.length > 0 && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+          {courses.map((course) => (
+            <div
+              key={course.id}
+              className="bg-white p-6 rounded-lg shadow-md hover:shadow-xl transition-all h-96 flex flex-col justify-between"
+            >
+              <div>
+                <img
+                  src={webdevremovebg}
+                  alt={course.name}
+                  className="w-full h-40 object-cover rounded-lg mb-4"
+                />
+                <h3 className="text-xl font-semibold text-gray-800 mb-2">
+                  {course.name}
+                </h3>
+                <p className="text-gray-600 text-sm mb-4 h-20 overflow-hidden">
+                  {course.description || "No description available."}
+                </p>
+              </div>
+
+              <div className="flex justify-between mt-2">
+                <Link
+                  to={`/courses/${course.id}`}
+                  className="text-green-600 hover:text-green-700 font-semibold"
+                >
+                  View Course
+                </Link>
+
+                <button
+                  onClick={() => handleScheduleClick(course.id)}
+                  className="text-green-600 hover:text-green-700 font-semibold"
+                >
+                  Schedule Timing
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 };

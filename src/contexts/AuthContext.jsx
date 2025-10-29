@@ -60,19 +60,6 @@ export const AuthProvider = ({ children }) => {
     window.location.href = ROUTES.DEFAULT;
   };
 
-  // ✅ Enroll in a single course
-  const enrollInCourse = (courseId) => {
-    if (!loggedInUser) return;
-
-    const enrolledCourses = { ...(loggedInUser.enrolledCourses || {}) };
-
-    if (!enrolledCourses[courseId]) {
-      enrolledCourses[courseId] = { status: "unlocked" };
-    }
-
-    persistUser({ ...loggedInUser, enrolledCourses });
-  };
-
   // ✅ Enroll in a pathway (auto-enroll its courses too)
   const enrollInPathway = (pathwayId) => {
     if (!loggedInUser) return;
@@ -124,24 +111,6 @@ export const AuthProvider = ({ children }) => {
     persistUser({ ...loggedInUser, enrolledCourses });
   };
 
-  // ✅ Disenroll from a single course
-  const disenrollFromCourse = (courseId) => {
-    if (!loggedInUser) return;
-
-    const enrolledCourses = { ...(loggedInUser.enrolledCourses || {}) };
-
-    // Don’t allow disenrolling from completed courses
-    if (enrolledCourses[courseId]?.status === "completed") {
-      alert("You cannot leave a completed course.");
-      return;
-    }
-
-    // Remove the course
-    delete enrolledCourses[courseId];
-
-    persistUser({ ...loggedInUser, enrolledCourses });
-  };
-
   // ✅ Disenroll from a pathway (removes non-completed courses)
   const disenrollFromPathway = (pathwayId) => {
     if (!loggedInUser) return;
@@ -174,10 +143,8 @@ export const AuthProvider = ({ children }) => {
         isLoggedIn: !!loggedInUser,
         setUserDataInState,
         clearUserDataFromState,
-        enrollInCourse,
         enrollInPathway,
         completeCourse,
-        disenrollFromCourse,   // ✅ new
         disenrollFromPathway,  // ✅ new
       }}
     >
