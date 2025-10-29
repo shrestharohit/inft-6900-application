@@ -76,4 +76,4 @@ function CertificatePage() {
   );
 }
 
-export default beforeAuthLayout(CertificatePage);
+export default CertificatePage;
