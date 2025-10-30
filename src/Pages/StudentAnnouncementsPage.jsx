@@ -1,16 +1,26 @@
-// src/Pages/StudentAnnouncementsPage.jsx
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { dummyCourses } from "../Pages/dummyData";
 import beforeAuthLayout from "../components/BeforeAuth";
 import useAnnouncement from "../hooks/useAnnouncement";
+import useRoleAccess from "../hooks/useRoleAccess";
+import { dummyCourses } from "../Pages/dummyData";
 
 const StudentAnnouncementsPageContent = () => {
   const { courseId } = useParams();
   const [published, setPublished] = useState([]);
+  const { getAllAnnouncementsForCourse } = useAnnouncement();
+  const { canViewAnnouncements, canCreateAnnouncement, isAdmin } = useRoleAccess();
 
   const course = dummyCourses.find((c) => String(c.id) === String(courseId));
-  const { getAllAnnouncementsForCourse } = useAnnouncement();
+
+  // 🚫 Role restriction
+  if (!canViewAnnouncements) {
+    return (
+      <div className="p-6 text-center text-red-500 font-semibold">
+        You do not have permission to view this page.
+      </div>
+    );
+  }
 
   const fetchAnnouncements = () => {
     getAllAnnouncementsForCourse(courseId)
@@ -24,31 +34,13 @@ const StudentAnnouncementsPageContent = () => {
       })
       .catch((err) => {
         console.error("Failed to fetch announcements", err);
-        setDrafts([]);
         setPublished([]);
       });
   };
 
   useEffect(() => {
-    let mounted = true;
     fetchAnnouncements();
-    return () => (mounted = false);
-  }, [getAllAnnouncementsForCourse]);
-
-  useEffect(() => {
-    if (!courseId) return;
-    const savedPublished =
-      JSON.parse(localStorage.getItem(`published_${courseId}`)) || [];
-    setPublished(savedPublished);
-  }, [courseId]);
-
-  if (!course) {
-    return (
-      <div className="p-6 text-red-500">
-        Course not found. Please go back to courses.
-      </div>
-    );
-  }
+  }, [getAllAnnouncementsForCourse, courseId]);
 
   // ✅ Helper to check if announcement is NEW (within last 7 days)
   const isNew = (publishedAt) => {
@@ -58,11 +50,38 @@ const StudentAnnouncementsPageContent = () => {
     return diffInDays <= 7;
   };
 
+  if (!course) {
+    return (
+      <div className="p-6 text-red-500">
+        Course not found. Please go back to courses.
+      </div>
+    );
+  }
+
   return (
     <div className="p-6 max-w-4xl mx-auto">
-      <h1 className="text-3xl font-bold text-gray-800 mb-6">
-        📢 Announcements
-      </h1>
+      {/* 🔹 Optional admin/owner banner */}
+      {isAdmin && (
+        <div className="mb-4 bg-yellow-100 border-l-4 border-yellow-500 text-yellow-800 p-3 rounded">
+          Admin Preview Mode — view-only access.
+        </div>
+      )}
+
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-3xl font-bold text-gray-800">
+          📢 Announcements
+        </h1>
+
+        {/* ✅ Only admins & course owners can post */}
+        {canCreateAnnouncement && (
+          <button
+            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md shadow"
+            onClick={() => alert("Coming soon: Create Announcement Modal")}
+          >
+            + New Announcement
+          </button>
+        )}
+      </div>
 
       {published.length === 0 ? (
         <div className="bg-white p-6 rounded-lg shadow text-center">
@@ -101,5 +120,4 @@ const StudentAnnouncementsPageContent = () => {
   );
 };
 
-// ✅ wrap with Header + Footer layout
-export default StudentAnnouncementsPageContent;
+export default beforeAuthLayout(StudentAnnouncementsPageContent);

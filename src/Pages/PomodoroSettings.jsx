@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from "react";
+import beforeAuthLayout from "../components/BeforeAuth";
+import useRoleAccess from "../hooks/useRoleAccess"; // ✅ added
 
 const DEFAULTS = {
     enabled: false,
@@ -6,7 +8,7 @@ const DEFAULTS = {
     shortBreakMinutes: 5,
 };
 
-export default function PomodoroSettings() {
+function PomodoroSettings() {
     const [enabled, setEnabled] = useState(DEFAULTS.enabled);
     const [focusHours, setFocusHours] = useState(0);
     const [focusMinutes, setFocusMinutes] = useState(DEFAULTS.focusMinutes);
@@ -14,7 +16,9 @@ export default function PomodoroSettings() {
     const [breakMinutes, setBreakMinutes] = useState(DEFAULTS.shortBreakMinutes);
     const [savedMsg, setSavedMsg] = useState("");
 
-    // Load saved settings
+    const { canPomodoro, isAdmin, isCourseOwner } = useRoleAccess(); // ✅ access control
+
+    // 🧠 Load saved settings
     useEffect(() => {
         const saved = JSON.parse(localStorage.getItem("pomodoroSettings"));
         if (saved) {
@@ -33,6 +37,7 @@ export default function PomodoroSettings() {
     const totalBreakMinutes = breakHours * 60 + breakMinutes;
 
     const handleSave = () => {
+        if (!canPomodoro) return; // ✅ prevent saving if not allowed
         const settings = {
             enabled,
             focusMinutes: Math.max(1, totalFocusMinutes),
@@ -44,6 +49,7 @@ export default function PomodoroSettings() {
     };
 
     const handleReset = () => {
+        if (!canPomodoro) return; // ✅ prevent reset if not allowed
         setEnabled(DEFAULTS.enabled);
         setFocusHours(0);
         setFocusMinutes(DEFAULTS.focusMinutes);
@@ -53,10 +59,17 @@ export default function PomodoroSettings() {
     };
 
     return (
-        <div className="max-w-lg mx-auto bg-white shadow-md rounded-lg p-8 mt-10">
+        <div className="max-w-lg mx-auto bg-white shadow-md rounded-lg p-8 mt-10 mb-16">
             <h2 className="text-3xl font-bold text-center text-[#1f2a60] mb-6">
                 Pomodoro Settings
             </h2>
+
+            {/* Optional notice for restricted roles */}
+            {(isAdmin || isCourseOwner) && (
+                <div className="mb-4 bg-yellow-100 border-l-4 border-yellow-500 text-yellow-800 p-3 rounded">
+                    {isAdmin ? "Admin" : "Course Owner"} Mode — Pomodoro editing disabled.
+                </div>
+            )}
 
             {/* Enable Switch */}
             <div className="flex items-center justify-between mb-6">
@@ -65,9 +78,9 @@ export default function PomodoroSettings() {
                 </span>
                 <button
                     type="button"
-                    onClick={() => setEnabled((v) => !v)}
+                    onClick={() => canPomodoro && setEnabled((v) => !v)} // ✅ restricted toggle
                     className={`w-16 h-8 flex items-center rounded-full p-1 transition-all duration-300 ${enabled ? "bg-green-500" : "bg-gray-300"
-                        }`}
+                        } ${!canPomodoro ? "opacity-50 pointer-events-none" : ""}`}
                 >
                     <div
                         className={`bg-white w-6 h-6 rounded-full shadow-md transform transition-all ${enabled ? "translate-x-8" : ""
@@ -78,7 +91,7 @@ export default function PomodoroSettings() {
 
             {/* Settings Section */}
             <div
-                className={`space-y-6 ${enabled
+                className={`space-y-6 ${enabled && canPomodoro
                         ? "opacity-100"
                         : "opacity-50 pointer-events-none select-none"
                     }`}
@@ -89,32 +102,28 @@ export default function PomodoroSettings() {
                         Focus Duration
                     </label>
                     <div className="flex gap-4">
-                        <div>
-                            <select
-                                value={focusHours}
-                                onChange={(e) => setFocusHours(Number(e.target.value))}
-                                className="border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-green-500"
-                            >
-                                {[...Array(4)].map((_, h) => (
-                                    <option key={h} value={h}>
-                                        {h} h
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
-                        <div>
-                            <select
-                                value={focusMinutes}
-                                onChange={(e) => setFocusMinutes(Number(e.target.value))}
-                                className="border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-green-500"
-                            >
-                                {[...Array(60)].map((_, m) => (
-                                    <option key={m} value={m}>
-                                        {m} m
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
+                        <select
+                            value={focusHours}
+                            onChange={(e) => setFocusHours(Number(e.target.value))}
+                            className="border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-green-500"
+                        >
+                            {[...Array(4)].map((_, h) => (
+                                <option key={h} value={h}>
+                                    {h} h
+                                </option>
+                            ))}
+                        </select>
+                        <select
+                            value={focusMinutes}
+                            onChange={(e) => setFocusMinutes(Number(e.target.value))}
+                            className="border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-green-500"
+                        >
+                            {[...Array(60)].map((_, m) => (
+                                <option key={m} value={m}>
+                                    {m} m
+                                </option>
+                            ))}
+                        </select>
                     </div>
                 </div>
 
@@ -124,32 +133,28 @@ export default function PomodoroSettings() {
                         Short Break Duration
                     </label>
                     <div className="flex gap-4">
-                        <div>
-                            <select
-                                value={breakHours}
-                                onChange={(e) => setBreakHours(Number(e.target.value))}
-                                className="border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-green-500"
-                            >
-                                {[...Array(2)].map((_, h) => (
-                                    <option key={h} value={h}>
-                                        {h} h
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
-                        <div>
-                            <select
-                                value={breakMinutes}
-                                onChange={(e) => setBreakMinutes(Number(e.target.value))}
-                                className="border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-green-500"
-                            >
-                                {[...Array(60)].map((_, m) => (
-                                    <option key={m} value={m}>
-                                        {m} m
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
+                        <select
+                            value={breakHours}
+                            onChange={(e) => setBreakHours(Number(e.target.value))}
+                            className="border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-green-500"
+                        >
+                            {[...Array(2)].map((_, h) => (
+                                <option key={h} value={h}>
+                                    {h} h
+                                </option>
+                            ))}
+                        </select>
+                        <select
+                            value={breakMinutes}
+                            onChange={(e) => setBreakMinutes(Number(e.target.value))}
+                            className="border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-green-500"
+                        >
+                            {[...Array(60)].map((_, m) => (
+                                <option key={m} value={m}>
+                                    {m} m
+                                </option>
+                            ))}
+                        </select>
                     </div>
                 </div>
             </div>
@@ -159,14 +164,22 @@ export default function PomodoroSettings() {
                 <button
                     type="button"
                     onClick={handleSave}
-                    className="flex-1 bg-green-500 hover:bg-green-600 text-white font-semibold py-3 rounded-md transition"
+                    disabled={!canPomodoro}
+                    className={`flex-1 font-semibold py-3 rounded-md transition ${canPomodoro
+                            ? "bg-green-500 hover:bg-green-600 text-white"
+                            : "bg-gray-300 text-gray-600 cursor-not-allowed"
+                        }`}
                 >
                     Save Settings
                 </button>
                 <button
                     type="button"
                     onClick={handleReset}
-                    className="px-4 py-3 rounded-md border border-gray-300 text-gray-700 hover:bg-gray-50"
+                    disabled={!canPomodoro}
+                    className={`px-4 py-3 rounded-md border border-gray-300 ${canPomodoro
+                            ? "text-gray-700 hover:bg-gray-50"
+                            : "text-gray-400 cursor-not-allowed"
+                        }`}
                 >
                     Reset
                 </button>
@@ -191,3 +204,6 @@ export default function PomodoroSettings() {
         </div>
     );
 }
+
+// ✅ Wrap with layout for consistent header & footer
+export default beforeAuthLayout(PomodoroSettings);

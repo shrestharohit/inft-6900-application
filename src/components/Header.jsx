@@ -258,6 +258,7 @@ import { useState, useEffect } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import useUserApi from "../hooks/useUserApi";
 import { dummyCourses, dummyPathways } from "../Pages/dummyData";
+import useRoleAccess from "../hooks/useRoleAccess"; // ✅ Role detection hook
 
 const Header = () => {
   const [anchorEl, setAnchorEl] = useState(null);
@@ -276,7 +277,9 @@ const Header = () => {
   } = useAuth();
   const { updateUserById } = useUserApi();
 
-  // ✅ useEffect (was mistakenly useState) to initialize notification toggle
+  // ✅ Roles
+  const { isAdmin, isCourseOwner } = useRoleAccess();
+
   useEffect(() => {
     if (loggedInUser) {
       setNotificationsEnabled(!!loggedInUser.notificationEnabled);
@@ -341,16 +344,13 @@ const Header = () => {
     }
   };
 
-  console.log("notificationsEnabled:", notificationsEnabled);
   return (
-    // ✅ sticky keeps header in the normal flow (no overlap), but still pins to top
     <header className="sticky top-0 z-50 bg-green-500 text-white shadow-md">
       <div className="container mx-auto max-w-7xl px-6 py-3">
         <div className="flex justify-between items-center gap-4">
           {/* Logo + Categories */}
           <div className="flex items-center gap-6">
             <Link to="/" className="flex items-center">
-              {/* ✅ shrink logo to fit header */}
               <img
                 src={logo}
                 alt="BrainWave"
@@ -371,7 +371,7 @@ const Header = () => {
                   borderRadius: "9999px",
                   fontWeight: 600,
                   textTransform: "none",
-                  height: 40, // ✅ matches search bar height
+                  height: 40,
                 }}
               >
                 Categories
@@ -485,6 +485,20 @@ const Header = () => {
                   <MenuItem onClick={() => navigate("/profilemanagement")}>
                     Edit Profile
                   </MenuItem>
+
+                  {/* 🕒 Pomodoro Settings */}
+                  <MenuItem
+                    onClick={() => {
+                      handleMenuClose();
+                      navigate("/pomodoro-settings");
+                    }}
+                  >
+                    Pomodoro Settings
+                  </MenuItem>
+
+                  <Divider />
+
+                  {/* Notifications Toggle */}
                   <MenuItem>
                     <div className="flex justify-between items-center w-full">
                       <span>Notifications</span>
@@ -495,6 +509,32 @@ const Header = () => {
                       />
                     </div>
                   </MenuItem>
+
+                  {/* ✅ Admin / Course Owner Portals moved here */}
+                  {isAdmin && (
+                    <MenuItem
+                      onClick={() => {
+                        handleMenuClose();
+                        navigate("/admin/");
+                      }}
+                    >
+                      Admin Portal
+                    </MenuItem>
+                  )}
+
+                  {isCourseOwner && (
+                    <MenuItem
+                      onClick={() => {
+                        handleMenuClose();
+                        navigate("/course-management");
+                      }}
+                    >
+                      Course Owner Portal
+                    </MenuItem>
+                  )}
+
+                  <Divider />
+
                   <MenuItem onClick={handleLogout}>Logout</MenuItem>
                 </Menu>
               </>

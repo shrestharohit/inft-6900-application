@@ -11,21 +11,21 @@ const CoursePage = () => {
   const { courseId } = useParams();
   const navigate = useNavigate();
   const { loggedInUser, isLoggedIn } = useAuth();
+  const userRole = loggedInUser?.role; // ✅ added
 
   const [course, setCourse] = useState(null);
   const [courseFromApi, setCourseFromApi] = useState(null);
   const [loadingCourse, setLoadingCourse] = useState(true);
   const [notFound, setNotFound] = useState(false);
 
-  
   const [loading, setLoading] = useState(false);
   const [hasEnrolled, setHasEnrolled] = useState(false);
 
   const [reviews, setReviews] = useState(null);
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState("");
-  const [editingReview, setEditingReview] = useState(false); // user has submitted a review
-  const [isEditing, setIsEditing] = useState(false); // user is actively editing
+  const [editingReview, setEditingReview] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
   const [reviewId, setReviewId] = useState(null);
 
   const { fetchCourse } = useCourseApi();
@@ -37,6 +37,7 @@ const CoursePage = () => {
     deleteReviewById,
   } = useReview();
 
+  // ✅ Fetch course info
   useEffect(() => {
     let mounted = true;
     setLoadingCourse(true);
@@ -45,9 +46,7 @@ const CoursePage = () => {
     fetchCourse(courseId)
       .then((res) => {
         if (!mounted) return;
-
-        const valid =
-          res && (res.courseID || res.id) && (res.title || res.name);
+        const valid = res && (res.courseID || res.id) && (res.title || res.name);
         if (!valid) {
           setNotFound(true);
           setCourseFromApi(null);
@@ -67,7 +66,7 @@ const CoursePage = () => {
     return () => (mounted = false);
   }, [fetchCourse, courseId]);
 
-
+  // ✅ Fetch course reviews
   useEffect(() => {
     let mounted = true;
     getAllReviewsForCourse(courseId)
@@ -75,17 +74,16 @@ const CoursePage = () => {
         if (mounted) setReviews(res);
       })
       .catch((err) => {
-        console.error("Failed to fetch courses", err);
+        console.error("Failed to fetch reviews", err);
         if (mounted) setReviews(null);
       });
 
     return () => (mounted = false);
-  }, [getAllReviewsForCourse]);
+  }, [getAllReviewsForCourse, courseId]);
 
-  // ✅ Reusable function to fetch enrolled courses
+  // ✅ Check if user already enrolled
   const fetchEnrolledCourses = async () => {
     if (!loggedInUser?.id) return;
-
     try {
       const res = await getEnrolledCoursesById(loggedInUser.id);
       res?.enrolments?.find(
@@ -98,11 +96,11 @@ const CoursePage = () => {
     }
   };
 
-  // ✅ Call on initial load
   useEffect(() => {
     fetchEnrolledCourses();
-  }, [loggedInUser?.id]); // Only re-run if user ID changes
+  }, [loggedInUser?.id]);
 
+  // ✅ Loading & not found states
   if (loadingCourse) {
     return (
       <div className="max-w-7xl mx-auto p-6 animate-pulse">
@@ -121,28 +119,27 @@ const CoursePage = () => {
     );
   }
 
-
+  // ✅ Enroll / Disenroll
   const handleEnroll = async () => {
     if (!isLoggedIn) {
       navigate("/login", { state: { from: `/courses/${courseId}` } });
       return;
     }
     setLoading(true);
-
     await enrollCourse(courseId, { userID: loggedInUser.id });
-    alert(`Successfully enrolled in this course`);
+    alert("Successfully enrolled in this course");
     setLoading(false);
     setHasEnrolled(true);
   };
 
   const handleDisenroll = async () => {
-    if (window.confirm(`Are you sure you want to leave this course?`)) {
+    if (window.confirm("Are you sure you want to leave this course?")) {
       await leaveCourse(courseId, { userID: loggedInUser.id });
       setHasEnrolled(false);
     }
   };
 
-  // Submit new or updated review
+  // ✅ Review submission
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!isLoggedIn) {
@@ -153,7 +150,7 @@ const CoursePage = () => {
 
     try {
       if (reviewId) {
-        updateReview(reviewId, { comment, rating, status: "active" });
+        await updateReview(reviewId, { comment, rating, status: "active" });
         alert("Review updated!");
       } else {
         const newReview = {
@@ -169,7 +166,6 @@ const CoursePage = () => {
       console.error("Failed to submit review", err);
     }
 
-    // Reset editing state
     setRating(0);
     setComment("");
     setIsEditing(false);
@@ -179,19 +175,13 @@ const CoursePage = () => {
   };
 
   const handleDelete = async (reviewId) => {
-    if (
-      window.confirm(
-        "Are you sure you want to delete your review for this course?"
-      )
-    ) {
+    if (window.confirm("Are you sure you want to delete your review?")) {
       try {
         await deleteReviewById(reviewId);
         alert("Your review has been deleted.");
       } catch (err) {
         console.error("Failed to delete review", err);
       }
-      setRating(0);
-      setComment("");
       const res = await getAllReviewsForCourse(courseId);
       setReviews(res);
     }
@@ -199,6 +189,13 @@ const CoursePage = () => {
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
+      {/* 🔶 Admin Banner */}
+      {userRole === "admin" && (
+        <div className="bg-yellow-100 text-yellow-800 text-center py-2 font-medium rounded-md mb-4">
+          You are viewing this course as an <b>Administrator</b>. Enrollment is disabled.
+        </div>
+      )}
+
       {/* Back Button */}
       <div className="mb-4">
         <button
@@ -230,7 +227,6 @@ const CoursePage = () => {
           <h1 className="text-3xl font-bold text-gray-800">
             {courseFromApi?.title || "Loading..."}
           </h1>
-          {/* <p className="text-lg text-gray-600 mt-2">{course.description}</p> */}
 
           {/* Metadata */}
           <div className="text-gray-500 text-sm mt-4 space-y-2">
@@ -260,10 +256,6 @@ const CoursePage = () => {
               <span className="font-semibold">Rating:</span>{" "}
               {reviews?.avgRating} ⭐
             </p>
-            {/* <p>
-              <span className="font-semibold">Enrolled Students:</span>{" "}
-              {course.numEnrolled}
-            </p> */}
             <p>
               <span className="font-semibold">Course Owner:</span>{" "}
               <Link
@@ -293,7 +285,7 @@ const CoursePage = () => {
             <h2 className="text-2xl font-bold mb-4">Reviews</h2>
 
             {/* Review Form */}
-            {isLoggedIn && hasEnrolled ? (
+            {isLoggedIn && hasEnrolled && userRole !== "admin" ? (
               <form onSubmit={handleSubmit} className="mb-6">
                 <div className="flex gap-2 mb-3">
                   {[1, 2, 3, 4, 5].map((star) => (
@@ -301,14 +293,9 @@ const CoursePage = () => {
                       key={star}
                       type="button"
                       onClick={() => setRating(star)}
-                      className={`text-2xl ${
-                        rating >= star ? "text-yellow-500" : "text-gray-300"
-                      }`}
-                      disabled={
-                        !reviews?.reviews?.find(
-                          (r) => r.userID == loggedInUser?.id
-                        ) || isEditing
-                      }
+                      className={`text-2xl ${rating >= star ? "text-yellow-500" : "text-gray-300"
+                        }`}
+                      disabled={isEditing}
                     >
                       ★
                     </button>
@@ -320,27 +307,14 @@ const CoursePage = () => {
                   onChange={(e) => setComment(e.target.value)}
                   placeholder="Write your feedback..."
                   className="w-full p-3 border border-gray-300 rounded-md mb-3 focus:ring-2 focus:ring-blue-500"
-                  disabled={
-                    !reviews?.reviews?.find(
-                      (r) => r.userID == loggedInUser?.id
-                    ) || isEditing
-                  }
                 />
 
-                {!reviews?.reviews?.find((r) => r.userID == loggedInUser?.id) ||
-                isEditing ? (
-                  <button
-                    type="submit"
-                    className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md font-semibold"
-                  >
-                    {reviewId ? "Update Review" : "Submit Review"}
-                  </button>
-                ) : (
-                  <p className="text-gray-500">
-                    You have already submitted a review. You can update or
-                    delete it below.
-                  </p>
-                )}
+                <button
+                  type="submit"
+                  className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md font-semibold"
+                >
+                  {reviewId ? "Update Review" : "Submit Review"}
+                </button>
               </form>
             ) : !isLoggedIn ? (
               <p className="text-gray-500 mb-4">
@@ -370,7 +344,7 @@ const CoursePage = () => {
                     >
                       <div className="flex items-center gap-2 mb-2">
                         <span className="font-semibold">
-                          {"User name not sent in api"}
+                          {"User name not sent in API"}
                         </span>
                         <span className="text-yellow-500">
                           {"★".repeat(r.rating)}
@@ -380,25 +354,24 @@ const CoursePage = () => {
                       <p className="text-gray-700">{r.comment}</p>
                       <p className="text-xs text-gray-400">{r.created_at}</p>
 
-                      {/* Update/Delete buttons only for logged-in user's review */}
                       {isLoggedIn && r.userID === loggedInUser?.id && (
                         <div className="mt-2 flex gap-2">
                           <button
                             onClick={() => {
                               setRating(r.rating);
                               setComment(r.comment);
-                              setIsEditing(true); // allow editing
+                              setIsEditing(true);
                               setReviewId(r.reviewID);
                             }}
                             className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded-md text-sm"
                           >
-                            Update Review
+                            Update
                           </button>
                           <button
                             onClick={() => handleDelete(r.reviewID)}
                             className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded-md text-sm"
                           >
-                            Delete Review
+                            Delete
                           </button>
                         </div>
                       )}
@@ -411,7 +384,8 @@ const CoursePage = () => {
 
           {/* Action Buttons */}
           <div className="mt-6 flex flex-col gap-3">
-            {!hasEnrolled && (
+            {/* 🧑‍🎓 Student Actions */}
+            {userRole !== "admin" && !hasEnrolled && (
               <button
                 onClick={handleEnroll}
                 disabled={loading}
@@ -420,15 +394,8 @@ const CoursePage = () => {
                 {loading ? "Enrolling..." : "Enroll Now"}
               </button>
             )}
-            {/* {hasEnrolled && (
-              <button
-                className="w-full bg-gray-300 text-white py-3 px-6 rounded-md cursor-not-allowed"
-                disabled
-              >
-                Locked 🔒 (Complete previous course to unlock)
-              </button>
-            )} */}
-            {hasEnrolled && (
+
+            {userRole !== "admin" && hasEnrolled && (
               <>
                 <button
                   onClick={() => navigate(`/courses/${courseId}/content`)}
@@ -444,14 +411,16 @@ const CoursePage = () => {
                 </button>
               </>
             )}
-            {/* {completionDate && (
+
+            {/* 🧑‍💼 Admin Action */}
+            {userRole === "admin" && (
               <button
-                className="w-full bg-green-700 text-white py-3 px-6 rounded-md cursor-not-allowed"
-                disabled
+                onClick={() => navigate(`/courses/${courseId}/content`)}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 px-6 rounded-md"
               >
-                Completed ✅
+                View Full Course Content
               </button>
-            )} */}
+            )}
           </div>
         </div>
       </div>

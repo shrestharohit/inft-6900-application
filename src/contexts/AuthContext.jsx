@@ -33,15 +33,35 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // useEffect(() => {
+  //   const storedUser = localStorage.getItem("user") || null;
+  //   const parsedUser = storedUser ? JSON.parse(storedUser) : null;
+
+  //   if (parsedUser) {
+  //     setLoggedInUser(parsedUser);
+  //     redirectBasedOnRole(parsedUser);
+  //   }
+  // }, []);
+
   useEffect(() => {
     const storedUser = localStorage.getItem("user") || null;
     const parsedUser = storedUser ? JSON.parse(storedUser) : null;
 
     if (parsedUser) {
       setLoggedInUser(parsedUser);
-      redirectBasedOnRole(parsedUser);
+
+      // ✅ Only redirect if user is not already on a valid route
+      const path = window.location.pathname;
+
+      // Allow user to stay where they are if they already navigated within the app
+      const isPublicPath = ["/", "/login", "/registration"].includes(path);
+
+      if (isPublicPath) {
+        redirectBasedOnRole(parsedUser);
+      }
     }
   }, []);
+
 
   const persistUser = (updatedUser) => {
     localStorage.setItem("user", JSON.stringify(updatedUser));

@@ -110,12 +110,6 @@ function CourseLayout() {
           <NavLink to="schedule" className="px-4 py-2 rounded hover:bg-gray-100">
             Schedule a Session
           </NavLink>
-          <NavLink
-            to="pomodoro-settings"
-            className="px-4 py-2 rounded hover:bg-gray-100"
-          >
-            Pomodoro Settings
-          </NavLink>
         </nav>
       </aside>
 
