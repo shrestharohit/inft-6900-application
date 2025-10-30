@@ -1,5 +1,5 @@
+// src/Pages/SchedulePage.jsx
 import React, { useState, useEffect } from "react";
-//import beforeAuthLayout from "../components/BeforeAuth";
 import { useAuth } from "../contexts/AuthContext";
 import { Calendar, momentLocalizer } from "react-big-calendar";
 import moment from "moment";
@@ -20,46 +20,65 @@ const SchedulePage = () => {
   const [newSession, setNewSession] = useState({ date: "", startTime: "", endTime: "" });
   const [editingSession, setEditingSession] = useState({ moduleId: null, sessionIdx: null });
 
+  // Load saved data
+  useEffect(() => {
+    const savedData = localStorage.getItem("studyModules");
+    if (savedData) {
+      try {
+        setModules(JSON.parse(savedData));
+      } catch (err) {
+        console.error("Failed to load saved schedule:", err);
+      }
+    }
+  }, []);
+
+  // Save data on modules change
+  useEffect(() => {
+    localStorage.setItem("studyModules", JSON.stringify(modules));
+  }, [modules]);
+
+  const formatTime = (timeStr) => (timeStr ? moment(timeStr, "HH:mm").format("hh:mm A") : "");
   const calculateHours = (start, end) => {
-    const startTime = new Date(`2020-01-01T${start}:00`);
-    const endTime = new Date(`2020-01-01T${end}:00`);
-    const diff = (endTime - startTime) / (1000 * 60 * 60);
+    const diff = (new Date(`2020-01-01T${end}:00`) - new Date(`2020-01-01T${start}:00`)) / (1000 * 60 * 60);
     return diff > 0 ? parseFloat(diff.toFixed(2)) : 0;
   };
-
-  const getTotalStudyHours = (sessions) =>
-    parseFloat(sessions.reduce((sum, s) => sum + (s.duration || 0), 0).toFixed(2));
+  const getTotalStudyHours = (sessions) => parseFloat(sessions.reduce((sum, s) => sum + (s.duration || 0), 0).toFixed(2));
+  const formatDuration = (decimalHours) => {
+    const h = Math.floor(decimalHours);
+    const m = Math.round((decimalHours - h) * 60);
+    return `${h}h ${m}m`;
+  };
 
   const handleAddOrEditSession = () => {
     if (!selectedModule) return alert("Please select a module first.");
-    if (!newSession.date || !newSession.startTime || !newSession.endTime)
-      return alert("Please fill out all fields.");
+    if (!newSession.date || !newSession.startTime || !newSession.endTime) return alert("Fill all fields.");
 
     const duration = calculateHours(newSession.startTime, newSession.endTime);
     if (duration <= 0) return alert("End time must be after start time.");
 
-    if (editingSession.sessionIdx !== null) {
-      setModules((prev) =>
-        prev.map((mod) =>
-          mod.id === editingSession.moduleId
-            ? {
-                ...mod,
-                sessions: mod.sessions.map((s, idx) =>
-                  idx === editingSession.sessionIdx ? { ...newSession, duration } : s
-                ),
-              }
-            : mod
-        )
-      );
-    } else {
-      setModules((prev) =>
-        prev.map((mod) =>
-          mod.id === selectedModule.id
-            ? { ...mod, sessions: [...mod.sessions, { ...newSession, duration }] }
-            : mod
-        )
-      );
-    }
+    const currentScheduled = getTotalStudyHours(selectedModule.sessions);
+    const isEditing = editingSession.sessionIdx !== null;
+
+    // Check total scheduled time
+    const totalAfter = isEditing
+      ? currentScheduled - selectedModule.sessions[editingSession.sessionIdx].duration + duration
+      : currentScheduled + duration;
+
+    if (totalAfter > selectedModule.expectedHours)
+      return alert(`Cannot exceed expected hours (${formatDuration(selectedModule.expectedHours)}) for this module.`);
+
+    setModules((prev) =>
+      prev.map((mod) =>
+        mod.id === selectedModule.id
+          ? {
+              ...mod,
+              sessions: isEditing
+                ? mod.sessions.map((s, idx) => (idx === editingSession.sessionIdx ? { ...newSession, duration } : s))
+                : [...mod.sessions, { ...newSession, duration }],
+            }
+          : mod
+      )
+    );
 
     setNewSession({ date: "", startTime: "", endTime: "" });
     setEditingSession({ moduleId: null, sessionIdx: null });
@@ -73,100 +92,58 @@ const SchedulePage = () => {
   };
 
   const handleDeleteSession = (modId, sessionIdx) => {
-    if (window.confirm("Are you sure you want to delete this session?")) {
-      setModules((prev) =>
-        prev.map((mod) =>
-          mod.id === modId
-            ? {
-                ...mod,
-                sessions: mod.sessions.filter((_, idx) => idx !== sessionIdx),
-              }
-            : mod
-        )
-      );
+    if (!window.confirm("Are you sure?")) return;
+
+    setModules((prev) =>
+      prev.map((mod) =>
+        mod.id === modId ? { ...mod, sessions: mod.sessions.filter((_, idx) => idx !== sessionIdx) } : mod
+      )
+    );
+
+    // Clear editing state if deleted session was being edited
+    if (editingSession.moduleId === modId && editingSession.sessionIdx === sessionIdx) {
+      setEditingSession({ moduleId: null, sessionIdx: null });
+      setNewSession({ date: "", startTime: "", endTime: "" });
     }
   };
 
-  useEffect(() => {
-    if (!("Notification" in window)) return;
-    if (Notification.permission !== "granted") Notification.requestPermission();
+  // Export session(s) to Google Calendar
+  const exportModuleToGoogleCalendar = (module) => {
+    if (!module.sessions.length) return alert("No sessions to export!");
 
-    const interval = setInterval(() => {
-      const now = new Date();
-      modules.forEach((mod) =>
-        mod.sessions.forEach((s) => {
-          const sessionDate = new Date(`${s.date}T${s.startTime}:00`);
-          const notifyTime = new Date(sessionDate.getTime() - 5 * 60000);
-          if (
-            now >= notifyTime &&
-            now <= new Date(notifyTime.getTime() + 60000) &&
-            !s.notified
-          ) {
-            new Notification(`Upcoming Study: ${mod.name}`, {
-              body: `Session starts at ${s.startTime}`,
-            });
-            s.notified = true;
-          }
-        })
-      );
-    }, 10000);
-
-    return () => clearInterval(interval);
-  }, [modules]);
-
-  // Export all sessions to Google Calendar
-  const exportAllToGoogleCalendar = () => {
-    const allSessions = modules.flatMap((mod) =>
-      mod.sessions.map((s) => ({
-        moduleName: mod.name,
-        date: s.date,
-        startTime: s.startTime,
-        endTime: s.endTime,
-      }))
-    );
-
-    if (allSessions.length === 0) return alert("No sessions to export!");
-
-    allSessions.forEach((s, idx) => {
+    module.sessions.forEach((s, idx) => {
       setTimeout(() => {
-        const start = new Date(`${s.date}T${s.startTime}:00`)
-          .toISOString()
-          .replace(/[-:]|\.\d{3}/g, "");
-        const end = new Date(`${s.date}T${s.endTime}:00`)
-          .toISOString()
-          .replace(/[-:]|\.\d{3}/g, "");
+        const start = new Date(`${s.date}T${s.startTime}:00`).toISOString().replace(/[-:]|\.\d{3}/g, "");
+        const end = new Date(`${s.date}T${s.endTime}:00`).toISOString().replace(/[-:]|\.\d{3}/g, "");
         const url = `https://www.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(
-          s.moduleName
-        )}&dates=${start}/${end}&details=${encodeURIComponent(`Study session for ${s.moduleName}`)}`;
+          module.name
+        )}&dates=${start}/${end}&details=${encodeURIComponent(`Study session for ${module.name}`)}`;
         window.open(url, "_blank");
-      }, idx * 300); // slight delay per session
+      }, idx * 300);
     });
   };
 
-  const hasSessions = modules.some((mod) => mod.sessions.length > 0);
-
-  // Prepare events for calendar
   const events = modules.flatMap((mod) =>
     mod.sessions.map((s, i) => ({
       title: mod.name,
       start: new Date(`${s.date}T${s.startTime}:00`),
       end: new Date(`${s.date}T${s.endTime}:00`),
-      details: `Module: ${mod.name}\nScheduled: ${s.date} ${s.startTime} - ${s.endTime}`,
+      details: `Module: ${mod.name}\n${s.date} ${formatTime(s.startTime)} - ${formatTime(s.endTime)}`,
       id: `${mod.id}-${i}`,
     }))
   );
 
   return (
-    <div className="min-h-screen">
-      <div className="max-w-5xl mx-auto py-12 px-6">
-        <div className="mb-8 text-center">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">Study Schedule Planner</h1>
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-6xl mx-auto py-12 px-4">
+        <div className="text-center mb-12">
+          <h1 className="text-4xl font-bold text-gray-900">📚 Study Schedule Planner</h1>
+          <p className="text-gray-600 mt-2">Manage your study modules and sessions easily.</p>
         </div>
 
-        {/* Add / Edit Session Section */}
-        <div className="bg-white rounded-2xl shadow-md p-6 mb-10 relative">
-          <h2 className="text-2xl font-semibold text-gray-800 mb-4">Add / Edit Study Session</h2>
-
+        {/* Add/Edit Session */}
+        <div className="bg-white rounded-3xl shadow-lg p-6 mb-10 border border-gray-200">
+          <h2 className="text-2xl font-semibold text-gray-800 mb-6">Add / Edit Session</h2>
           <div className="grid md:grid-cols-2 gap-6 mb-4">
             <div>
               <label className="block text-gray-700 mb-1 font-medium">Select Module</label>
@@ -216,23 +193,13 @@ const SchedulePage = () => {
               </div>
             </div>
 
-            {/* Add Session + Export button line */}
-            <div className="flex justify-between mt-4 col-span-3">
+            <div className="flex justify-end mt-4 md:col-span-2">
               <button
                 onClick={handleAddOrEditSession}
                 className="bg-blue-600 text-white font-medium px-6 py-2 rounded-lg hover:bg-blue-700 transition"
               >
                 {editingSession.sessionIdx !== null ? "Save Changes" : "+ Add Session"}
               </button>
-
-              {hasSessions && (
-                <button
-                  onClick={exportAllToGoogleCalendar}
-                  className="bg-green-600 text-white font-medium px-6 py-2 rounded-lg hover:bg-green-700 transition"
-                >
-                  + Export All to Google Calendar
-                </button>
-              )}
             </div>
           </div>
         </div>
@@ -242,12 +209,13 @@ const SchedulePage = () => {
           {modules.map((mod) => (
             <div
               key={mod.id}
-              className="bg-white shadow-sm rounded-xl p-5 border border-gray-100 hover:shadow-md transition"
+              className="bg-white shadow-md rounded-2xl p-5 border border-gray-100 hover:shadow-lg transition"
             >
-              <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center justify-between mb-3">
                 <h3 className="text-lg font-semibold text-gray-800">{mod.name}</h3>
                 <span className="text-sm text-gray-500">
-                  Expected: {mod.expectedHours}h • Scheduled: <b>{getTotalStudyHours(mod.sessions)}h</b>
+                  Expected: {formatDuration(mod.expectedHours)} • Scheduled:{" "}
+                  <b>{formatDuration(getTotalStudyHours(mod.sessions))}</b>
                 </span>
               </div>
 
@@ -256,10 +224,9 @@ const SchedulePage = () => {
                   {mod.sessions.map((s, i) => (
                     <li key={i} className="flex justify-between py-2 text-sm md:text-base">
                       <span>
-                        {s.date} — {s.startTime} to {s.endTime}
+                        {s.date} — {formatTime(s.startTime)} to {formatTime(s.endTime)}
                       </span>
                       <span className="flex items-center gap-3">
-                        {s.duration.toFixed(2)}h
                         <button
                           className="text-blue-600 hover:underline"
                           onClick={() => handleEditSession(mod.id, i)}
@@ -271,6 +238,12 @@ const SchedulePage = () => {
                           onClick={() => handleDeleteSession(mod.id, i)}
                         >
                           Delete
+                        </button>
+                        <button
+                          className="bg-green-600 text-white font-medium px-2 py-0.5 rounded-lg hover:bg-green-700 transition text-xs"
+                          onClick={() => exportModuleToGoogleCalendar({ ...mod, sessions: [s] })}
+                        >
+                          Export
                         </button>
                       </span>
                     </li>
@@ -295,7 +268,7 @@ const SchedulePage = () => {
               event: ({ event }) => (
                 <div
                   className="px-1 py-1 bg-blue-500 text-white rounded text-xs cursor-pointer"
-                  title={event.details} // hover shows module details
+                  title={event.details}
                 >
                   {event.title}
                 </div>
