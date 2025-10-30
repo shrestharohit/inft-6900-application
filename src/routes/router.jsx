@@ -111,13 +111,13 @@ export const router = createBrowserRouter([
           { path: "announcements", element: <StudentAnnouncementsPage /> },
           { path: "discussions", element: <StudentDiscussionPage /> },
           { path: "certificate", element: <CertificatePage /> },
-          { path: "pomodoro-settings", element: <PomodoroSettings />}
+          { path: "pomodoro-settings", element: <PomodoroSettings />},
+          { path: "schedule", element: <SchedulePage /> },
           
         ],
       },
     ],
   },
-  { path: "/schedule/:courseId", element: <SchedulePage /> },
 
   // Admin routes
   {

@@ -37,7 +37,7 @@ function CourseLayout() {
 
   return (
     <div className="flex bg-gray-50 min-h-screen">
-      {/* Sidebar — sits below global header */}
+      {/* Sidebar */}
       <aside className="fixed top-[88px] left-0 w-64 bg-white border-r shadow-sm h-[calc(100vh-88px)] overflow-y-auto">
         <NavLink
           to="."
@@ -51,7 +51,9 @@ function CourseLayout() {
             <div key={module.moduleID}>
               <button
                 onClick={() =>
-                  setOpenModule(openModule === module.moduleID ? null : module.moduleID)
+                  setOpenModule(
+                    openModule === module.moduleID ? null : module.moduleID
+                  )
                 }
                 className="w-full text-left px-4 py-2 rounded hover:bg-gray-100 font-medium flex justify-between items-center"
               >
@@ -73,8 +75,9 @@ function CourseLayout() {
                   ))}
                   <li>
                     <NavLink
-                      to={`modules/${module.moduleID}/quizzes/${quiz?.find((x) => x.moduleID === module.moduleID)?.quizID || ""
-                        }`}
+                      to={`modules/${module.moduleID}/quizzes/${quiz?.find(
+                        (x) => x.moduleID === module.moduleID
+                      )?.quizID || ""}`}
                       className="block px-3 py-1 text-sm rounded hover:bg-gray-100"
                     >
                       Quiz
@@ -85,21 +88,26 @@ function CourseLayout() {
             </div>
           ))}
 
-          <NavLink to="announcements" className="px-4 py-2 rounded hover:bg-gray-100">
+          <NavLink
+            to="announcements"
+            className="px-4 py-2 rounded hover:bg-gray-100"
+          >
             Announcements
           </NavLink>
-          <NavLink to="discussions" className="px-4 py-2 rounded hover:bg-gray-100">
+          <NavLink
+            to="discussions"
+            className="px-4 py-2 rounded hover:bg-gray-100"
+          >
             Discussion Board
           </NavLink>
-          <NavLink to="questions" className="px-4 py-2 rounded hover:bg-gray-100">
+          <NavLink
+            to="questions"
+            className="px-4 py-2 rounded hover:bg-gray-100"
+          >
             Ask Question
           </NavLink>
 
-        
-          <NavLink
-            to={`/schedule/${courseId}`}
-            className="px-4 py-2 rounded hover:bg-gray-100"
-          >
+          <NavLink to="schedule" className="px-4 py-2 rounded hover:bg-gray-100">
             Schedule a Session
           </NavLink>
           <NavLink
@@ -108,11 +116,7 @@ function CourseLayout() {
           >
             Pomodoro Settings
           </NavLink>
-
-      
         </nav>
-
-
       </aside>
 
       <main className="flex-1 ml-64 mt-[88px] p-6">

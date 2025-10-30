@@ -79,6 +79,10 @@ const QuizPage = () => {
   const calculateResult = async () => {
     const payload = mapAnswers();
     const res = await submitQuiz(quiz.quizID, payload);
+    let fixedAttempt = { ...res.attempt };
+    if (fixedAttempt.score <= 1) {
+      fixedAttempt.score = fixedAttempt.score * 100;
+    }
     setCurrentAttempt(res.attempt);
     setShowResult(true);
     setQuiz(null);
