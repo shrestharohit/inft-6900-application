@@ -8,20 +8,23 @@ import useEnrollment from "../hooks/useEnrollment";
 
 const QuizPage = () => {
   const navigate = useNavigate();
-  const { courseId, moduleId } = useParams(); // ✅ get the courseId from URL
+  const { courseId, moduleId } = useParams();
   const [answers, setAnswers] = useState({});
   const [attempts, setAttempts] = useState([]);
   const [showResult, setShowResult] = useState(false);
   const [currentAttempt, setCurrentAttempt] = useState(null);
   const [quizStarted, setQuizStarted] = useState(false);
-  const [quiz, setQuiz] = useState(null); // Placeholder for fetched quiz
+  const [quiz, setQuiz] = useState(null);
   const [enrolmentID, setEnrolmentID] = useState(null);
   const [attemptID, setAttemptID] = useState(null);
 
-  const { startQuiz, submitQuiz } = useQuizApi();
-  const { fetchQuizForCourse, getQuizResultForUser } = useQuizApi();
+  const { startQuiz, submitQuiz, fetchQuizForCourse, getQuizResultForUser } =
+    useQuizApi();
   const { getEnrolledCoursesById } = useEnrollment();
   const { loggedInUser } = useAuth();
+
+  // ✅ Normalize scores helper
+  const normalizeScore = (score) => (score <= 1 ? score * 100 : score);
 
   useEffect(() => {
     let mounted = true;
@@ -29,14 +32,23 @@ const QuizPage = () => {
       .then(async (res) => {
         const activeQuiz = res?.find((x) => x.moduleID == moduleId);
         if (mounted) setQuiz(activeQuiz);
+
         const resp = await getQuizResultForUser(
           activeQuiz?.quizID,
           loggedInUser?.id
         );
-        setAttempts(resp);
-        if (resp.length > 0) {
+
+        // ✅ Normalize all fetched attempts
+        const normalized = resp.map((a) => ({
+          ...a,
+          score: normalizeScore(a.score),
+        }));
+
+        setAttempts(normalized);
+
+        if (normalized.length > 0) {
           setShowResult(true);
-          setCurrentAttempt(resp?.[0]);
+          setCurrentAttempt(normalized[0]);
         }
       })
       .catch((err) => {
@@ -45,9 +57,8 @@ const QuizPage = () => {
       });
 
     return () => (mounted = false);
-  }, [fetchQuizForCourse]);
+  }, [fetchQuizForCourse, courseId, moduleId, getQuizResultForUser, loggedInUser]);
 
-  console.log({ currentAttempt });
   useEffect(() => {
     let mounted = true;
     getEnrolledCoursesById(loggedInUser?.id)
@@ -58,17 +69,17 @@ const QuizPage = () => {
         if (mounted) setEnrolmentID(activeEnrollment?.enrolmentID);
       })
       .catch((err) => {
-        console.error("Failed to fetch quiz", err);
+        console.error("Failed to fetch enrollment", err);
         if (mounted) setEnrolmentID(null);
       });
 
     return () => (mounted = false);
-  }, [getEnrolledCoursesById]);
+  }, [getEnrolledCoursesById, loggedInUser, courseId]);
 
   function mapAnswers() {
     return {
-      enrolmentID: enrolmentID,
-      attemptID: attemptID,
+      enrolmentID,
+      attemptID,
       answers: Object.entries(answers)?.map(([questionID, optionID]) => ({
         questionID: Number(questionID),
         optionID: Number(optionID),
@@ -79,15 +90,16 @@ const QuizPage = () => {
   const calculateResult = async () => {
     const payload = mapAnswers();
     const res = await submitQuiz(quiz.quizID, payload);
-    let fixedAttempt = { ...res.attempt };
-    if (fixedAttempt.score <= 1) {
-      fixedAttempt.score = fixedAttempt.score * 100;
-    }
-    setCurrentAttempt(res.attempt);
+    let fixedAttempt = { ...res.attempt, score: normalizeScore(res.attempt.score) };
+
+    setCurrentAttempt(fixedAttempt);
     setShowResult(true);
     setQuiz(null);
     setQuizStarted(false);
     setAttemptID(null);
+
+    // ✅ Also push the new normalized attempt to the attempts list
+    setAttempts((prev) => [fixedAttempt, ...prev]);
   };
 
   const handleOptionChange = (questionId, optionId) => {
@@ -115,8 +127,8 @@ const QuizPage = () => {
               Ready to test your knowledge?
             </h2>
             <p className="text-gray-600 mb-3">
-              <strong>{quiz?.questions?.length}</strong> questions | Passing
-              score: <strong>80%</strong>
+              <strong>{quiz?.questions?.length}</strong> questions | Passing score:{" "}
+              <strong>80%</strong>
             </p>
             <p className="text-gray-600 mb-6">
               Attempts made:{" "}
@@ -148,11 +160,10 @@ const QuizPage = () => {
                   {q.options?.map((o) => (
                     <label
                       key={o.optionID}
-                      className={`block cursor-pointer p-4 rounded-lg border transition ${
-                        answers[q.questionID] === o.optionID
+                      className={`block cursor-pointer p-4 rounded-lg border transition ${answers[q.questionID] === o.optionID
                           ? "border-blue-500 bg-blue-50 text-blue-700"
                           : "border-gray-300 bg-gray-50 hover:bg-gray-100"
-                      }`}
+                        }`}
                     >
                       <input
                         type="radio"
@@ -184,23 +195,23 @@ const QuizPage = () => {
         {showResult && currentAttempt && (
           <div className="space-y-6">
             <div
-              className={`p-6 rounded-xl shadow-lg border ${
-                currentAttempt.passed
+              className={`p-6 rounded-xl shadow-lg border ${currentAttempt.passed
                   ? "border-green-500 bg-green-50"
                   : "border-red-500 bg-red-50"
-              }`}
+                }`}
             >
               <h2
-                className={`text-xl font-bold mb-2 ${
-                  currentAttempt.passed ? "text-green-700" : "text-red-700"
-                }`}
+                className={`text-xl font-bold mb-2 ${currentAttempt.passed ? "text-green-700" : "text-red-700"
+                  }`}
               >
-                Attempt #{currentAttempt.id} -{" "}
+                Attempt #{currentAttempt.attemptID || currentAttempt.id} -{" "}
                 {currentAttempt.passed ? "Passed ✅" : "Failed ❌"}
               </h2>
               <p className="text-gray-700 font-medium">
                 Score:{" "}
-                <span className="font-bold">{currentAttempt.score}%</span>
+                <span className="font-bold">
+                  {Math.round(currentAttempt.score)}%
+                </span>
               </p>
             </div>
 
@@ -227,7 +238,7 @@ const QuizPage = () => {
                   onClick={() =>
                     navigate(`/courses/${courseId}/certificate`, {
                       state: {
-                        name: "John Doe", // replace with logged-in user name
+                        name: "John Doe",
                         course: "Module Quiz",
                         score: currentAttempt.score,
                         date: currentAttempt.date,
@@ -270,7 +281,8 @@ const QuizPage = () => {
                   className="flex justify-between items-center p-4 bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition"
                 >
                   <p className="text-gray-700 font-medium">
-                    Attempt #{a.attemptID} — Score: {a.score || 0}% —{" "}
+                    Attempt #{a.attemptID} — Score:{" "}
+                    {Math.round(a.score || 0)}% —{" "}
                     {a.passed ? (
                       <span className="text-green-600 font-semibold">
                         Passed ✅
@@ -289,6 +301,7 @@ const QuizPage = () => {
                     className="py-2 px-5 bg-blue-600 hover:bg-blue-700 text-white rounded-md font-medium shadow-sm transition"
                   >
                     View Feedback
+                    
                   </button>
                 </div>
               ))}

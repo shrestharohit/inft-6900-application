@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import beforeAuthLayout from "../components/BeforeAuth";
 
 const DEFAULTS = {
     enabled: false,
@@ -6,7 +7,7 @@ const DEFAULTS = {
     shortBreakMinutes: 5,
 };
 
-export default function PomodoroSettings() {
+function PomodoroSettings() {
     const [enabled, setEnabled] = useState(DEFAULTS.enabled);
     const [focusHours, setFocusHours] = useState(0);
     const [focusMinutes, setFocusMinutes] = useState(DEFAULTS.focusMinutes);
@@ -14,7 +15,7 @@ export default function PomodoroSettings() {
     const [breakMinutes, setBreakMinutes] = useState(DEFAULTS.shortBreakMinutes);
     const [savedMsg, setSavedMsg] = useState("");
 
-    // Load saved settings
+    // 🧠 Load saved settings
     useEffect(() => {
         const saved = JSON.parse(localStorage.getItem("pomodoroSettings"));
         if (saved) {
@@ -53,7 +54,7 @@ export default function PomodoroSettings() {
     };
 
     return (
-        <div className="max-w-lg mx-auto bg-white shadow-md rounded-lg p-8 mt-10">
+        <div className="max-w-lg mx-auto bg-white shadow-md rounded-lg p-8 mt-10 mb-16">
             <h2 className="text-3xl font-bold text-center text-[#1f2a60] mb-6">
                 Pomodoro Settings
             </h2>
@@ -78,9 +79,7 @@ export default function PomodoroSettings() {
 
             {/* Settings Section */}
             <div
-                className={`space-y-6 ${enabled
-                        ? "opacity-100"
-                        : "opacity-50 pointer-events-none select-none"
+                className={`space-y-6 ${enabled ? "opacity-100" : "opacity-50 pointer-events-none select-none"
                     }`}
             >
                 {/* Focus Duration */}
@@ -89,32 +88,28 @@ export default function PomodoroSettings() {
                         Focus Duration
                     </label>
                     <div className="flex gap-4">
-                        <div>
-                            <select
-                                value={focusHours}
-                                onChange={(e) => setFocusHours(Number(e.target.value))}
-                                className="border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-green-500"
-                            >
-                                {[...Array(4)].map((_, h) => (
-                                    <option key={h} value={h}>
-                                        {h} h
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
-                        <div>
-                            <select
-                                value={focusMinutes}
-                                onChange={(e) => setFocusMinutes(Number(e.target.value))}
-                                className="border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-green-500"
-                            >
-                                {[...Array(60)].map((_, m) => (
-                                    <option key={m} value={m}>
-                                        {m} m
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
+                        <select
+                            value={focusHours}
+                            onChange={(e) => setFocusHours(Number(e.target.value))}
+                            className="border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-green-500"
+                        >
+                            {[...Array(4)].map((_, h) => (
+                                <option key={h} value={h}>
+                                    {h} h
+                                </option>
+                            ))}
+                        </select>
+                        <select
+                            value={focusMinutes}
+                            onChange={(e) => setFocusMinutes(Number(e.target.value))}
+                            className="border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-green-500"
+                        >
+                            {[...Array(60)].map((_, m) => (
+                                <option key={m} value={m}>
+                                    {m} m
+                                </option>
+                            ))}
+                        </select>
                     </div>
                 </div>
 
@@ -124,32 +119,28 @@ export default function PomodoroSettings() {
                         Short Break Duration
                     </label>
                     <div className="flex gap-4">
-                        <div>
-                            <select
-                                value={breakHours}
-                                onChange={(e) => setBreakHours(Number(e.target.value))}
-                                className="border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-green-500"
-                            >
-                                {[...Array(2)].map((_, h) => (
-                                    <option key={h} value={h}>
-                                        {h} h
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
-                        <div>
-                            <select
-                                value={breakMinutes}
-                                onChange={(e) => setBreakMinutes(Number(e.target.value))}
-                                className="border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-green-500"
-                            >
-                                {[...Array(60)].map((_, m) => (
-                                    <option key={m} value={m}>
-                                        {m} m
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
+                        <select
+                            value={breakHours}
+                            onChange={(e) => setBreakHours(Number(e.target.value))}
+                            className="border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-green-500"
+                        >
+                            {[...Array(2)].map((_, h) => (
+                                <option key={h} value={h}>
+                                    {h} h
+                                </option>
+                            ))}
+                        </select>
+                        <select
+                            value={breakMinutes}
+                            onChange={(e) => setBreakMinutes(Number(e.target.value))}
+                            className="border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-green-500"
+                        >
+                            {[...Array(60)].map((_, m) => (
+                                <option key={m} value={m}>
+                                    {m} m
+                                </option>
+                            ))}
+                        </select>
                     </div>
                 </div>
             </div>
@@ -191,3 +182,6 @@ export default function PomodoroSettings() {
         </div>
     );
 }
+
+// ✅ Wrap with layout for consistent header & footer
+export default beforeAuthLayout(PomodoroSettings);

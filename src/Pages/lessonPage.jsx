@@ -1,12 +1,11 @@
 import React, { useState, useRef, useEffect } from "react";
-import { useParams, useLocation } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import beforeAuthLayout from "../components/BeforeAuth";
 import useContent from "../hooks/useContent";
 import { toast, Toaster } from "react-hot-toast";
 
 const LessonPage = () => {
   const { lessonId } = useParams();
-  const location = useLocation(); // 👈 detect route changes
   const [lessonContent, setLessonContent] = useState(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
@@ -45,6 +44,80 @@ const LessonPage = () => {
     return () => (mounted = false);
   }, [getContentDetails, lessonId]);
 
+  // 🕒 Start break timer after pressing "Okay"
+  const startBreakTimer = () => {
+    const breakDuration = pomodoroSettings.shortBreakMinutes * 60 * 1000;
+    const breakEndTime = Date.now() + breakDuration;
+
+    // Save break state globally
+    localStorage.setItem("pomodoroOnBreak", "true");
+    localStorage.setItem("pomodoroBreakEnd", breakEndTime.toString());
+    console.log(
+      `☕ [Pomodoro] Break started for ${pomodoroSettings.shortBreakMinutes} minutes.`
+    );
+
+    setTimeout(() => {
+      localStorage.removeItem("pomodoroOnBreak");
+      localStorage.removeItem("pomodoroBreakEnd");
+      toast("✅ Break finished! Ready for your next focus session?", {
+        icon: "🎯",
+        style: {
+          background: "#f9fafb",
+          color: "#111827",
+          border: "1px solid #d1d5db",
+        },
+      });
+    }, breakDuration);
+  };
+
+  // 🕒 Helper: start new focus session manually
+  const startNewSession = () => {
+    if (!pomodoroSettings.enabled) return;
+    if (timerRef.current) clearTimeout(timerRef.current);
+
+    setFocusEnded(false);
+    console.log("🕒 [Pomodoro] Starting a new focus session manually...");
+
+    const focusTime = pomodoroSettings.focusMinutes * 60 * 1000;
+    timerRef.current = setTimeout(() => {
+      console.log("🕒 [Pomodoro] Focus time completed (manual restart).");
+      setFocusEnded(true);
+      localStorage.setItem("pomodoroFocusEnded", "true");
+      showPomodoroToast(); // show toast again when this cycle ends
+    }, focusTime);
+  };
+
+  // ☕ Custom toast message with buttons
+  const showPomodoroToast = () => {
+    toast.custom((t) => (
+      <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-md w-[320px]">
+        <p className="text-gray-800 font-medium mb-3">
+          ☕ Focus session complete! Take a short break.
+        </p>
+        <div className="flex justify-end gap-2">
+          <button
+            onClick={() => {
+              toast.dismiss(t.id);
+              startBreakTimer(); // ✅ Start break when user presses "Okay"
+            }}
+            className="px-3 py-1.5 bg-gray-200 hover:bg-gray-300 rounded-md text-sm"
+          >
+            Okay
+          </button>
+          <button
+            onClick={() => {
+              toast.dismiss(t.id);
+              startNewSession();
+            }}
+            className="px-3 py-1.5 bg-green-500 hover:bg-green-600 text-white rounded-md text-sm"
+          >
+            Start New Session
+          </button>
+        </div>
+      </div>
+    ));
+  };
+
   // 🔹 Start focus timer silently
   useEffect(() => {
     if (!pomodoroSettings.enabled) {
@@ -58,10 +131,10 @@ const LessonPage = () => {
     );
 
     timerRef.current = setTimeout(() => {
-      console.log("🕒 [Pomodoro] Focus time completed — setting focusEnded=true");
+      console.log("🕒 [Pomodoro] Focus time completed — showing toast.");
       setFocusEnded(true);
       localStorage.setItem("pomodoroFocusEnded", "true");
-      console.log("🕒 [Pomodoro] Focus completed — flag stored in localStorage");
+      showPomodoroToast();
     }, focusTime);
 
     return () => {
@@ -69,23 +142,6 @@ const LessonPage = () => {
       console.log("🕒 [Pomodoro] Focus timer cleared on unmount.");
     };
   }, [pomodoroSettings]);
-
-  // 🔹 React Router route change detection
-  useEffect(() => {
-    if (focusEnded && pomodoroSettings.enabled) {
-      console.log("🕒 [Pomodoro] Route change detected — showing break reminder.");
-      toast("☕ You’ve been focused — take a short break before continuing!", {
-        icon: "🕒",
-        style: {
-          background: "#f9fafb",
-          color: "#111827",
-          border: "1px solid #d1d5db",
-        },
-      });
-    } else {
-      console.log("🕒 [Pomodoro] Route change detected but no reminder (either Pomodoro disabled or focus not ended).");
-    }
-  }, [location.pathname]); // 👈 triggers every time route changes
 
   // --- Text-to-Speech Handlers ---
   const handleStartPause = () => {
