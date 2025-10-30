@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import beforeAuthLayout from "../components/BeforeAuth";
+import useRoleAccess from "../hooks/useRoleAccess"; // ✅ added
 
 const DEFAULTS = {
     enabled: false,
@@ -14,6 +15,8 @@ function PomodoroSettings() {
     const [breakHours, setBreakHours] = useState(0);
     const [breakMinutes, setBreakMinutes] = useState(DEFAULTS.shortBreakMinutes);
     const [savedMsg, setSavedMsg] = useState("");
+
+    const { canPomodoro, isAdmin, isCourseOwner } = useRoleAccess(); // ✅ access control
 
     // 🧠 Load saved settings
     useEffect(() => {
@@ -34,6 +37,7 @@ function PomodoroSettings() {
     const totalBreakMinutes = breakHours * 60 + breakMinutes;
 
     const handleSave = () => {
+        if (!canPomodoro) return; // ✅ prevent saving if not allowed
         const settings = {
             enabled,
             focusMinutes: Math.max(1, totalFocusMinutes),
@@ -45,6 +49,7 @@ function PomodoroSettings() {
     };
 
     const handleReset = () => {
+        if (!canPomodoro) return; // ✅ prevent reset if not allowed
         setEnabled(DEFAULTS.enabled);
         setFocusHours(0);
         setFocusMinutes(DEFAULTS.focusMinutes);
@@ -59,6 +64,13 @@ function PomodoroSettings() {
                 Pomodoro Settings
             </h2>
 
+            {/* Optional notice for restricted roles */}
+            {(isAdmin || isCourseOwner) && (
+                <div className="mb-4 bg-yellow-100 border-l-4 border-yellow-500 text-yellow-800 p-3 rounded">
+                    {isAdmin ? "Admin" : "Course Owner"} Mode — Pomodoro editing disabled.
+                </div>
+            )}
+
             {/* Enable Switch */}
             <div className="flex items-center justify-between mb-6">
                 <span className="text-lg font-semibold text-gray-700">
@@ -66,9 +78,9 @@ function PomodoroSettings() {
                 </span>
                 <button
                     type="button"
-                    onClick={() => setEnabled((v) => !v)}
+                    onClick={() => canPomodoro && setEnabled((v) => !v)} // ✅ restricted toggle
                     className={`w-16 h-8 flex items-center rounded-full p-1 transition-all duration-300 ${enabled ? "bg-green-500" : "bg-gray-300"
-                        }`}
+                        } ${!canPomodoro ? "opacity-50 pointer-events-none" : ""}`}
                 >
                     <div
                         className={`bg-white w-6 h-6 rounded-full shadow-md transform transition-all ${enabled ? "translate-x-8" : ""
@@ -79,7 +91,9 @@ function PomodoroSettings() {
 
             {/* Settings Section */}
             <div
-                className={`space-y-6 ${enabled ? "opacity-100" : "opacity-50 pointer-events-none select-none"
+                className={`space-y-6 ${enabled && canPomodoro
+                        ? "opacity-100"
+                        : "opacity-50 pointer-events-none select-none"
                     }`}
             >
                 {/* Focus Duration */}
@@ -150,14 +164,22 @@ function PomodoroSettings() {
                 <button
                     type="button"
                     onClick={handleSave}
-                    className="flex-1 bg-green-500 hover:bg-green-600 text-white font-semibold py-3 rounded-md transition"
+                    disabled={!canPomodoro}
+                    className={`flex-1 font-semibold py-3 rounded-md transition ${canPomodoro
+                            ? "bg-green-500 hover:bg-green-600 text-white"
+                            : "bg-gray-300 text-gray-600 cursor-not-allowed"
+                        }`}
                 >
                     Save Settings
                 </button>
                 <button
                     type="button"
                     onClick={handleReset}
-                    className="px-4 py-3 rounded-md border border-gray-300 text-gray-700 hover:bg-gray-50"
+                    disabled={!canPomodoro}
+                    className={`px-4 py-3 rounded-md border border-gray-300 ${canPomodoro
+                            ? "text-gray-700 hover:bg-gray-50"
+                            : "text-gray-400 cursor-not-allowed"
+                        }`}
                 >
                     Reset
                 </button>

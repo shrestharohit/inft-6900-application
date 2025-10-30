@@ -258,7 +258,7 @@ import { useState, useEffect } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import useUserApi from "../hooks/useUserApi";
 import { dummyCourses, dummyPathways } from "../Pages/dummyData";
-import AccessTimeIcon from "@mui/icons-material/AccessTime"; // 🕒 for Pomodoro
+import useRoleAccess from "../hooks/useRoleAccess"; // ✅ Role detection hook
 
 const Header = () => {
   const [anchorEl, setAnchorEl] = useState(null);
@@ -276,6 +276,9 @@ const Header = () => {
     setUserDataInState,
   } = useAuth();
   const { updateUserById } = useUserApi();
+
+  // ✅ Roles
+  const { isAdmin, isCourseOwner } = useRoleAccess();
 
   useEffect(() => {
     if (loggedInUser) {
@@ -495,6 +498,7 @@ const Header = () => {
 
                   <Divider />
 
+                  {/* Notifications Toggle */}
                   <MenuItem>
                     <div className="flex justify-between items-center w-full">
                       <span>Notifications</span>
@@ -505,6 +509,31 @@ const Header = () => {
                       />
                     </div>
                   </MenuItem>
+
+                  {/* ✅ Admin / Course Owner Portals moved here */}
+                  {isAdmin && (
+                    <MenuItem
+                      onClick={() => {
+                        handleMenuClose();
+                        navigate("/admin/");
+                      }}
+                    >
+                      Admin Portal
+                    </MenuItem>
+                  )}
+
+                  {isCourseOwner && (
+                    <MenuItem
+                      onClick={() => {
+                        handleMenuClose();
+                        navigate("/course-management");
+                      }}
+                    >
+                      Course Owner Portal
+                    </MenuItem>
+                  )}
+
+                  <Divider />
 
                   <MenuItem onClick={handleLogout}>Logout</MenuItem>
                 </Menu>

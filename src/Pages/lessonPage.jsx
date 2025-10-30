@@ -3,6 +3,7 @@ import { useParams } from "react-router-dom";
 import beforeAuthLayout from "../components/BeforeAuth";
 import useContent from "../hooks/useContent";
 import { toast, Toaster } from "react-hot-toast";
+import useRoleAccess from "../hooks/useRoleAccess"; // ✅ added
 
 const LessonPage = () => {
   const { lessonId } = useParams();
@@ -13,6 +14,7 @@ const LessonPage = () => {
   const timerRef = useRef(null);
   const [focusEnded, setFocusEnded] = useState(false);
   const { getContentDetails } = useContent();
+  const { canPomodoro, isAdmin, isCourseOwner } = useRoleAccess(); // ✅ added
 
   // 🧠 Load user's Pomodoro settings
   const [pomodoroSettings] = useState(() => {
@@ -46,10 +48,10 @@ const LessonPage = () => {
 
   // 🕒 Start break timer after pressing "Okay"
   const startBreakTimer = () => {
+    if (!canPomodoro) return; // ✅ restrict break timers to students
     const breakDuration = pomodoroSettings.shortBreakMinutes * 60 * 1000;
     const breakEndTime = Date.now() + breakDuration;
 
-    // Save break state globally
     localStorage.setItem("pomodoroOnBreak", "true");
     localStorage.setItem("pomodoroBreakEnd", breakEndTime.toString());
     console.log(
@@ -72,7 +74,7 @@ const LessonPage = () => {
 
   // 🕒 Helper: start new focus session manually
   const startNewSession = () => {
-    if (!pomodoroSettings.enabled) return;
+    if (!pomodoroSettings.enabled || !canPomodoro) return; // ✅ restrict to students only
     if (timerRef.current) clearTimeout(timerRef.current);
 
     setFocusEnded(false);
@@ -83,12 +85,13 @@ const LessonPage = () => {
       console.log("🕒 [Pomodoro] Focus time completed (manual restart).");
       setFocusEnded(true);
       localStorage.setItem("pomodoroFocusEnded", "true");
-      showPomodoroToast(); // show toast again when this cycle ends
+      showPomodoroToast();
     }, focusTime);
   };
 
   // ☕ Custom toast message with buttons
   const showPomodoroToast = () => {
+    if (!canPomodoro) return; // ✅ only students see this toast
     toast.custom((t) => (
       <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-md w-[320px]">
         <p className="text-gray-800 font-medium mb-3">
@@ -98,7 +101,7 @@ const LessonPage = () => {
           <button
             onClick={() => {
               toast.dismiss(t.id);
-              startBreakTimer(); // ✅ Start break when user presses "Okay"
+              startBreakTimer();
             }}
             className="px-3 py-1.5 bg-gray-200 hover:bg-gray-300 rounded-md text-sm"
           >
@@ -120,6 +123,11 @@ const LessonPage = () => {
 
   // 🔹 Start focus timer silently
   useEffect(() => {
+    if (!canPomodoro) {
+      console.log("🕒 [Pomodoro] Access denied — not a student. Timer not started.");
+      return;
+    }
+
     if (!pomodoroSettings.enabled) {
       console.log("🕒 [Pomodoro] Pomodoro disabled — timer not started.");
       return;
@@ -141,7 +149,7 @@ const LessonPage = () => {
       clearTimeout(timerRef.current);
       console.log("🕒 [Pomodoro] Focus timer cleared on unmount.");
     };
-  }, [pomodoroSettings]);
+  }, [pomodoroSettings, canPomodoro]);
 
   // --- Text-to-Speech Handlers ---
   const handleStartPause = () => {
@@ -201,6 +209,13 @@ const LessonPage = () => {
   return (
     <div className="p-6 max-w-5xl mx-auto">
       <Toaster position="top-center" reverseOrder={false} />
+
+      {/* Optional notice for Admin/Course Owner */}
+      {(isAdmin || isCourseOwner) && (
+        <div className="mb-4 bg-yellow-100 border-l-4 border-yellow-500 text-yellow-800 p-3 rounded">
+          {isAdmin ? "Admin" : "Course Owner"} Mode — Pomodoro is disabled.
+        </div>
+      )}
 
       {/* Heading + TTS controls aligned */}
       <div className="flex items-center justify-between mb-6">

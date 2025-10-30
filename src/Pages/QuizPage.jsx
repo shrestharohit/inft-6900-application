@@ -1,10 +1,10 @@
-// src/Pages/QuizPage.jsx
 import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import beforeAuthLayout from "../components/BeforeAuth";
 import useQuizApi from "../hooks/useQuizApi";
 import { useAuth } from "../contexts/AuthContext";
 import useEnrollment from "../hooks/useEnrollment";
+import useRoleAccess from "../hooks/useRoleAccess";
 
 const QuizPage = () => {
   const navigate = useNavigate();
@@ -18,12 +18,21 @@ const QuizPage = () => {
   const [enrolmentID, setEnrolmentID] = useState(null);
   const [attemptID, setAttemptID] = useState(null);
 
-  const { startQuiz, submitQuiz, fetchQuizForCourse, getQuizResultForUser } =
-    useQuizApi();
+  const { startQuiz, submitQuiz, fetchQuizForCourse, getQuizResultForUser } = useQuizApi();
   const { getEnrolledCoursesById } = useEnrollment();
   const { loggedInUser } = useAuth();
+  const { isAdmin, isCourseOwner, canAttemptQuiz, canViewCourses } = useRoleAccess();
 
-  // ✅ Normalize scores helper
+  // 🚫 Restrict unauthorized
+  if (!canViewCourses) {
+    return (
+      <div className="p-6 text-center text-red-500 font-semibold">
+        You do not have permission to view this page.
+      </div>
+    );
+  }
+
+  // ✅ Normalize scores
   const normalizeScore = (score) => (score <= 1 ? score * 100 : score);
 
   useEffect(() => {
@@ -33,17 +42,8 @@ const QuizPage = () => {
         const activeQuiz = res?.find((x) => x.moduleID == moduleId);
         if (mounted) setQuiz(activeQuiz);
 
-        const resp = await getQuizResultForUser(
-          activeQuiz?.quizID,
-          loggedInUser?.id
-        );
-
-        // ✅ Normalize all fetched attempts
-        const normalized = resp.map((a) => ({
-          ...a,
-          score: normalizeScore(a.score),
-        }));
-
+        const resp = await getQuizResultForUser(activeQuiz?.quizID, loggedInUser?.id);
+        const normalized = resp.map((a) => ({ ...a, score: normalizeScore(a.score) }));
         setAttempts(normalized);
 
         if (normalized.length > 0) {
@@ -55,7 +55,6 @@ const QuizPage = () => {
         console.error("Failed to fetch quiz", err);
         if (mounted) setQuiz([]);
       });
-
     return () => (mounted = false);
   }, [fetchQuizForCourse, courseId, moduleId, getQuizResultForUser, loggedInUser]);
 
@@ -63,50 +62,43 @@ const QuizPage = () => {
     let mounted = true;
     getEnrolledCoursesById(loggedInUser?.id)
       .then((resp) => {
-        const activeEnrollment = resp?.enrolments?.find(
-          (x) => x.courseID == courseId
-        );
+        const activeEnrollment = resp?.enrolments?.find((x) => x.courseID == courseId);
         if (mounted) setEnrolmentID(activeEnrollment?.enrolmentID);
       })
       .catch((err) => {
         console.error("Failed to fetch enrollment", err);
         if (mounted) setEnrolmentID(null);
       });
-
     return () => (mounted = false);
   }, [getEnrolledCoursesById, loggedInUser, courseId]);
 
-  function mapAnswers() {
-    return {
-      enrolmentID,
-      attemptID,
-      answers: Object.entries(answers)?.map(([questionID, optionID]) => ({
-        questionID: Number(questionID),
-        optionID: Number(optionID),
-      })),
-    };
-  }
+  const mapAnswers = () => ({
+    enrolmentID,
+    attemptID,
+    answers: Object.entries(answers)?.map(([questionID, optionID]) => ({
+      questionID: Number(questionID),
+      optionID: Number(optionID),
+    })),
+  });
 
   const calculateResult = async () => {
     const payload = mapAnswers();
     const res = await submitQuiz(quiz.quizID, payload);
-    let fixedAttempt = { ...res.attempt, score: normalizeScore(res.attempt.score) };
+    const fixedAttempt = { ...res.attempt, score: normalizeScore(res.attempt.score) };
 
     setCurrentAttempt(fixedAttempt);
     setShowResult(true);
     setQuiz(null);
     setQuizStarted(false);
     setAttemptID(null);
-
-    // ✅ Also push the new normalized attempt to the attempts list
     setAttempts((prev) => [fixedAttempt, ...prev]);
   };
 
-  const handleOptionChange = (questionId, optionId) => {
+  const handleOptionChange = (questionId, optionId) =>
     setAnswers({ ...answers, [questionId]: optionId });
-  };
 
   const handleStartQuiz = async () => {
+    if (!canAttemptQuiz) return alert("You do not have permission to attempt this quiz.");
     setShowResult(false);
     setQuizStarted(true);
     const res = await startQuiz(quiz.quizID, { enrolmentID });
@@ -116,11 +108,18 @@ const QuizPage = () => {
   return (
     <div className="p-6 min-h-screen bg-gray-50">
       <div className="max-w-5xl mx-auto">
+        {/* 🔹 Banner for admin/owner */}
+        {(isAdmin || isCourseOwner) && (
+          <div className="mb-4 bg-yellow-100 border-l-4 border-yellow-500 text-yellow-800 p-3 rounded">
+            {isAdmin ? "Admin" : "Course Owner"} Preview Mode — quizzes are view-only.
+          </div>
+        )}
+
         <h1 className="text-4xl font-extrabold text-gray-800 mb-8 text-center">
           Module Quiz
         </h1>
 
-        {/* Pre-Quiz Info */}
+        {/* Info before quiz (students only) */}
         {!quizStarted && !showResult && !attempts?.length && (
           <div className="bg-white p-10 rounded-2xl shadow-xl border border-gray-200 text-center">
             <h2 className="text-2xl font-bold text-gray-700 mb-4">
@@ -132,27 +131,28 @@ const QuizPage = () => {
             </p>
             <p className="text-gray-600 mb-6">
               Attempts made:{" "}
-              <span className="font-semibold text-blue-600">
-                {attempts.length}
-              </span>
+              <span className="font-semibold text-blue-600">{attempts.length}</span>
             </p>
-            <button
-              onClick={handleStartQuiz}
-              className="px-10 py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold text-lg shadow-lg transition"
-            >
-              Start Quiz
-            </button>
+            {canAttemptQuiz ? (
+              <button
+                onClick={handleStartQuiz}
+                className="px-10 py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold text-lg shadow-lg transition"
+              >
+                Start Quiz
+              </button>
+            ) : (
+              <p className="text-gray-500 italic">
+                You can view this quiz but cannot attempt it.
+              </p>
+            )}
           </div>
         )}
 
-        {/* Quiz Screen */}
-        {quizStarted && !showResult && (
+        {/* Quiz in progress */}
+        {quizStarted && canAttemptQuiz && !showResult && (
           <div className="space-y-6">
             {quiz?.questions?.map((q, idx) => (
-              <div
-                key={q.questionID}
-                className="p-6 bg-white rounded-xl shadow-lg border border-gray-200"
-              >
+              <div key={q.questionID} className="p-6 bg-white rounded-xl shadow-lg border border-gray-200">
                 <p className="text-lg font-semibold mb-4 text-gray-800">
                   Q{idx + 1}. {q.questionText}
                 </p>
@@ -170,9 +170,7 @@ const QuizPage = () => {
                         name={`question-${q.questionID}`}
                         value={o.optionID}
                         checked={answers[q.questionID] === o.optionID}
-                        onChange={() =>
-                          handleOptionChange(q.questionID, o.optionID)
-                        }
+                        onChange={() => handleOptionChange(q.questionID, o.optionID)}
                         className="mr-3 accent-blue-600"
                       />
                       {o.optionText}
@@ -181,7 +179,6 @@ const QuizPage = () => {
                 </div>
               </div>
             ))}
-
             <button
               onClick={calculateResult}
               className="w-full py-4 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold text-lg shadow-lg transition"
@@ -191,7 +188,7 @@ const QuizPage = () => {
           </div>
         )}
 
-        {/* Quiz Result */}
+        {/* Results screen */}
         {showResult && currentAttempt && (
           <div className="space-y-6">
             <div
@@ -204,7 +201,7 @@ const QuizPage = () => {
                 className={`text-xl font-bold mb-2 ${currentAttempt.passed ? "text-green-700" : "text-red-700"
                   }`}
               >
-                Attempt #{currentAttempt.attemptID || currentAttempt.id} -{" "}
+                Attempt #{currentAttempt.attemptID} —{" "}
                 {currentAttempt.passed ? "Passed ✅" : "Failed ❌"}
               </h2>
               <p className="text-gray-700 font-medium">
@@ -233,12 +230,12 @@ const QuizPage = () => {
             ))}
 
             <div className="flex gap-4 mt-4">
-              {currentAttempt.passed ? (
+              {canAttemptQuiz && currentAttempt.passed ? (
                 <button
                   onClick={() =>
                     navigate(`/courses/${courseId}/certificate`, {
                       state: {
-                        name: "John Doe",
+                        name: loggedInUser?.firstName || "Student",
                         course: "Module Quiz",
                         score: currentAttempt.score,
                         date: currentAttempt.date,
@@ -249,14 +246,14 @@ const QuizPage = () => {
                 >
                   🎉 Generate Certificate
                 </button>
-              ) : (
+              ) : canAttemptQuiz ? (
                 <button
                   onClick={handleStartQuiz}
                   className="flex-1 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold shadow-md"
                 >
                   Retake Quiz
                 </button>
-              )}
+              ) : null}
 
               <button
                 onClick={() => navigate(-1)}
@@ -268,7 +265,7 @@ const QuizPage = () => {
           </div>
         )}
 
-        {/* Previous Attempts */}
+        {/* Previous attempts */}
         {attempts.length > 0 && (
           <div className="mt-12">
             <h2 className="text-2xl font-bold text-blue-700 mb-4">
@@ -301,7 +298,6 @@ const QuizPage = () => {
                     className="py-2 px-5 bg-blue-600 hover:bg-blue-700 text-white rounded-md font-medium shadow-sm transition"
                   >
                     View Feedback
-                    
                   </button>
                 </div>
               ))}

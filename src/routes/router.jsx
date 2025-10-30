@@ -82,6 +82,7 @@ export const router = createBrowserRouter([
 
   { path: "/profilemanagement", element: <ProfileManagement /> },
   { path: "/pomodoro-settings", element: <PomodoroSettings /> },
+  
 
   // Footer dummy pages
   { path: "/about", element: <About /> },
@@ -131,6 +132,7 @@ export const router = createBrowserRouter([
       { path: "users", element: <AdminUserManagement /> },
       { path: "messages", element: <MessagesPage /> },
       { path: "profile", element: <AdminProfile title="Profile Page" /> },
+      
       { path: "course-approvals", element: <AdminCourseApproval /> },
       { path: "module-approvals", element: <AdminModuleApproval /> },
       { path: "quiz-approvals", element: <AdminQuizApproval /> },
