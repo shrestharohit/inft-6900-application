@@ -1,7 +1,6 @@
 // src/Pages/CourseContentPage.jsx
 import React, { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import beforeAuthLayout from "../components/BeforeAuth";
 import useCourseApi from "../hooks/useCourseApi";
 import useQuizApi from "../hooks/useQuizApi";
 import useModuleApi from "../hooks/useModuleApi";
@@ -9,8 +8,7 @@ import useModuleApi from "../hooks/useModuleApi";
 const CourseContentPage = () => {
   const { courseId } = useParams();
 
-  // "idle" | "loading" | "success" | "not_found" | "error"
-  const [status, setStatus] = useState("loading");
+  const [status, setStatus] = useState("loading"); // "idle" | "loading" | "success" | "not_found" | "error"
   const [course, setCourse] = useState(null);
   const [modules, setModules] = useState([]);
   const [quizzes, setQuizzes] = useState([]);
@@ -18,6 +16,11 @@ const CourseContentPage = () => {
   const { fetchCourse } = useCourseApi();
   const { fetchQuizForCourse } = useQuizApi();
   const { fetchAllModulesInACourse } = useModuleApi();
+
+  // --------- Scroll to top on page load ---------
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [courseId]);
 
   useEffect(() => {
     let active = true;
@@ -33,7 +36,6 @@ const CourseContentPage = () => {
 
         if (!active) return;
 
-        // ✅ Check if we actually got a valid course
         if (
           !courseRes ||
           (!courseRes.courseID && !courseRes.id) ||
@@ -69,9 +71,8 @@ const CourseContentPage = () => {
 
   // ---------- Render gates ----------
   if (status === "loading") {
-    // Skeleton loader (no "not found" flicker)
     return (
-      <div className="max-w-7xl mx-auto p-6 animate-pulse">
+      <div className="max-w-7xl mx-auto p-6 min-h-screen animate-pulse">
         <div className="h-8 w-64 bg-gray-200 rounded mb-4" />
         <div className="h-4 w-96 bg-gray-200 rounded mb-6" />
         <div className="space-y-3">
@@ -105,7 +106,7 @@ const CourseContentPage = () => {
 
   // ---------- Normal content ----------
   return (
-    <div className="max-w-7xl mx-auto p-6">
+    <div className="max-w-7xl mx-auto p-6 min-h-screen">
       <h1 className="text-3xl font-bold text-gray-800 mb-4">
         {course?.title || "Course Content"}
       </h1>
@@ -144,9 +145,9 @@ const CourseContentPage = () => {
 
                 <li>
                   <Link
-                    to={`/courses/${courseId}/modules/${module.moduleID}/quizzes/${quizzes.find((x) => x.moduleID === module.moduleID)?.quizID ||
-                      ""
-                      }`}
+                    to={`/courses/${courseId}/modules/${module.moduleID}/quizzes/${quizzes.find(
+                      (x) => x.moduleID === module.moduleID
+                    )?.quizID || ""}`}
                     className="text-gray-700 hover:text-blue-600 hover:underline"
                   >
                     Quiz
