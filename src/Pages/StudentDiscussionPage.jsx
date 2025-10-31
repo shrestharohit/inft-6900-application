@@ -1,14 +1,20 @@
-// src/Pages/StudentDiscussionPage.jsx
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import beforeAuthLayout from "../components/BeforeAuth";
 import { useAuth } from "../contexts/AuthContext";
 import { dummyCourses } from "../Pages/dummyData";
 import useDiscussionApi from "../hooks/useDiscussionApi";
+import useRoleAccess from "../hooks/useRoleAccess";
 
 const StudentDiscussionPage = () => {
   const { courseId } = useParams();
   const { loggedInUser } = useAuth();
+  const {
+    canViewCourses,
+    canPostDiscussion,
+    isAdmin,
+    isCourseOwner
+  } = useRoleAccess();
 
   const [threads, setThreads] = useState([]);
   const [newThread, setNewThread] = useState({ title: "", message: "" });
@@ -16,9 +22,19 @@ const StudentDiscussionPage = () => {
   const [editingThreadId, setEditingThreadId] = useState(null);
   const [editingReply, setEditingReply] = useState(null); // {threadId, replyId}
 
-  const { fetchCoursePosts, createPost, updatePost, deletePost, replyToPost } = useDiscussionApi();
+  const { fetchCoursePosts, createPost, updatePost, deletePost, replyToPost } =
+    useDiscussionApi();
 
-  // fetch discussions for the given courseId and normalize shape to local model
+  // 🚫 Restrict access if user has no view rights
+  if (!canViewCourses) {
+    return (
+      <div className="p-6 text-center text-red-500 font-semibold">
+        You do not have permission to view this page.
+      </div>
+    );
+  }
+
+  // ✅ Fetch all threads for this course
   const fetchDiscussions = async (cid) => {
     try {
       const res = await fetchCoursePosts(cid || courseId);
@@ -46,23 +62,10 @@ const StudentDiscussionPage = () => {
   };
 
   useEffect(() => {
-    let mounted = true;
-    if (courseId) {
-      // initial load for the given course
-      fetchDiscussions(courseId);
-    }
-    return () => {
-      mounted = false;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    if (courseId) fetchDiscussions(courseId);
   }, [courseId]);
 
-  const saveToStorage = (updated) => {
-    // keep API-backed state in memory only
-    setThreads(updated);
-  };
-
-  // ✅ Create or update thread
+  // ✅ Create or update a discussion thread
   const handleNewThread = async (e) => {
     e.preventDefault();
     if (!newThread.title.trim() || !newThread.message.trim()) return;
@@ -91,7 +94,7 @@ const StudentDiscussionPage = () => {
     }
   };
 
-  // ✅ Reply or edit reply
+  // ✅ Reply or edit a reply
   const handleReply = async (threadId) => {
     const text = replyText[threadId];
     if (!text?.trim()) return;
@@ -156,55 +159,68 @@ const StudentDiscussionPage = () => {
 
   return (
     <div className="p-6 max-w-5xl mx-auto">
+      {/* 🔹 Banner for admin/course_owner */}
+      {(isAdmin || isCourseOwner) && (
+        <div className="mb-4 bg-yellow-100 border-l-4 border-yellow-500 text-yellow-800 p-3 rounded">
+          {isAdmin ? "Admin" : "Course Owner"} Preview Mode — view-only access.
+        </div>
+      )}
+
       <h1 className="text-3xl font-bold text-gray-800 mb-6">💬 Discussions</h1>
 
-      {/* New Thread / Edit Thread */}
-      <form
-        onSubmit={handleNewThread}
-        className="bg-white shadow-md rounded-lg p-6 mb-8"
-      >
-        <h2 className="text-lg font-semibold mb-4">
-          {editingThreadId ? "Edit Thread" : "Start New Discussion"}
-        </h2>
-        <input
-          type="text"
-          placeholder="Thread Title"
-          value={newThread.title}
-          onChange={(e) =>
-            setNewThread((prev) => ({ ...prev, title: e.target.value }))
-          }
-          className="w-full border p-3 rounded mb-3"
-        />
-        <textarea
-          placeholder="What's on your mind?"
-          rows="4"
-          value={newThread.message}
-          onChange={(e) =>
-            setNewThread((prev) => ({ ...prev, message: e.target.value }))
-          }
-          className="w-full border p-3 rounded mb-3"
-        />
-        <div className="flex gap-3">
-          <button
-            type="submit"
-            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded"
-          >
-            {editingThreadId ? "Update" : "Post"}
-          </button>
-          {editingThreadId && (
+      {/* ✅ Hide posting form if user cannot post */}
+      {canPostDiscussion ? (
+        <form
+          onSubmit={handleNewThread}
+          className="bg-white shadow-md rounded-lg p-6 mb-8"
+        >
+          <h2 className="text-lg font-semibold mb-4">
+            {editingThreadId ? "Edit Thread" : "Start New Discussion"}
+          </h2>
+          <input
+            type="text"
+            placeholder="Thread Title"
+            value={newThread.title}
+            onChange={(e) =>
+              setNewThread((prev) => ({ ...prev, title: e.target.value }))
+            }
+            className="w-full border p-3 rounded mb-3"
+          />
+          <textarea
+            placeholder="What's on your mind?"
+            rows="4"
+            value={newThread.message}
+            onChange={(e) =>
+              setNewThread((prev) => ({ ...prev, message: e.target.value }))
+            }
+            className="w-full border p-3 rounded mb-3"
+          />
+          <div className="flex gap-3">
             <button
-              type="button"
-              onClick={() => {
-                setEditingThreadId(null);
-                setNewThread({ title: "", message: "" });
-              }}
-              className="bg-gray-500 hover:bg-gray-600 text-white px-6 py-2 rounded"
+              type="submit"
+              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded"
             >
-              Cancel
+              {editingThreadId ? "Update" : "Post"}
             </button>
-          )}
+            {editingThreadId && (
+              <button
+                type="button"
+                onClick={() => {
+                  setEditingThreadId(null);
+                  setNewThread({ title: "", message: "" });
+                }}
+                className="bg-gray-500 hover:bg-gray-600 text-white px-6 py-2 rounded"
+              >
+                Cancel
+              </button>
+            )}
+          </div>
+        </form>
+      ) : (
+        <div className="bg-gray-100 text-gray-700 p-4 rounded-lg shadow-sm mb-6">
+          You can view existing discussions but cannot post new threads or replies.
         </div>
-      </form>
+      )}
 
       {/* Threads */}
       {threads.length === 0 ? (
@@ -217,28 +233,27 @@ const StudentDiscussionPage = () => {
                 <div>
                   <h3 className="font-bold text-lg">{thread.title}</h3>
                   <p className="mt-2">{thread.message}</p>
-                  <p className="text-xs text-gray-500 mt-2">
-                    {thread.createdAt}
-                  </p>
+                  <p className="text-xs text-gray-500 mt-2">{thread.createdAt}</p>
                 </div>
 
-                {/* Thread controls for author */}
-                {thread.authorId === (loggedInUser?.email || "anonymous") && (
-                  <div className="flex gap-2 text-sm">
-                    <button
-                      onClick={() => handleEditThread(thread)}
-                      className="text-blue-600 hover:underline"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => handleDeleteThread(thread.id)}
-                      className="text-red-500 hover:underline"
-                    >
-                      Delete
-                    </button>
-                  </div>
-                )}
+                {/* Thread controls only for author and posters */}
+                {canPostDiscussion &&
+                  thread.authorId === (loggedInUser?.email || "anonymous") && (
+                    <div className="flex gap-2 text-sm">
+                      <button
+                        onClick={() => handleEditThread(thread)}
+                        className="text-blue-600 hover:underline"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => handleDeleteThread(thread.id)}
+                        className="text-red-500 hover:underline"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  )}
               </div>
 
               {/* Replies */}
@@ -254,59 +269,62 @@ const StudentDiscussionPage = () => {
                         {r.author} – {r.createdAt}
                       </p>
                     </div>
-                    {r.authorId === (loggedInUser?.email || "anonymous") && (
-                      <div className="flex gap-2 text-xs">
-                        <button
-                          onClick={() => handleEditReply(thread.id, r)}
-                          className="text-blue-600 hover:underline"
-                        >
-                          Edit
-                        </button>
-                        <button
-                          onClick={() => handleDeleteReply(thread.id, r.id)}
-                          className="text-red-500 hover:underline"
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    )}
+                    {canPostDiscussion &&
+                      r.authorId === (loggedInUser?.email || "anonymous") && (
+                        <div className="flex gap-2 text-xs">
+                          <button
+                            onClick={() => handleEditReply(thread.id, r)}
+                            className="text-blue-600 hover:underline"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            onClick={() => handleDeleteReply(thread.id, r.id)}
+                            className="text-red-500 hover:underline"
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      )}
                   </div>
                 ))}
               </div>
 
               {/* Reply box */}
-              <div className="mt-3">
-                <textarea
-                  rows="2"
-                  placeholder="Reply..."
-                  value={replyText[thread.id] || ""}
-                  onChange={(e) =>
-                    setReplyText({ ...replyText, [thread.id]: e.target.value })
-                  }
-                  className="w-full border p-2 rounded mb-2"
-                />
-                <div className="flex gap-3">
-                  <button
-                    onClick={() => handleReply(thread.id)}
-                    className="bg-green-600 hover:bg-green-700 text-white px-4 py-1 rounded text-sm"
-                  >
-                    {editingReply?.threadId === thread.id
-                      ? "Update Reply"
-                      : "Reply"}
-                  </button>
-                  {editingReply?.threadId === thread.id && (
+              {canPostDiscussion && (
+                <div className="mt-3">
+                  <textarea
+                    rows="2"
+                    placeholder="Reply..."
+                    value={replyText[thread.id] || ""}
+                    onChange={(e) =>
+                      setReplyText({ ...replyText, [thread.id]: e.target.value })
+                    }
+                    className="w-full border p-2 rounded mb-2"
+                  />
+                  <div className="flex gap-3">
                     <button
-                      onClick={() => {
-                        setEditingReply(null);
-                        setReplyText({ ...replyText, [thread.id]: "" });
-                      }}
-                      className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-1 rounded text-sm"
+                      onClick={() => handleReply(thread.id)}
+                      className="bg-green-600 hover:bg-green-700 text-white px-4 py-1 rounded text-sm"
                     >
-                      Cancel
+                      {editingReply?.threadId === thread.id
+                        ? "Update Reply"
+                        : "Reply"}
                     </button>
-                  )}
+                    {editingReply?.threadId === thread.id && (
+                      <button
+                        onClick={() => {
+                          setEditingReply(null);
+                          setReplyText({ ...replyText, [thread.id]: "" });
+                        }}
+                        className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-1 rounded text-sm"
+                      >
+                        Cancel
+                      </button>
+                    )}
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
           ))}
         </div>
@@ -315,4 +333,4 @@ const StudentDiscussionPage = () => {
   );
 };
 
-export default StudentDiscussionPage;
+export default beforeAuthLayout(StudentDiscussionPage);

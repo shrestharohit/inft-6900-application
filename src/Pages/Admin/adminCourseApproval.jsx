@@ -23,7 +23,11 @@ const AdminCourseApproval = () => {
   const [courses, setCourses] = useState([]);
   const [pathways, setPathways] = useState([]);
   const [expanded, setExpanded] = useState({});
-  const [snack, setSnack] = useState({ open: false, severity: "success", msg: "" });
+  const [snack, setSnack] = useState({
+    open: false,
+    severity: "success",
+    msg: "",
+  });
   const { fetchAllCourses, updateCourse } = useCourseApi();
   const { fetchAllPathways } = usePathwayApi();
   const navigate = useNavigate();
@@ -37,7 +41,13 @@ const AdminCourseApproval = () => {
           fetchAllPathways(),
         ]);
         if (!mounted) return;
-        setCourses(courseRes || []);
+
+        // ✅ Hide all draft courses from admin view
+        const filteredCourses = (courseRes || []).filter(
+          (course) => course.status?.toLowerCase() !== "draft"
+        );
+
+        setCourses(filteredCourses);
         setPathways(pathwayRes?.pathways || []);
       } catch (e) {
         console.error("Failed to load data", e);
@@ -59,9 +69,18 @@ const AdminCourseApproval = () => {
 
     try {
       await updateCourse(courseID, { status });
-      setSnack({ open: true, severity: "success", msg: "✅ Course status updated." });
+      setSnack({
+        open: true,
+        severity: "success",
+        msg: "✅ Course status updated.",
+      });
+
+      // ✅ Re-fetch and re-filter so drafts remain hidden
       const res = await fetchAllCourses();
-      setCourses(res || []);
+      const filteredCourses = (res || []).filter(
+        (course) => course.status?.toLowerCase() !== "draft"
+      );
+      setCourses(filteredCourses);
     } catch (err) {
       console.error("Failed to update course", err);
       setSnack({ open: true, severity: "error", msg: "❌ Update failed." });
@@ -119,10 +138,11 @@ const AdminCourseApproval = () => {
                   return (
                     <React.Fragment key={idx}>
                       <TableRow
-                        className={`hover:bg-gray-50 transition ${course.status === "wait_for_approval"
+                        className={`hover:bg-gray-50 transition ${
+                          course.status === "wait_for_approval"
                             ? "border-l-4 border-yellow-500"
                             : ""
-                          }`}
+                        }`}
                       >
                         <TableCell>
                           <IconButton
@@ -195,12 +215,6 @@ const AdminCourseApproval = () => {
                           {course.status === "inactive" && (
                             <Typography variant="body2" color="text.secondary">
                               Inactive — owner can edit & resubmit.
-                            </Typography>
-                          )}
-
-                          {course.status === "draft" && (
-                            <Typography variant="body2" color="text.secondary">
-                              Pending owner submission.
                             </Typography>
                           )}
                         </TableCell>

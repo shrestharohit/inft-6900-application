@@ -1,9 +1,27 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import * as Yup from "yup";
 import registration_image from "../assets/Images/registration_image.png";
 import beforeAuthLayout from "../components/BeforeAuth";
 import { useAuth } from "../contexts/AuthContext";
 import useUserApi from "../hooks/useUserApi";
+
+// ✅ Consistent Yup schema (same rules as registration)
+const loginSchema = Yup.object().shape({
+  email: Yup.string()
+    .matches(
+      /^[^\s@]+@[^\s@]{2,}\.[^\s@]{2,}$/,
+      "Please enter a valid email address"
+    )
+    .required("Email is required"),
+  password: Yup.string()
+    .min(8, "Password must be at least 8 characters")
+    .matches(/[A-Z]/, "Must contain at least one uppercase letter")
+    .matches(/[a-z]/, "Must contain at least one lowercase letter")
+    .matches(/[0-9]/, "Must contain at least one number")
+    .matches(/[@$!%*?&]/, "Must contain at least one special character")
+    .required("Password is required"),
+});
 
 function LoginForm() {
   const { setUserDataInState } = useAuth();
@@ -12,7 +30,8 @@ function LoginForm() {
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError] = useState({});
+  const [generalError, setGeneralError] = useState("");
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -21,25 +40,39 @@ function LoginForm() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError("");
-    setLoading(true);
+    setError({});
+    setGeneralError("");
 
     try {
+      // ✅ Run Yup validation
+      await loginSchema.validate(formData, { abortEarly: false });
+
+      setLoading(true);
       const response = await loginUser(formData);
-      console.log("✅ Login API response:", response);
       setUserDataInState(response.user);
     } catch (err) {
-      console.error("❌ Login error:", err);
-      setError(
-        err?.response?.data?.error ||
+      if (err.name === "ValidationError") {
+        // Collect Yup errors into a field-wise object
+        const validationErrors = {};
+        err.inner.forEach((e) => (validationErrors[e.path] = e.message));
+        setError(validationErrors);
+      } else {
+        setGeneralError(
+          err?.response?.data?.error ||
           err?.error ||
           err?.message ||
           "Login failed. Please try again."
-      );
+        );
+      }
     } finally {
       setLoading(false);
     }
   };
+
+  // Helper for red borders
+  const inputClass = (field) =>
+    `w-full border rounded-md px-4 py-3 focus:ring-2 focus:ring-blue-500 ${error[field] ? "border-red-500 focus:ring-red-500" : "border-gray-300"
+    }`;
 
   return (
     <div className="flex flex-col md:flex-row bg-white shadow-lg rounded-lg max-w-6xl w-full mx-auto my-16 p-10">
@@ -67,10 +100,12 @@ function LoginForm() {
               name="email"
               value={formData.email}
               onChange={handleChange}
-              required
-              className="w-full border border-gray-300 rounded-md px-4 py-3 focus:ring-2 focus:ring-blue-500"
+              className={inputClass("email")}
               placeholder="Enter your email"
             />
+            {error.email && (
+              <p className="text-red-600 text-sm mt-1">{error.email}</p>
+            )}
           </div>
 
           {/* Password */}
@@ -82,8 +117,7 @@ function LoginForm() {
                 name="password"
                 value={formData.password}
                 onChange={handleChange}
-                required
-                className="w-full border border-gray-300 rounded-md px-4 py-3 focus:ring-2 focus:ring-blue-500"
+                className={inputClass("password")}
                 placeholder="Enter your password"
               />
               <button
@@ -94,6 +128,9 @@ function LoginForm() {
                 {showPassword ? "Hide" : "Show"}
               </button>
             </div>
+            {error.password && (
+              <p className="text-red-600 text-sm mt-1">{error.password}</p>
+            )}
             <Link
               to="/forgotpassword"
               className="block mt-2 text-sm text-blue-600 hover:underline"
@@ -102,14 +139,14 @@ function LoginForm() {
             </Link>
           </div>
 
-          {/* Error */}
-          {error && (
+          {/* General Error */}
+          {generalError && (
             <div className="p-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg">
-              {error}
+              {generalError}
             </div>
           )}
 
-          {/* Submit */}
+          {/* Submit Button */}
           <button
             type="submit"
             disabled={loading}
@@ -118,9 +155,8 @@ function LoginForm() {
             {loading ? "Logging in..." : "Login"}
           </button>
 
-          {/* Sign Up Link */}
           <p className="text-center text-sm">
-            Don't have an account?{" "}
+            Don’t have an account?{" "}
             <Link to="/registration" className="text-blue-600 underline">
               Sign Up
             </Link>

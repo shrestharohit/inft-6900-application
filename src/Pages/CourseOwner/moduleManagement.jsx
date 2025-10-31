@@ -292,7 +292,7 @@ export default function ModuleManagement() {
         setModules((prev) => [...prev, { ...createdModule, courseName }]);
         alert("Module created successfully!");
       }
-
+      resetForm();
       // stay in current mode; user can use Cancel Edit to switch
     } catch (err) {
       console.error("Failed to save module", err);

@@ -23,6 +23,7 @@ import {
   CircularProgress,
 } from "@mui/material";
 import { Add, Edit, Delete } from "@mui/icons-material";
+import * as Yup from "yup"; // ✅ Yup for consistent validation
 import useUserApi from "../../hooks/useUserApi";
 
 const ROLES = ["admin", "course_owner"];
@@ -33,6 +34,27 @@ const emptyForm = {
   email: "",
   role: "course_owner",
 };
+
+// ✅ Define Yup schema for consistent validation
+const userSchema = Yup.object().shape({
+  firstName: Yup.string()
+    .min(2, "First name must have at least 2 characters")
+    .max(30, "First name too long")
+    .required("First name is required"),
+  lastName: Yup.string()
+    .min(2, "Last name must have at least 2 characters")
+    .max(30, "Last name too long")
+    .required("Last name is required"),
+  email: Yup.string()
+    .matches(
+      /^[^\s@]+@[^\s@]{2,}\.[^\s@]{2,}$/,
+      "Please enter a valid email address"
+    )
+    .required("Email is required"),
+  role: Yup.string()
+    .oneOf(ROLES, "Please select a valid role")
+    .required("Role is required"),
+});
 
 const AdminUserManagement = () => {
   const [users, setUsers] = useState([]);
@@ -45,7 +67,7 @@ const AdminUserManagement = () => {
     severity: "success",
     msg: "",
   });
-  const [loading, setLoading] = useState(true); // loading state
+  const [loading, setLoading] = useState(true);
 
   const {
     registerPriviledgedUser,
@@ -72,16 +94,18 @@ const AdminUserManagement = () => {
     }
   };
 
-  const validate = () => {
-    const e = {};
-    if (!form.firstName.trim()) e.firstName = "First name is required";
-    if (!form.lastName.trim()) e.lastName = "Last name is required";
-    if (!form.email.trim()) e.email = "Email is required";
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email))
-      e.email = "Invalid email";
-    if (!ROLES.includes(form.role)) e.role = "Choose a role";
-    setErrors(e);
-    return Object.keys(e).length === 0;
+  // ✅ Validate using Yup
+  const validate = async () => {
+    try {
+      await userSchema.validate(form, { abortEarly: false });
+      setErrors({});
+      return true;
+    } catch (err) {
+      const validationErrors = {};
+      err.inner.forEach((e) => (validationErrors[e.path] = e.message));
+      setErrors(validationErrors);
+      return false;
+    }
   };
 
   const resetDialog = () => {
@@ -116,29 +140,34 @@ const AdminUserManagement = () => {
   };
 
   const handleSave = async () => {
-    if (!validate()) return;
+    const isValid = await validate();
+    if (!isValid) return;
 
     try {
       if (editingIndex === null) {
         await registerPriviledgedUser(form);
       } else {
         const originalUser = users[editingIndex];
-
         await updateUserById({
           ...form,
           userID: originalUser.userID,
         });
       }
+
       setSnack({
         open: true,
         severity: "success",
-        msg: "User added successfully.",
+        msg:
+          editingIndex === null
+            ? "User added successfully."
+            : "User updated successfully.",
       });
     } catch (err) {
+      console.error("❌ User save error:", err);
       setSnack({
         open: true,
         severity: "error",
-        msg: "Failed to add user.",
+        msg: "Failed to save user.",
       });
     }
     handleClose();
@@ -157,6 +186,7 @@ const AdminUserManagement = () => {
         msg: "User deleted successfully.",
       });
     } catch (err) {
+      console.error("❌ Delete error:", err);
       setSnack({
         open: true,
         severity: "error",

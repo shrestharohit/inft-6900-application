@@ -39,6 +39,7 @@ import CourseQuestionsPage from "../Pages/CourseQuestionsPage";
 import StudentAnnouncementsPage from "../Pages/StudentAnnouncementsPage";
 import StudentDiscussionPage from "../Pages/StudentDiscussionPage";
 import SchedulePage from "../pages/SchedulePage";
+import PomodoroSettings from "../Pages/PomodoroSettings.jsx";
 
 import SearchResults from "../Pages/SearchResults";
 import CertificatePage from "../Pages/certificatePage";
@@ -80,6 +81,8 @@ export const router = createBrowserRouter([
   { path: "/reset-password", element: <ResetPasswordPage /> }, // Step 3
 
   { path: "/profilemanagement", element: <ProfileManagement /> },
+  { path: "/pomodoro-settings", element: <PomodoroSettings /> },
+  
 
   // Footer dummy pages
   { path: "/about", element: <About /> },
@@ -110,11 +113,12 @@ export const router = createBrowserRouter([
           { path: "announcements", element: <StudentAnnouncementsPage /> },
           { path: "discussions", element: <StudentDiscussionPage /> },
           { path: "certificate", element: <CertificatePage /> },
+          { path: "schedule", element: <SchedulePage /> },
+          
         ],
       },
     ],
   },
-  { path: "/schedule/:courseId", element: <SchedulePage /> },
 
   // Admin routes
   {
@@ -128,6 +132,7 @@ export const router = createBrowserRouter([
       { path: "users", element: <AdminUserManagement /> },
       { path: "messages", element: <MessagesPage /> },
       { path: "profile", element: <AdminProfile title="Profile Page" /> },
+      
       { path: "course-approvals", element: <AdminCourseApproval /> },
       { path: "module-approvals", element: <AdminModuleApproval /> },
       { path: "quiz-approvals", element: <AdminQuizApproval /> },
