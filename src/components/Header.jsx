@@ -265,7 +265,7 @@ const Header = () => {
   const [categoryAnchor, setCategoryAnchor] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchCategory, setSearchCategory] = useState("all");
-  const [notificationsEnabled, setNotificationsEnabled] = useState(false);
+  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
 
   const open = Boolean(anchorEl);
   const navigate = useNavigate();
@@ -282,10 +282,11 @@ const Header = () => {
 
   useEffect(() => {
     if (loggedInUser) {
-      setNotificationsEnabled(!!loggedInUser.notificationEnabled);
+      setNotificationsEnabled(!!loggedInUser.notificationEnabled); // Override default based on logged-in user
     }
   }, [loggedInUser]);
 
+  
   const getPlaceholder = () => {
     switch (searchCategory) {
       case "courses":

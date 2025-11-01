@@ -6,21 +6,12 @@ import beforeAuthLayout from "../components/BeforeAuth";
 import { useAuth } from "../contexts/AuthContext";
 import useUserApi from "../hooks/useUserApi";
 
-// ✅ Consistent Yup schema (same rules as registration)
+// ✅ Simplified Yup schema (only ensures fields are filled and valid email)
 const loginSchema = Yup.object().shape({
   email: Yup.string()
-    .matches(
-      /^[^\s@]+@[^\s@]{2,}\.[^\s@]{2,}$/,
-      "Please enter a valid email address"
-    )
+    .email("Please enter a valid email address")
     .required("Email is required"),
-  password: Yup.string()
-    .min(8, "Password must be at least 8 characters")
-    .matches(/[A-Z]/, "Must contain at least one uppercase letter")
-    .matches(/[a-z]/, "Must contain at least one lowercase letter")
-    .matches(/[0-9]/, "Must contain at least one number")
-    .matches(/[@$!%*?&]/, "Must contain at least one special character")
-    .required("Password is required"),
+  password: Yup.string().required("Password is required"),
 });
 
 function LoginForm() {
@@ -44,7 +35,7 @@ function LoginForm() {
     setGeneralError("");
 
     try {
-      // ✅ Run Yup validation
+      // ✅ Validate only required fields
       await loginSchema.validate(formData, { abortEarly: false });
 
       setLoading(true);
@@ -52,7 +43,6 @@ function LoginForm() {
       setUserDataInState(response.user);
     } catch (err) {
       if (err.name === "ValidationError") {
-        // Collect Yup errors into a field-wise object
         const validationErrors = {};
         err.inner.forEach((e) => (validationErrors[e.path] = e.message));
         setError(validationErrors);
@@ -69,9 +59,10 @@ function LoginForm() {
     }
   };
 
-  // Helper for red borders
   const inputClass = (field) =>
-    `w-full border rounded-md px-4 py-3 focus:ring-2 focus:ring-blue-500 ${error[field] ? "border-red-500 focus:ring-red-500" : "border-gray-300"
+    `w-full border rounded-md px-4 py-3 focus:ring-2 focus:ring-blue-500 ${error[field]
+      ? "border-red-500 focus:ring-red-500"
+      : "border-gray-300"
     }`;
 
   return (

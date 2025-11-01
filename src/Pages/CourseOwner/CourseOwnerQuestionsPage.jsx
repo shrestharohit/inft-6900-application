@@ -1,7 +1,6 @@
 // src/Pages/CourseOwner/CourseOwnerQuestionsPage.jsx
 import React, { useState, useEffect } from "react";
 import { useAuth } from "../../contexts/AuthContext";
-import { dummyCourses } from "../dummyData";
 import useCourseApi from "../../hooks/useCourseApi";
 import useDms from "../../hooks/useDMs";
 
@@ -9,11 +8,31 @@ const CourseOwnerQuestionsPage = () => {
   const { loggedInUser } = useAuth();
   const [selectedCourseId, setSelectedCourseId] = useState("");
   const [questions, setQuestions] = useState([]);
-  const [replyText, setReplyText] = useState({}); // map: q.id -> reply
+  const [replyText, setReplyText] = useState({});
   const [ownerCourses, setOwnerCourses] = useState([]);
   const { fetchAllCourses } = useCourseApi();
-
   const { getAllDmsForCourse, replyDms } = useDms();
+
+  // 🕒 Format timestamps using user's OS timezone in AM/PM format
+  const formatDateTime = (isoString) => {
+    if (!isoString) return "";
+
+    // Create a Date object from the ISO string (which is in UTC)
+    const dateUTC = new Date(isoString);
+
+    // Apply the 11-hour offset (11 * 60 * 60 * 1000 ms = 11 hours)
+    const dateOffset = new Date(dateUTC.getTime() + 11 * 60 * 60 * 1000); // +11 hours
+
+    // Format the date with toLocaleString
+    return dateOffset.toLocaleString([], {
+      month: "short",
+      day: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true, // Show time in 12-hour format
+    });
+  };
 
   useEffect(() => {
     let mounted = true;
@@ -24,7 +43,7 @@ const CourseOwnerQuestionsPage = () => {
       })
       .catch((err) => {
         console.error("Failed to fetch courses", err);
-        if (mounted) setCourses([]);
+        if (mounted) setOwnerCourses([]);
       });
 
     return () => (mounted = false);
@@ -33,10 +52,15 @@ const CourseOwnerQuestionsPage = () => {
   const fetchDms = (courseId) => {
     getAllDmsForCourse(courseId || selectedCourseId)
       .then((res) => {
-        setQuestions(res.dms);
+        const dms = res?.dms || [];
+        // ✅ Sort newest first
+        const sorted = dms.sort(
+          (a, b) => new Date(b.created_at) - new Date(a.created_at)
+        );
+        setQuestions(sorted);
       })
       .catch((err) => {
-        console.error("Failed to fetch announcements", err);
+        console.error("Failed to fetch questions", err);
         setQuestions([]);
       });
   };
@@ -53,7 +77,6 @@ const CourseOwnerQuestionsPage = () => {
     };
     replyDms(dm.msgID, payload)
       .then(() => {
-        // Refresh the list after successful reply
         fetchDms();
         setReplyText((prev) => ({ ...prev, [dm.msgID]: "" }));
       })
@@ -107,7 +130,9 @@ const CourseOwnerQuestionsPage = () => {
                   className="bg-white p-5 rounded-lg shadow border-l-4 border-blue-500"
                 >
                   <p className="font-semibold text-gray-800">{q.message}</p>
-                  <p className="text-xs text-gray-400 mb-3">{q.created_at}</p>
+                  <p className="text-xs text-gray-500 mb-3">
+                    Asked on {formatDateTime(q.created_at)}
+                  </p>
 
                   {q.reply ? (
                     <p className="mt-2 text-green-700">

@@ -120,4 +120,4 @@ const StudentAnnouncementsPageContent = () => {
   );
 };
 
-export default beforeAuthLayout(StudentAnnouncementsPageContent);
+export default (StudentAnnouncementsPageContent);
