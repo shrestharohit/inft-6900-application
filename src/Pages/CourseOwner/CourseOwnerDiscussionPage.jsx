@@ -1,7 +1,6 @@
 // src/Pages/CourseOwner/CourseOwnerDiscussionPage.jsx
 import React, { useEffect, useState } from "react";
 import { useAuth } from "../../contexts/AuthContext";
-import { dummyCourses } from "../../Pages/dummyData";
 import useCourseApi from "../../hooks/useCourseApi";
 import useDiscussionApi from "../../hooks/useDiscussionApi";
 
@@ -18,6 +17,29 @@ const CourseOwnerDiscussionPage = () => {
   const { fetchAllCourses } = useCourseApi();
   const { fetchCoursePosts, createPost, updatePost, deletePost, replyToPost } =
     useDiscussionApi();
+
+  // 🕒 Format date and time nicely in local timezone
+  // 🕒 Format date and time nicely in local timezone with a 11-hour offset
+  const formatDateTime = (isoString) => {
+    if (!isoString) return "";
+
+    // Create a Date object from the ISO string (which is in UTC)
+    const dateUTC = new Date(isoString);
+
+    // Apply the 11-hour offset (11 * 60 * 60 * 1000 ms = 11 hours)
+    const dateOffset = new Date(dateUTC.getTime() + 11 * 60 * 60 * 1000); // +11 hours
+
+    // Format the date with toLocaleString
+    return dateOffset.toLocaleString([], {
+      month: "short",
+      day: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true, // Show time in 12-hour format
+    });
+  };
+
 
   useEffect(() => {
     let mounted = true;
@@ -37,32 +59,39 @@ const CourseOwnerDiscussionPage = () => {
   const fetchDiscussions = (courseId) => {
     fetchCoursePosts(courseId || selectedCourseId)
       .then((res) => {
-        console.log(res);
-        setThreads(res.posts);
+        const posts = res?.posts || [];
+        // ✅ Sort threads by date descending
+        const sortedThreads = [...posts].sort(
+          (a, b) => new Date(b.created_at) - new Date(a.created_at)
+        );
+
+        // ✅ Sort replies inside each thread by date descending
+        sortedThreads.forEach((t) => {
+          t.replies = (t.replies || []).sort(
+            (a, b) => new Date(b.created_at) - new Date(a.created_at)
+          );
+        });
+
+        setThreads(sortedThreads);
       })
       .catch((err) => {
-        console.error("Failed to fetch announcements", err);
+        console.error("Failed to fetch discussions", err);
         setThreads([]);
       });
   };
 
-  const saveToStorage = (updated) => {
-    setThreads(updated);
-  };
-
-  // ✅ Add or update thread
-  const handleNewThread = (e) => {
+  const handleNewThread = async (e) => {
     e.preventDefault();
     if (!newThread.title.trim() || !newThread.message.trim()) return;
 
     if (editingThreadId) {
-      updatePost(editingThreadId, {
+      await updatePost(editingThreadId, {
         title: newThread.title,
         postText: newThread.message,
       });
       alert("Thread updated!");
     } else {
-      createPost(selectedCourseId, {
+      await createPost(selectedCourseId, {
         userID: loggedInUser?.id,
         title: newThread.title,
         postText: newThread.message,
@@ -74,7 +103,6 @@ const CourseOwnerDiscussionPage = () => {
     setNewThread({ title: "", message: "" });
   };
 
-  // ✅ Add or update reply
   const handleReply = async (thread) => {
     const text = replyText[thread.postID];
     if (!text?.trim()) return;
@@ -85,23 +113,20 @@ const CourseOwnerDiscussionPage = () => {
         title: thread.title,
         postText: text,
       });
-      fetchDiscussions();
     } else {
       await replyToPost(thread.postID, {
         userID: loggedInUser?.id,
         postText: text,
       });
-      fetchDiscussions();
     }
-
+    fetchDiscussions();
     setReplyText({ ...replyText, [thread.postID]: "" });
+    setEditingReply(null);
   };
 
   const handleDeleteThread = async (threadId) => {
     if (!window.confirm("Delete this thread?")) return;
     await deletePost(threadId);
-    setNewThread({ title: "", message: "" });
-    setEditingThreadId(null);
     fetchDiscussions();
   };
 
@@ -111,19 +136,12 @@ const CourseOwnerDiscussionPage = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  // ✅ Delete reply
   const handleDeleteReply = async (threadId, replyId) => {
     if (!window.confirm("Delete this reply?")) return;
     await deletePost(replyId);
-    setReplyText({
-      ...replyText,
-      [threadId]: "",
-    });
-    setEditingReply(null);
     fetchDiscussions();
   };
 
-  // ✅ Edit reply
   const handleEditReply = (threadId, reply) => {
     setReplyText({ ...replyText, [threadId]: reply.postText });
     setEditingReply({ threadId, replyId: reply.postID });
@@ -219,9 +237,9 @@ const CourseOwnerDiscussionPage = () => {
             <p className="text-gray-500">No discussions yet.</p>
           ) : (
             <div className="space-y-6">
-              {threads.map((thread, idx) => (
+              {threads.map((thread) => (
                 <div
-                  key={idx}
+                  key={thread.postID}
                   className="bg-white p-5 rounded-lg shadow hover:shadow-md transition"
                 >
                   <div className="flex justify-between items-start">
@@ -229,7 +247,7 @@ const CourseOwnerDiscussionPage = () => {
                       <h3 className="font-bold text-lg">{thread.title}</h3>
                       <p className="mt-2">{thread.postText}</p>
                       <p className="text-xs text-gray-500 mt-2">
-                        {thread.created_at}
+                        {formatDateTime(thread.created_at)}
                       </p>
                     </div>
                     <div className="flex gap-2 text-sm">
@@ -258,7 +276,7 @@ const CourseOwnerDiscussionPage = () => {
                         <div>
                           <p>{r.postText}</p>
                           <p className="text-xs text-gray-500">
-                            {r.created_at}
+                            {formatDateTime(r.created_at)}
                           </p>
                         </div>
                         <div className="flex gap-2 text-xs">

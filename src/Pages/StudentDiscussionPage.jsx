@@ -2,28 +2,40 @@ import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import beforeAuthLayout from "../components/BeforeAuth";
 import { useAuth } from "../contexts/AuthContext";
-import { dummyCourses } from "../Pages/dummyData";
 import useDiscussionApi from "../hooks/useDiscussionApi";
 import useRoleAccess from "../hooks/useRoleAccess";
 
 const StudentDiscussionPage = () => {
   const { courseId } = useParams();
   const { loggedInUser } = useAuth();
-  const {
-    canViewCourses,
-    canPostDiscussion,
-    isAdmin,
-    isCourseOwner
-  } = useRoleAccess();
+  const { canViewCourses, canPostDiscussion, isAdmin, isCourseOwner } =
+    useRoleAccess();
 
   const [threads, setThreads] = useState([]);
   const [newThread, setNewThread] = useState({ title: "", message: "" });
   const [replyText, setReplyText] = useState({});
   const [editingThreadId, setEditingThreadId] = useState(null);
-  const [editingReply, setEditingReply] = useState(null); // {threadId, replyId}
+  const [editingReply, setEditingReply] = useState(null);
 
   const { fetchCoursePosts, createPost, updatePost, deletePost, replyToPost } =
     useDiscussionApi();
+
+  // 🕒 Format all timestamps as UTC+10
+  const formatDateTime = (ts) => {
+    if (!ts) return "";
+    const dateUTC = new Date(ts);
+    const dateOffset = new Date(dateUTC.getTime() + 11 * 60 * 60 * 1000); // +10 h
+    return (
+      dateOffset.toLocaleString([], {
+        month: "short",
+        day: "2-digit",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: true,
+      }) 
+    );
+  };
 
   // 🚫 Restrict access if user has no view rights
   if (!canViewCourses) {
@@ -39,27 +51,41 @@ const StudentDiscussionPage = () => {
     try {
       const res = await fetchCoursePosts(cid || courseId);
       const posts = res?.posts || [];
-      const mapped = (posts || []).map((p) => ({
+
+      // Map and sort
+      const mapped = posts.map((p) => ({
         id: p.postID,
         title: p.title,
         message: p.postText,
         author: p.userID || p.author || "User",
         authorId: p.userID || p.authorId || null,
         createdAt: p.created_at || p.createdAt || null,
-        replies: (p.replies || []).map((r) => ({
-          id: r.postID,
-          text: r.postText,
-          author: r.userID || r.author || "User",
-          authorId: r.userID || r.authorId || null,
-          createdAt: r.created_at || r.createdAt || null,
-        })),
+        replies: (p.replies || [])
+          .map((r) => ({
+            id: r.postID,
+            text: r.postText,
+            author: r.userID || r.author || "User",
+            authorId: r.userID || r.authorId || null,
+            createdAt: r.created_at || r.createdAt || null,
+          }))
+          // ✅ Sort replies descending (latest first)
+          .sort(
+            (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          ),
       }));
-      setThreads(mapped);
+
+      // ✅ Sort threads descending (latest first)
+      const sortedThreads = mapped.sort(
+        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      );
+
+      setThreads(sortedThreads);
     } catch (err) {
       console.error("Failed to fetch discussions", err);
       setThreads([]);
     }
   };
+
 
   useEffect(() => {
     if (courseId) fetchDiscussions(courseId);
@@ -159,7 +185,6 @@ const StudentDiscussionPage = () => {
 
   return (
     <div className="p-6 max-w-5xl mx-auto">
-      {/* 🔹 Banner for admin/course_owner */}
       {(isAdmin || isCourseOwner) && (
         <div className="mb-4 bg-yellow-100 border-l-4 border-yellow-500 text-yellow-800 p-3 rounded">
           {isAdmin ? "Admin" : "Course Owner"} Preview Mode — view-only access.
@@ -168,7 +193,7 @@ const StudentDiscussionPage = () => {
 
       <h1 className="text-3xl font-bold text-gray-800 mb-6">💬 Discussions</h1>
 
-      {/* ✅ Hide posting form if user cannot post */}
+      {/* ✅ Posting form */}
       {canPostDiscussion ? (
         <form
           onSubmit={handleNewThread}
@@ -222,7 +247,7 @@ const StudentDiscussionPage = () => {
         </div>
       )}
 
-      {/* Threads */}
+      {/* ✅ Threads */}
       {threads.length === 0 ? (
         <p className="text-gray-500">No discussions yet.</p>
       ) : (
@@ -233,10 +258,11 @@ const StudentDiscussionPage = () => {
                 <div>
                   <h3 className="font-bold text-lg">{thread.title}</h3>
                   <p className="mt-2">{thread.message}</p>
-                  <p className="text-xs text-gray-500 mt-2">{thread.createdAt}</p>
+                  <p className="text-xs text-gray-500 mt-2">
+                    {formatDateTime(thread.createdAt)}
+                  </p>
                 </div>
 
-                {/* Thread controls only for author and posters */}
                 {canPostDiscussion &&
                   thread.authorId === (loggedInUser?.email || "anonymous") && (
                     <div className="flex gap-2 text-sm">
@@ -256,7 +282,7 @@ const StudentDiscussionPage = () => {
                   )}
               </div>
 
-              {/* Replies */}
+              {/* ✅ Replies */}
               <div className="mt-4 ml-4 border-l pl-4 space-y-2">
                 {thread.replies.map((r) => (
                   <div
@@ -266,7 +292,7 @@ const StudentDiscussionPage = () => {
                     <div>
                       <p>{r.text}</p>
                       <p className="text-xs text-gray-500">
-                        {r.author} – {r.createdAt}
+                        {r.author} – {formatDateTime(r.createdAt)}
                       </p>
                     </div>
                     {canPostDiscussion &&
@@ -290,7 +316,7 @@ const StudentDiscussionPage = () => {
                 ))}
               </div>
 
-              {/* Reply box */}
+              {/* ✅ Reply box */}
               {canPostDiscussion && (
                 <div className="mt-3">
                   <textarea
@@ -333,4 +359,4 @@ const StudentDiscussionPage = () => {
   );
 };
 
-export default beforeAuthLayout(StudentDiscussionPage);
+export default (StudentDiscussionPage);

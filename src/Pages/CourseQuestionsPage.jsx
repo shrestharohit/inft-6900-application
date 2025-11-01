@@ -16,26 +16,56 @@ const CourseQuestionsPage = () => {
 
   const { getAllDmsForUser, createDms } = useDms();
   const { loggedInUser } = useAuth();
-  const {
-    canViewCourses,
-    canSubmitQuestions,
-    isAdmin,
-    isCourseOwner,
-  } = useRoleAccess();
+  const { canViewCourses, canSubmitQuestions, isAdmin, isCourseOwner } =
+    useRoleAccess();
 
-  // 🚫 Block if no permission
-  if (!canViewCourses) {
+  // ✅ Parse timestamps safely (backend sends UTC with Z)
+  const normalizeToDate = (ts) => {
+    if (!ts) return null;
+    if (ts instanceof Date) return ts;
+
+    if (typeof ts === "number") {
+      const ms = ts > 1e12 ? ts : ts * 1000;
+      return new Date(ms);
+    }
+
+    if (typeof ts === "string") {
+      let s = ts.trim();
+      if (!/[zZ]$|[+\-]\d{2}:\d{2}$/.test(s)) s += "Z";
+      const d = new Date(s);
+      return isNaN(d) ? null : d;
+    }
+
+    const d = new Date(ts);
+    return isNaN(d) ? null : d;
+  };
+
+  // ✅ Format as UTC+10 (manual offset, always correct for your case)
+  const formatDateTime = (ts) => {
+    if (!ts) return "";
+    const dateUTC = new Date(ts);
+    const dateOffset = new Date(dateUTC.getTime() + 11 * 60 * 60 * 1000); // +10 hours
     return (
-      <div className="p-6 text-center text-red-500 font-semibold">
-        You do not have permission to view this page.
-      </div>
+      dateOffset.toLocaleString([], {
+        month: "short",
+        day: "2-digit",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: true,
+      }) 
     );
-  }
+  };
 
-  // ✅ Fetch all Q&As (DMs)
+  // ✅ Fetch & sort by newest first
   const fetchDms = () => {
     getAllDmsForUser(loggedInUser?.id)
-      .then((res) => setQuestions(res.dms))
+      .then((res) => {
+        const sorted = [...res.dms].sort(
+          (a, b) => normalizeToDate(b.created_at) - normalizeToDate(a.created_at)
+        );
+        setQuestions(sorted);
+      })
       .catch((err) => {
         console.error("Failed to fetch questions", err);
         setQuestions([]);
@@ -49,14 +79,14 @@ const CourseQuestionsPage = () => {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!newQuestion.trim()) return;
-    if (newQuestion.length > MAX_CHARS) {
+    if ((newQuestion || "").length > MAX_CHARS) {
       alert(`Question must be under ${MAX_CHARS} characters.`);
       return;
     }
 
     if (editingId) {
       const updated = questions.map((q) =>
-        q.id === editingId ? { ...q, text: newQuestion } : q
+        q.msgID === editingId ? { ...q, message: newQuestion } : q
       );
       setQuestions(updated);
       setEditingId(null);
@@ -75,13 +105,12 @@ const CourseQuestionsPage = () => {
 
   const handleDelete = (id) => {
     if (!window.confirm("Delete this question?")) return;
-    const updated = questions.filter((q) => q.id !== id);
-    setQuestions(updated);
+    setQuestions(questions.filter((q) => q.msgID !== id));
   };
 
   const handleEdit = (q) => {
-    setNewQuestion(q.text);
-    setEditingId(q.id);
+    setNewQuestion(q.message || ""); // ✅ prevent undefined
+    setEditingId(q.msgID); // ✅ use msgID
   };
 
   const cancelEdit = () => {
@@ -89,6 +118,7 @@ const CourseQuestionsPage = () => {
     setEditingId(null);
   };
 
+  // ✅ Filtering logic
   const filteredQuestions =
     filter === "all"
       ? questions
@@ -96,9 +126,17 @@ const CourseQuestionsPage = () => {
         ? questions.filter((q) => q.reply)
         : questions.filter((q) => !q.reply);
 
+  // ✅ Move permission check AFTER hooks
+  if (!canViewCourses) {
+    return (
+      <div className="p-6 text-center text-red-500 font-semibold">
+        You do not have permission to view this page.
+      </div>
+    );
+  }
+
   return (
     <div className="p-6 max-w-6xl mx-auto">
-      {/* 🔹 Banner for admin/owner */}
       {(isAdmin || isCourseOwner) && (
         <div className="mb-4 bg-yellow-100 border-l-4 border-yellow-500 text-yellow-800 p-3 rounded">
           {isAdmin ? "Admin" : "Course Owner"} Preview Mode — view-only access.
@@ -109,7 +147,7 @@ const CourseQuestionsPage = () => {
         Questions for Course Owner
       </h1>
 
-      {/* ✅ Only students can ask/edit questions */}
+      {/* ✅ Ask/edit form */}
       {canSubmitQuestions ? (
         <form
           onSubmit={handleSubmit}
@@ -127,7 +165,7 @@ const CourseQuestionsPage = () => {
           />
           <div className="flex justify-between items-center mb-3 text-sm text-gray-500">
             <span>
-              {newQuestion.length} / {MAX_CHARS} characters
+              {(newQuestion || "").length} / {MAX_CHARS} characters
             </span>
             {editingId && (
               <button
@@ -152,7 +190,7 @@ const CourseQuestionsPage = () => {
         </div>
       )}
 
-      {/* Filter */}
+      {/* ✅ Filter buttons */}
       <div className="mb-6 flex gap-3 text-sm">
         {["all", "answered", "unanswered"].map((type) => (
           <button
@@ -168,7 +206,7 @@ const CourseQuestionsPage = () => {
         ))}
       </div>
 
-      {/* Questions list */}
+      {/* ✅ Questions list */}
       <div>
         {filteredQuestions.length === 0 ? (
           <p className="text-gray-500">No questions found.</p>
@@ -180,7 +218,9 @@ const CourseQuestionsPage = () => {
                 className="border p-5 rounded-lg bg-gray-50 shadow-sm relative"
               >
                 <p className="font-semibold text-gray-800">{q.message}</p>
-                <p className="text-xs text-gray-400">{q.created_at}</p>
+                <p className="text-xs text-gray-400">
+                  {formatDateTime(q.created_at)}
+                </p>
 
                 {q.reply ? (
                   <p className="mt-2 text-green-700">
@@ -190,24 +230,22 @@ const CourseQuestionsPage = () => {
                   <p className="mt-2 text-yellow-600">⏳ Awaiting reply</p>
                 )}
 
-                {/* Delete & edit only for student who posted */}
-                {canSubmitQuestions &&
-                  q.userID === loggedInUser?.id && (
-                    <div className="absolute top-3 right-3 flex gap-3 text-xs">
-                      <button
-                        onClick={() => handleEdit(q)}
-                        className="text-blue-600 hover:underline"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => handleDelete(q.id)}
-                        className="text-red-500 hover:underline"
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  )}
+                {canSubmitQuestions && q.userID === loggedInUser?.id && (
+                  <div className="absolute top-3 right-3 flex gap-3 text-xs">
+                    <button
+                      onClick={() => handleEdit(q)}
+                      className="text-blue-600 hover:underline"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => handleDelete(q.msgID)}
+                      className="text-red-500 hover:underline"
+                    >
+                      Delete
+                    </button>
+                  </div>
+                )}
               </div>
             ))}
           </div>
@@ -217,4 +255,4 @@ const CourseQuestionsPage = () => {
   );
 };
 
-export default beforeAuthLayout(CourseQuestionsPage);
+export default (CourseQuestionsPage);
