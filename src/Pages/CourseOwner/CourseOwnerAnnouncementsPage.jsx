@@ -1,13 +1,13 @@
+// src/Pages/CourseOwner/CourseOwnerAnnouncementsPage.jsx
 import React, { useState, useEffect } from "react";
 import { useAuth } from "../../contexts/AuthContext";
-import { dummyCourses } from "../dummyData";
 import useCourseApi from "../../hooks/useCourseApi";
 import useAnnouncement from "../../hooks/useAnnouncement";
 
 const CourseOwnerAnnouncementsPage = () => {
   const { loggedInUser } = useAuth();
   const [selectedCourseId, setSelectedCourseId] = useState("");
-  const [drafts, setDrafts] = useState([]); // multiple drafts
+  const [drafts, setDrafts] = useState([]);
   const [published, setPublished] = useState([]);
   const [form, setForm] = useState({ title: "", content: "" });
   const [editingDraftId, setEditingDraftId] = useState(null);
@@ -20,6 +20,26 @@ const CourseOwnerAnnouncementsPage = () => {
     getAllAnnouncementsForCourse,
     deleteAnnouncementById,
   } = useAnnouncement();
+
+  const formatDateTime = (isoString) => {
+    if (!isoString) return "";
+
+    // Create a Date object from the ISO string (which is in UTC)
+    const dateUTC = new Date(isoString);
+
+    // Apply the 11-hour offset (11 * 60 * 60 * 1000 ms = 11 hours)
+    const dateOffset = new Date(dateUTC.getTime() + 11 * 60 * 60 * 1000); // +11 hours
+
+    // Format the date with toLocaleString
+    return dateOffset.toLocaleString([], {
+      month: "short",
+      day: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true, // Show time in 12-hour format
+    });
+  };
 
   useEffect(() => {
     let mounted = true;
@@ -39,14 +59,17 @@ const CourseOwnerAnnouncementsPage = () => {
   const fetchAnnouncements = (courseId) => {
     getAllAnnouncementsForCourse(courseId || selectedCourseId)
       .then((res) => {
-        console.log(res);
-        const draftList =
-          res.announcements?.filter((a) => a.status === "draft") || [];
-        const publishedList =
-          res.announcements
-            ?.filter((a) => a.status === "active")
-            .sort((a, b) => new Date(b.created_at) - new Date(a.created_at)) ||
-          [];
+        const all = res?.announcements || [];
+
+        // ✅ Sort both lists (descending)
+        const draftList = all
+          .filter((a) => a.status === "draft")
+          .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+        const publishedList = all
+          .filter((a) => a.status === "active")
+          .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
         setDrafts(draftList);
         setPublished(publishedList);
       })
@@ -57,7 +80,7 @@ const CourseOwnerAnnouncementsPage = () => {
       });
   };
 
-  const saveDraft = () => {
+  const saveDraft = async () => {
     if (!form.title || !form.content) {
       alert("Fill title and message before saving.");
       return;
@@ -67,10 +90,10 @@ const CourseOwnerAnnouncementsPage = () => {
       status: "draft",
     };
     if (editingDraftId) {
-      updateAnnouncement(editingDraftId, draft);
+      await updateAnnouncement(editingDraftId, draft);
       alert("Draft updated!");
     } else {
-      createAnnouncement(selectedCourseId, draft);
+      await createAnnouncement(selectedCourseId, draft);
       alert("Draft saved!");
     }
     fetchAnnouncements();
@@ -187,13 +210,13 @@ const CourseOwnerAnnouncementsPage = () => {
               <ul className="space-y-4">
                 {drafts.map((d) => (
                   <li
-                    key={d.id}
+                    key={d.announcementID}
                     className="border p-4 bg-white rounded shadow-sm"
                   >
                     <h3 className="font-bold text-lg">{d.title}</h3>
                     <p className="text-gray-700 mt-1">{d.content}</p>
                     <p className="text-xs text-gray-400 mt-2">
-                      Draft created: {d.createdAt}
+                      Draft created: {formatDateTime(d.created_at)}
                     </p>
                     <div className="flex gap-2 mt-3">
                       <button
@@ -232,13 +255,13 @@ const CourseOwnerAnnouncementsPage = () => {
               <ul className="space-y-4">
                 {published.map((a) => (
                   <li
-                    key={a.id}
+                    key={a.announcementID}
                     className="border p-4 bg-white rounded shadow-sm"
                   >
                     <h3 className="font-bold text-lg">{a.title}</h3>
                     <p className="text-gray-700 mt-1">{a.content}</p>
                     <p className="text-xs text-gray-400 mt-2">
-                      Published at: {a.publishedAt}
+                      Published at: {formatDateTime(a.created_at)}
                     </p>
                   </li>
                 ))}

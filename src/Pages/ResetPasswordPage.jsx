@@ -1,3 +1,4 @@
+// src/Pages/resetPasswordPage.jsx
 import React, { useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import * as Yup from "yup";
@@ -5,7 +6,7 @@ import registration_image from "../assets/Images/registration_image.png";
 import beforeAuthLayout from "../components/BeforeAuth";
 import useUserApi from "../hooks/useUserApi";
 
-// ✅ Define Yup validation schema (same as registration)
+// ✅ Yup validation schema
 const resetPasswordSchema = Yup.object().shape({
   newPassword: Yup.string()
     .min(8, "Password must be at least 8 characters")
@@ -76,10 +77,35 @@ const ResetPasswordPage = () => {
     }
   };
 
-  // ✅ Red border helper
   const inputClass = (field) =>
-    `w-full border rounded-md px-4 py-3 focus:ring-2 focus:ring-blue-500 ${error[field] ? "border-red-500 focus:ring-red-500" : "border-gray-300"
+    `w-full border rounded-md px-4 py-3 focus:ring-2 focus:ring-blue-500 ${error[field]
+      ? "border-red-500 focus:ring-red-500"
+      : "border-gray-300"
     }`;
+
+  // ✅ Password validation rules for live feedback
+  const passwordValidations = [
+    {
+      label: "At least 8 characters",
+      test: (v) => v.length >= 8,
+    },
+    {
+      label: "Contains an uppercase letter",
+      test: (v) => /[A-Z]/.test(v),
+    },
+    {
+      label: "Contains a lowercase letter",
+      test: (v) => /[a-z]/.test(v),
+    },
+    {
+      label: "Contains a number",
+      test: (v) => /[0-9]/.test(v),
+    },
+    {
+      label: "Contains a special character (@, $, !, %, *, ?, &)",
+      test: (v) => /[@$!%*?&]/.test(v),
+    },
+  ];
 
   return (
     <div className="flex flex-col md:flex-row bg-white shadow-lg rounded-lg max-w-6xl w-full mx-auto my-16 p-10">
@@ -118,8 +144,27 @@ const ResetPasswordPage = () => {
             >
               {showPassword ? "Hide" : "Show"}
             </button>
+
+            {/* ✅ Password strength guide */}
+            <div className="bg-gray-50 p-2 rounded-md mt-2 text-xs space-y-1">
+              {passwordValidations.map((rule, i) => (
+                <p
+                  key={i}
+                  className={
+                    rule.test(formData.newPassword)
+                      ? "text-green-600"
+                      : "text-gray-500"
+                  }
+                >
+                  • {rule.label}
+                </p>
+              ))}
+            </div>
+
             {error.newPassword && (
-              <p className="text-red-600 text-sm mt-1">{error.newPassword}</p>
+              <p className="text-red-600 text-sm mt-1">
+                {error.newPassword}
+              </p>
             )}
           </div>
 
@@ -135,6 +180,15 @@ const ResetPasswordPage = () => {
               className={inputClass("confirmPassword")}
               placeholder="Confirm your new password"
             />
+
+            {/* ✅ Live match indicator */}
+            {formData.confirmPassword &&
+              formData.confirmPassword === formData.newPassword && (
+                <p className="text-green-600 text-xs mt-1">
+                  ✅ Passwords match
+                </p>
+              )}
+
             {error.confirmPassword && (
               <p className="text-red-600 text-sm mt-1">
                 {error.confirmPassword}
@@ -160,7 +214,7 @@ const ResetPasswordPage = () => {
             </button>
           </div>
 
-          {/* Back to Login Link */}
+          {/* Back to Login */}
           <div className="text-center mt-4">
             <Link to="/login" className="text-sm text-blue-600 hover:underline">
               Back to Login

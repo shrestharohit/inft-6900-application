@@ -1,3 +1,4 @@
+// src/Pages/registration.jsx
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { registerUser } from "../api/user";
@@ -78,7 +79,8 @@ function RegistrationForm() {
             } catch (err) {
                 console.error("❌ Registration error:", err);
                 setError(
-                    err?.response?.data?.message || "Registration failed. Please try again."
+                    err?.response?.data?.message ||
+                    "Registration failed. Please try again."
                 );
             } finally {
                 setLoading(false);
@@ -92,11 +94,34 @@ function RegistrationForm() {
             : "border-gray-300"
         }`;
 
-    // ✅ When user clicks “Agree” in modal
     const handleAgreeTerms = () => {
         formik.setFieldValue("termsAgreed", true);
         setShowTerms(false);
     };
+
+    // ✅ Password strength helper
+    const passwordValidations = [
+        {
+            label: "At least 8 characters",
+            test: (v) => v.length >= 8,
+        },
+        {
+            label: "Contains an uppercase letter",
+            test: (v) => /[A-Z]/.test(v),
+        },
+        {
+            label: "Contains a lowercase letter",
+            test: (v) => /[a-z]/.test(v),
+        },
+        {
+            label: "Contains a number",
+            test: (v) => /[0-9]/.test(v),
+        },
+        {
+            label: "Contains a special character (@, $, !, %, *, ?, &)",
+            test: (v) => /[@$!%*?&]/.test(v),
+        },
+    ];
 
     return (
         <div className="flex flex-col md:flex-row bg-white shadow-lg rounded-lg max-w-6xl w-full mx-auto my-16 p-10 relative">
@@ -194,6 +219,24 @@ function RegistrationForm() {
                                 {showPassword ? "Hide" : "Show"}
                             </button>
                         </div>
+
+                        {/* ✅ Password strength guide */}
+                        <div className="bg-gray-50 p-2 rounded-md mt-2 text-xs space-y-1">
+                            {passwordValidations.map((rule, i) => (
+                                <p
+                                    key={i}
+                                    className={
+                                        rule.test(formik.values.password)
+                                            ? "text-green-600"
+                                            : "text-gray-500"
+                                    }
+                                >
+                                    • {rule.label}
+                                </p>
+                            ))}
+                        </div>
+
+                        {/* Error */}
                         {formik.touched.password && formik.errors.password && (
                             <p className="text-red-500 text-sm mt-1">
                                 {formik.errors.password}
@@ -203,7 +246,9 @@ function RegistrationForm() {
 
                     {/* Confirm Password */}
                     <div>
-                        <label className="block font-semibold mb-1">Confirm Password</label>
+                        <label className="block font-semibold mb-1">
+                            Confirm Password
+                        </label>
                         <div className="relative">
                             <input
                                 type={showPassword ? "text" : "password"}
@@ -222,11 +267,21 @@ function RegistrationForm() {
                                 {showPassword ? "Hide" : "Show"}
                             </button>
                         </div>
-                        {formik.touched.confirmPassword && formik.errors.confirmPassword && (
-                            <p className="text-red-500 text-sm mt-1">
-                                {formik.errors.confirmPassword}
-                            </p>
-                        )}
+
+                        {/* ✅ Live match indicator */}
+                        {formik.values.confirmPassword &&
+                            formik.values.confirmPassword === formik.values.password && (
+                                <p className="text-green-600 text-xs mt-1">
+                                    ✅ Passwords match
+                                </p>
+                            )}
+
+                        {formik.touched.confirmPassword &&
+                            formik.errors.confirmPassword && (
+                                <p className="text-red-500 text-sm mt-1">
+                                    {formik.errors.confirmPassword}
+                                </p>
+                            )}
                     </div>
 
                     {/* Terms Checkbox */}
@@ -258,7 +313,7 @@ function RegistrationForm() {
                         </p>
                     )}
 
-                    {/* Submit Button */}
+                    {/* Submit */}
                     <button
                         type="submit"
                         disabled={loading}
@@ -288,7 +343,7 @@ function RegistrationForm() {
                 </form>
             </div>
 
-            {/* 🧾 Terms & Conditions Modal */}
+            {/* 🧾 Terms Modal */}
             {showTerms && (
                 <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
                     <div className="bg-white rounded-lg shadow-lg w-11/12 md:w-2/3 lg:w-1/2 max-h-[80vh] overflow-y-auto p-6">
@@ -296,18 +351,19 @@ function RegistrationForm() {
                             Terms and Conditions
                         </h2>
                         <p className="text-gray-700 leading-relaxed mb-3">
-                            Welcome to our platform! These Terms and Conditions outline the rules and
-                            regulations for using this website. By registering, you agree to comply with
-                            all applicable laws and respect the privacy of others.
+                            Welcome to our platform! These Terms and Conditions outline the
+                            rules and regulations for using this website. By registering, you
+                            agree to comply with all applicable laws and respect the privacy
+                            of others.
                         </p>
                         <p className="text-gray-700 leading-relaxed mb-3">
-                            Your data will be used solely for improving user experience. We do not sell
-                            or share personal information without consent. You may close your account at
-                            any time by contacting support.
+                            Your data will be used solely for improving user experience. We do
+                            not sell or share personal information without consent. You may
+                            close your account at any time by contacting support.
                         </p>
                         <p className="text-gray-700 leading-relaxed mb-6">
-                            By clicking “Agree,” you accept that any violation of these terms may result
-                            in suspension or termination of your account.
+                            By clicking “Agree,” you accept that any violation of these terms
+                            may result in suspension or termination of your account.
                         </p>
                         <div className="flex justify-end gap-3">
                             <button

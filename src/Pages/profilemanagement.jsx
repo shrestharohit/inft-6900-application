@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from "react";
 import * as Yup from "yup";
-import { useNavigate } from "react-router-dom";
 import beforeAuthLayout from "../components/BeforeAuth";
 import { useAuth } from "../contexts/AuthContext";
 import useUserApi from "../hooks/useUserApi";
 
-// ✅ Define Yup validation schema
+// ✅ Validation schema with all rules
 const profileSchema = Yup.object().shape({
   firstName: Yup.string()
     .min(2, "First name must be at least 2 characters")
@@ -41,8 +40,7 @@ const profileSchema = Yup.object().shape({
   }),
 });
 
-function ProfileManagement({ setIsLoggedIn }) {
-  const navigate = useNavigate();
+function ProfileManagement() {
   const { loggedInUser, setUserDataInState } = useAuth();
   const { updateUser } = useUserApi();
 
@@ -83,7 +81,6 @@ function ProfileManagement({ setIsLoggedIn }) {
     setSuccessMsg("");
 
     try {
-      // ✅ Validate form data with Yup
       await profileSchema.validate(formData, { abortEarly: false });
 
       setLoading(true);
@@ -119,8 +116,26 @@ function ProfileManagement({ setIsLoggedIn }) {
   const togglePasswordVisibility = () => setShowPassword(!showPassword);
 
   const inputClass = (field) =>
-    `w-full px-4 py-3 border rounded-md focus:ring-2 focus:ring-blue-500 ${errors[field] ? "border-red-500 focus:ring-red-500" : "border-gray-300"
+    `w-full px-4 py-3 border rounded-md focus:ring-2 focus:ring-blue-500 ${errors[field]
+      ? "border-red-500 focus:ring-red-500"
+      : "border-gray-300"
     }`;
+
+  // ✅ Password rule checks
+  const passwordRules = [
+    { label: "At least 8 characters", test: (v) => v.length >= 8 },
+    { label: "Contains an uppercase letter", test: (v) => /[A-Z]/.test(v) },
+    { label: "Contains a lowercase letter", test: (v) => /[a-z]/.test(v) },
+    { label: "Contains a number", test: (v) => /[0-9]/.test(v) },
+    {
+      label: "Contains a special character (@, $, !, %, *, ?, &)",
+      test: (v) => /[@$!%*?&]/.test(v),
+    },
+    {
+      label: "Not the same as current password",
+      test: (v) => v && v !== formData.currentPassword,
+    },
+  ];
 
   return (
     <div className="flex justify-center items-center p-6 min-h-screen bg-gray-100">
@@ -215,6 +230,23 @@ function ProfileManagement({ setIsLoggedIn }) {
             >
               {showPassword ? "Hide" : "Show"}
             </button>
+
+            {/* ✅ Always show password rules */}
+            <div className="bg-gray-50 p-2 rounded-md mt-2 text-xs space-y-1">
+              {passwordRules.map((rule, i) => (
+                <p
+                  key={i}
+                  className={
+                    rule.test(formData.newPassword)
+                      ? "text-green-600"
+                      : "text-gray-500"
+                  }
+                >
+                  • {rule.label}
+                </p>
+              ))}
+            </div>
+
             {errors.newPassword && (
               <p className="text-red-600 text-sm mt-1">{errors.newPassword}</p>
             )}
@@ -232,6 +264,10 @@ function ProfileManagement({ setIsLoggedIn }) {
               onChange={handleChange}
               className={inputClass("confirmPassword")}
             />
+            {formData.confirmPassword &&
+              formData.confirmPassword === formData.newPassword && (
+                <p className="text-green-600 text-xs mt-1">✅ Passwords match</p>
+              )}
             {errors.confirmPassword && (
               <p className="text-red-600 text-sm mt-1">
                 {errors.confirmPassword}
@@ -257,9 +293,33 @@ function ProfileManagement({ setIsLoggedIn }) {
               type="button"
               onClick={handleSave}
               disabled={loading}
-              className={`w-full py-3 text-white font-semibold rounded-md transition ${loading ? "bg-green-300" : "bg-green-500 hover:bg-green-600"
+              className={`w-full py-3 text-white font-semibold rounded-md transition flex justify-center items-center gap-2 ${loading
+                  ? "bg-green-300 cursor-not-allowed"
+                  : "bg-green-500 hover:bg-green-600"
                 }`}
             >
+              {loading && (
+                <svg
+                  className="animate-spin h-5 w-5 text-white"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  ></circle>
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                  ></path>
+                </svg>
+              )}
               {loading ? "Saving..." : "Save Changes"}
             </button>
           </div>
