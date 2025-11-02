@@ -19,7 +19,7 @@ const CourseQuestionsPage = () => {
   const { canViewCourses, canSubmitQuestions, isAdmin, isCourseOwner } =
     useRoleAccess();
 
-  // ✅ Parse timestamps safely (backend sends UTC with Z)
+  // Parse timestamps safely
   const normalizeToDate = (ts) => {
     if (!ts) return null;
     if (ts instanceof Date) return ts;
@@ -40,7 +40,7 @@ const CourseQuestionsPage = () => {
     return isNaN(d) ? null : d;
   };
 
-  // ✅ Format as UTC+10 (manual offset, always correct for your case)
+  // Format as UTC+10
   const formatDateTime = (ts) => {
     if (!ts) return "";
     const dateUTC = new Date(ts);
@@ -57,7 +57,7 @@ const CourseQuestionsPage = () => {
     );
   };
 
-  // ✅ Fetch & sort by newest first
+  // Fetch & sort by newest first
   const fetchDms = () => {
     getAllDmsForUser(loggedInUser?.id)
       .then((res) => {
@@ -109,8 +109,8 @@ const CourseQuestionsPage = () => {
   };
 
   const handleEdit = (q) => {
-    setNewQuestion(q.message || ""); // ✅ prevent undefined
-    setEditingId(q.msgID); // ✅ use msgID
+    setNewQuestion(q.message || ""); // prevent undefined
+    setEditingId(q.msgID); // use msgID
   };
 
   const cancelEdit = () => {
@@ -118,7 +118,7 @@ const CourseQuestionsPage = () => {
     setEditingId(null);
   };
 
-  // ✅ Filtering logic
+  // Filtering logic
   const filteredQuestions =
     filter === "all"
       ? questions
@@ -126,7 +126,6 @@ const CourseQuestionsPage = () => {
         ? questions.filter((q) => q.reply)
         : questions.filter((q) => !q.reply);
 
-  // ✅ Move permission check AFTER hooks
   if (!canViewCourses) {
     return (
       <div className="p-6 text-center text-red-500 font-semibold">
@@ -147,7 +146,7 @@ const CourseQuestionsPage = () => {
         Questions for Course Owner
       </h1>
 
-      {/* ✅ Ask/edit form */}
+      {/* Ask/edit form */}
       {canSubmitQuestions ? (
         <form
           onSubmit={handleSubmit}
@@ -190,7 +189,7 @@ const CourseQuestionsPage = () => {
         </div>
       )}
 
-      {/* ✅ Filter buttons */}
+      {/* Filter buttons */}
       <div className="mb-6 flex gap-3 text-sm">
         {["all", "answered", "unanswered"].map((type) => (
           <button
@@ -206,7 +205,7 @@ const CourseQuestionsPage = () => {
         ))}
       </div>
 
-      {/* ✅ Questions list */}
+      {/* Questions list */}
       <div>
         {filteredQuestions.length === 0 ? (
           <p className="text-gray-500">No questions found.</p>
@@ -230,7 +229,8 @@ const CourseQuestionsPage = () => {
                   <p className="mt-2 text-yellow-600">⏳ Awaiting reply</p>
                 )}
 
-                {canSubmitQuestions && q.userID === loggedInUser?.id && (
+                {/* ✅ Only show edit/delete if user owns question AND it has no reply */}
+                {canSubmitQuestions && q.userID === loggedInUser?.id && !q.reply && (
                   <div className="absolute top-3 right-3 flex gap-3 text-xs">
                     <button
                       onClick={() => handleEdit(q)}
@@ -255,4 +255,4 @@ const CourseQuestionsPage = () => {
   );
 };
 
-export default (CourseQuestionsPage);
+export default CourseQuestionsPage;
