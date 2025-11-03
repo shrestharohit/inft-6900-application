@@ -11,7 +11,11 @@ const pathwayCourseMap = {
 };
 
 export const AuthProvider = ({ children }) => {
-  const [loggedInUser, setLoggedInUser] = useState(null);
+  // ✅ Restore user instantly from localStorage (prevents undefined on first render)
+  const [loggedInUser, setLoggedInUser] = useState(() => {
+    const storedUser = localStorage.getItem("user");
+    return storedUser ? JSON.parse(storedUser) : null;
+  });
 
   const getTargetRoute = (role) => {
     switch (role) {
@@ -33,27 +37,15 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // useEffect(() => {
-  //   const storedUser = localStorage.getItem("user") || null;
-  //   const parsedUser = storedUser ? JSON.parse(storedUser) : null;
-
-  //   if (parsedUser) {
-  //     setLoggedInUser(parsedUser);
-  //     redirectBasedOnRole(parsedUser);
-  //   }
-  // }, []);
-
+  // ✅ Ensure correct redirect after refresh or direct visit
   useEffect(() => {
-    const storedUser = localStorage.getItem("user") || null;
+    const storedUser = localStorage.getItem("user");
     const parsedUser = storedUser ? JSON.parse(storedUser) : null;
 
     if (parsedUser) {
       setLoggedInUser(parsedUser);
 
-      // ✅ Only redirect if user is not already on a valid route
       const path = window.location.pathname;
-
-      // Allow user to stay where they are if they already navigated within the app
       const isPublicPath = ["/", "/login", "/registration"].includes(path);
 
       if (isPublicPath) {
@@ -62,9 +54,12 @@ export const AuthProvider = ({ children }) => {
     }
   }, []);
 
-
+  // ✅ Persist user (store both full object and userId separately)
   const persistUser = (updatedUser) => {
     localStorage.setItem("user", JSON.stringify(updatedUser));
+    if (updatedUser?.id) {
+      localStorage.setItem("userId", updatedUser.id);
+    }
     setLoggedInUser(updatedUser);
   };
 
@@ -74,8 +69,10 @@ export const AuthProvider = ({ children }) => {
     redirectBasedOnRole(user);
   };
 
+  // ✅ Clear user data safely
   const clearUserDataFromState = () => {
     localStorage.removeItem("user");
+    localStorage.removeItem("userId");
     setLoggedInUser(null);
     window.location.href = ROUTES.DEFAULT;
   };
@@ -165,7 +162,7 @@ export const AuthProvider = ({ children }) => {
         clearUserDataFromState,
         enrollInPathway,
         completeCourse,
-        disenrollFromPathway,  // ✅ new
+        disenrollFromPathway,
       }}
     >
       {children}
