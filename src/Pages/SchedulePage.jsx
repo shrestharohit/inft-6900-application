@@ -305,7 +305,6 @@ const SchedulePage = () => {
   const [newSession, setNewSession] = useState({ date: "", startTime: "", endTime: "" });
   const [editingSession, setEditingSession] = useState({ moduleId: null, sessionIdx: null });
 
-  // 🚫 Restrict unauthorized users
   if (!canViewCourses) {
     return (
       <div className="p-6 text-center text-red-500 font-semibold">
@@ -314,7 +313,6 @@ const SchedulePage = () => {
     );
   }
 
-  // Load saved data
   useEffect(() => {
     const savedData = localStorage.getItem("studyModules");
     if (savedData) {
@@ -326,24 +324,27 @@ const SchedulePage = () => {
     }
   }, []);
 
-  // Save data on modules change
   useEffect(() => {
     localStorage.setItem("studyModules", JSON.stringify(modules));
   }, [modules]);
 
   const formatTime = (timeStr) => (timeStr ? moment(timeStr, "HH:mm").format("hh:mm A") : "");
+
   const calculateHours = (start, end) => {
     const diff = (new Date(`2020-01-01T${end}:00`) - new Date(`2020-01-01T${start}:00`)) / (1000 * 60 * 60);
     return diff > 0 ? parseFloat(diff.toFixed(2)) : 0;
   };
-  const getTotalStudyHours = (sessions) => parseFloat(sessions.reduce((sum, s) => sum + (s.duration || 0), 0).toFixed(2));
+
+  const getTotalStudyHours = (sessions) =>
+    parseFloat(sessions.reduce((sum, s) => sum + (s.duration || 0), 0).toFixed(2));
+
   const formatDuration = (decimalHours) => {
     const h = Math.floor(decimalHours);
     const m = Math.round((decimalHours - h) * 60);
     return `${h}h ${m}m`;
   };
 
-  // 🔹 Add/Edit session (students only)
+  // Add/Edit session (no restriction on hours)
   const handleAddOrEditSession = () => {
     if (!canSchedule) return alert("You do not have permission to modify schedule.");
     if (!selectedModule) return alert("Please select a module first.");
@@ -352,26 +353,20 @@ const SchedulePage = () => {
     const duration = calculateHours(newSession.startTime, newSession.endTime);
     if (duration <= 0) return alert("End time must be after start time.");
 
-    const currentScheduled = getTotalStudyHours(selectedModule.sessions);
     const isEditing = editingSession.sessionIdx !== null;
 
-    const totalAfter = isEditing
-      ? currentScheduled - selectedModule.sessions[editingSession.sessionIdx].duration + duration
-      : currentScheduled + duration;
-
-    if (totalAfter > selectedModule.expectedHours)
-      return alert(`Cannot exceed expected hours (${formatDuration(selectedModule.expectedHours)}) for this module.`);
-
     setModules((prev) =>
-      prev.map((mod) =>
-        mod.id === selectedModule.id
+      prev.map((m) =>
+        m.id === selectedModule.id
           ? {
-            ...mod,
-            sessions: isEditing
-              ? mod.sessions.map((s, idx) => (idx === editingSession.sessionIdx ? { ...newSession, duration } : s))
-              : [...mod.sessions, { ...newSession, duration }],
-          }
-          : mod
+              ...m,
+              sessions: isEditing
+                ? m.sessions.map((s, idx) =>
+                    idx === editingSession.sessionIdx ? { ...newSession, duration } : s
+                  )
+                : [...m.sessions, { ...newSession, duration }],
+            }
+          : m
       )
     );
 
@@ -432,7 +427,6 @@ const SchedulePage = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-6xl mx-auto py-12 px-4">
-        {/* 🔹 Banner for admins/owners */}
         {(isAdmin || isCourseOwner) && (
           <div className="mb-6 bg-yellow-100 border-l-4 border-yellow-500 text-yellow-800 p-3 rounded">
             {isAdmin ? "Admin" : "Course Owner"} Preview Mode — view-only access.
@@ -444,7 +438,6 @@ const SchedulePage = () => {
           <p className="text-gray-600 mt-2">Manage your study modules and sessions easily.</p>
         </div>
 
-        {/* Only show Add/Edit form for students */}
         {canSchedule && (
           <div className="bg-white rounded-3xl shadow-lg p-6 mb-10 border border-gray-200">
             <h2 className="text-2xl font-semibold text-gray-800 mb-6">Add / Edit Session</h2>
@@ -509,7 +502,6 @@ const SchedulePage = () => {
           </div>
         )}
 
-        {/* Module List */}
         <div className="space-y-6">
           {modules.map((mod) => (
             <div
@@ -563,7 +555,6 @@ const SchedulePage = () => {
           ))}
         </div>
 
-        {/* Calendar */}
         <div className="mt-10 bg-white rounded-2xl shadow-md p-5">
           <Calendar
             localizer={localizer}
@@ -589,3 +580,4 @@ const SchedulePage = () => {
 };
 
 export default SchedulePage;
+
