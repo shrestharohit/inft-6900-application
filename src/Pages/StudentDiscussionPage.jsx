@@ -20,21 +20,42 @@ const StudentDiscussionPage = () => {
   const { fetchCoursePosts, createPost, updatePost, deletePost, replyToPost } =
     useDiscussionApi();
 
-  // 🕒 Format all timestamps as UTC+10
+  // ✅ Parse DB timestamps already in local (Sydney) format
+  const normalizeToDate = (ts) => {
+    if (!ts) return null;
+    if (ts instanceof Date) return ts;
+
+    if (typeof ts === "number") {
+      const ms = ts > 1e12 ? ts : ts * 1000;
+      return new Date(ms);
+    }
+
+    if (typeof ts === "string") {
+      let s = ts.trim();
+      // Convert "YYYY-MM-DD HH:mm:ss" → "YYYY-MM-DDTHH:mm:ss"
+      if (s.includes(" ") && !s.includes("T")) s = s.replace(" ", "T");
+      // ⚠️ DO NOT append "Z" — treat as local Sydney time
+      const d = new Date(s);
+      return isNaN(d) ? null : d;
+    }
+
+    const d = new Date(ts);
+    return isNaN(d) ? null : d;
+  };
+
+  // ✅ Format Sydney-local time properly
   const formatDateTime = (ts) => {
-    if (!ts) return "";
-    const dateUTC = new Date(ts);
-    const dateOffset = new Date(dateUTC.getTime() + 11 * 60 * 60 * 1000); // +10 h
-    return (
-      dateOffset.toLocaleString([], {
-        month: "short",
-        day: "2-digit",
-        year: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-        hour12: true,
-      }) 
-    );
+    const date = normalizeToDate(ts);
+    if (!date) return "";
+    return new Intl.DateTimeFormat("en-AU", {
+      timeZone: "Australia/Sydney",
+      month: "short",
+      day: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+    }).format(date);
   };
 
   // 🚫 Restrict access if user has no view rights
@@ -52,31 +73,26 @@ const StudentDiscussionPage = () => {
       const res = await fetchCoursePosts(cid || courseId);
       const posts = res?.posts || [];
 
-      // Map and sort
       const mapped = posts.map((p) => ({
         id: p.postID,
         title: p.title,
         message: p.postText,
         author: p.userID || p.author || "User",
         authorId: p.userID || p.authorId || null,
-        createdAt: p.created_at || p.createdAt || null,
+        createdAt: normalizeToDate(p.created_at || p.createdAt),
         replies: (p.replies || [])
           .map((r) => ({
             id: r.postID,
             text: r.postText,
             author: r.userID || r.author || "User",
             authorId: r.userID || r.authorId || null,
-            createdAt: r.created_at || r.createdAt || null,
+            createdAt: normalizeToDate(r.created_at || r.createdAt),
           }))
-          // ✅ Sort replies descending (latest first)
-          .sort(
-            (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-          ),
+          .sort((a, b) => b.createdAt - a.createdAt),
       }));
 
-      // ✅ Sort threads descending (latest first)
       const sortedThreads = mapped.sort(
-        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        (a, b) => b.createdAt - a.createdAt
       );
 
       setThreads(sortedThreads);
@@ -85,7 +101,6 @@ const StudentDiscussionPage = () => {
       setThreads([]);
     }
   };
-
 
   useEffect(() => {
     if (courseId) fetchDiscussions(courseId);
@@ -104,16 +119,27 @@ const StudentDiscussionPage = () => {
         });
         alert("Thread updated!");
       } else {
-        await createPost(courseId, {
+        const res = await createPost(courseId, {
           userID: loggedInUser?.id,
           title: newThread.title,
           postText: newThread.message,
         });
-        alert("Thread created!");
+
+        // ✅ Add instantly without refetch (prevents flicker)
+        const newThreadData = {
+          id: res?.data?.postID || Math.random().toString(36),
+          title: newThread.title,
+          message: newThread.message,
+          author: loggedInUser?.email || "User",
+          authorId: loggedInUser?.id,
+          createdAt: new Date(),
+          replies: [],
+        };
+        setThreads((prev) => [newThreadData, ...prev]);
       }
+
       setEditingThreadId(null);
       setNewThread({ title: "", message: "" });
-      await fetchDiscussions(courseId);
     } catch (err) {
       console.error("Failed to save thread", err);
       alert("Failed to save thread");
@@ -129,15 +155,31 @@ const StudentDiscussionPage = () => {
       if (editingReply && editingReply.threadId === threadId) {
         await updatePost(editingReply.replyId, {
           postText: text,
-          title: threads.find((t) => t.id === threadId)?.title,
         });
       } else {
-        await replyToPost(threadId, {
+        const res = await replyToPost(threadId, {
           userID: loggedInUser?.id,
           postText: text,
         });
+
+        // ✅ Append reply locally to avoid re-fetch flicker
+        const newReply = {
+          id: res?.data?.postID || Math.random().toString(36),
+          text,
+          author: loggedInUser?.email || "User",
+          authorId: loggedInUser?.id,
+          createdAt: new Date(),
+        };
+
+        setThreads((prev) =>
+          prev.map((t) =>
+            t.id === threadId
+              ? { ...t, replies: [newReply, ...t.replies] }
+              : t
+          )
+        );
       }
-      await fetchDiscussions(courseId);
+
       setReplyText({ ...replyText, [threadId]: "" });
       setEditingReply(null);
     } catch (err) {
@@ -150,9 +192,7 @@ const StudentDiscussionPage = () => {
     if (!window.confirm("Delete this thread?")) return;
     try {
       await deletePost(threadId);
-      setNewThread({ title: "", message: "" });
-      setEditingThreadId(null);
-      await fetchDiscussions(courseId);
+      setThreads((prev) => prev.filter((t) => t.id !== threadId));
     } catch (err) {
       console.error("Failed to delete thread", err);
       alert("Failed to delete thread");
@@ -169,9 +209,13 @@ const StudentDiscussionPage = () => {
     if (!window.confirm("Delete this reply?")) return;
     try {
       await deletePost(replyId);
-      setReplyText({ ...replyText, [threadId]: "" });
-      setEditingReply(null);
-      await fetchDiscussions(courseId);
+      setThreads((prev) =>
+        prev.map((t) =>
+          t.id === threadId
+            ? { ...t, replies: t.replies.filter((r) => r.id !== replyId) }
+            : t
+        )
+      );
     } catch (err) {
       console.error("Failed to delete reply", err);
       alert("Failed to delete reply");
@@ -359,4 +403,4 @@ const StudentDiscussionPage = () => {
   );
 };
 
-export default (StudentDiscussionPage);
+export default StudentDiscussionPage;

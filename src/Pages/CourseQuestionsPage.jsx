@@ -19,12 +19,11 @@ const CourseQuestionsPage = () => {
   const { canViewCourses, canSubmitQuestions, isAdmin, isCourseOwner } =
     useRoleAccess();
 
-  // ✅ Parse DB timestamps safely as UTC and convert properly to local
+  // ✅ Parse timestamps already in local (Sydney) time
   const normalizeToDate = (ts) => {
     if (!ts) return null;
     if (ts instanceof Date) return ts;
 
-    // Handle numeric timestamps
     if (typeof ts === "number") {
       const ms = ts > 1e12 ? ts : ts * 1000;
       return new Date(ms);
@@ -32,16 +31,8 @@ const CourseQuestionsPage = () => {
 
     if (typeof ts === "string") {
       let s = ts.trim();
-
-      // Convert "YYYY-MM-DD HH:mm:ss" → "YYYY-MM-DDTHH:mm:ssZ"
-      if (s.includes(" ") && !s.includes("T")) {
-        s = s.replace(" ", "T");
-      }
-      if (!/[zZ]$|[+\-]\d{2}:\d{2}$/.test(s)) {
-        s += "Z"; // ✅ explicitly mark as UTC
-      }
-
-      const d = new Date(s);
+      if (s.includes(" ") && !s.includes("T")) s = s.replace(" ", "T");
+      const d = new Date(s); // ⚠️ treat as local, don't add "Z"
       return isNaN(d) ? null : d;
     }
 
@@ -49,13 +40,12 @@ const CourseQuestionsPage = () => {
     return isNaN(d) ? null : d;
   };
 
-
-  // ✅ Convert UTC → Australia/Sydney for display
+  // ✅ Format Sydney-local time
   const formatDateTime = (ts) => {
     const date = normalizeToDate(ts);
     if (!date) return "";
 
-    return date.toLocaleString("en-AU", {
+    const formatted = new Intl.DateTimeFormat("en-AU", {
       timeZone: "Australia/Sydney",
       month: "short",
       day: "2-digit",
@@ -63,33 +53,38 @@ const CourseQuestionsPage = () => {
       hour: "2-digit",
       minute: "2-digit",
       hour12: true,
-    });
+    }).format(date);
+
+    return formatted;
   };
 
-
-  // ✅ Fetch & sort by newest first
-  const fetchDms = () => {
-    getAllDmsForUser(loggedInUser?.id)
-      .then((res) => {
-        const sorted = [...res.dms].sort(
-          (a, b) => normalizeToDate(b.created_at) - normalizeToDate(a.created_at)
-        );
-        setQuestions(sorted);
-      })
-      .catch((err) => {
-        console.error("Failed to fetch questions", err);
-        setQuestions([]);
+  // ✅ Fetch & sort messages (normalize strings only)
+  const fetchDms = async () => {
+    try {
+      const res = await getAllDmsForUser(loggedInUser?.id);
+      const normalized = (res.dms || []).map((d) => {
+        if (typeof d.created_at === "string") {
+          return { ...d, created_at: normalizeToDate(d.created_at) };
+        }
+        return d; // already normalized
       });
+      const sorted = normalized.sort((a, b) => b.created_at - a.created_at);
+      setQuestions(sorted);
+    } catch (err) {
+      console.error("Failed to fetch questions", err);
+      setQuestions([]);
+    }
   };
 
   useEffect(() => {
     if (loggedInUser?.id) fetchDms();
   }, [getAllDmsForUser, loggedInUser?.id]);
 
-  const handleSubmit = (e) => {
+  // ✅ Handle submit safely (no double re-fetch)
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!newQuestion.trim()) return;
-    if ((newQuestion || "").length > MAX_CHARS) {
+    if (newQuestion.length > MAX_CHARS) {
       alert(`Question must be under ${MAX_CHARS} characters.`);
       return;
     }
@@ -106,21 +101,34 @@ const CourseQuestionsPage = () => {
         courseID: courseId,
         message: newQuestion,
       };
-      createDms(question)
-        .then(() => fetchDms())
-        .catch((err) => console.error("Failed to create question", err));
+
+      try {
+        const res = await createDms(question);
+        // ✅ Normalize immediately before adding
+        const newQ = {
+          ...(res.data || res.dms || question),
+          created_at: normalizeToDate(
+            res.data?.created_at || res.dms?.created_at || new Date()
+          ),
+        };
+        // Add new question instantly (no re-fetch)
+        setQuestions((prev) => [newQ, ...prev]);
+      } catch (err) {
+        console.error("Failed to create question", err);
+      }
     }
+
     setNewQuestion("");
   };
 
   const handleDelete = (id) => {
     if (!window.confirm("Delete this question?")) return;
-    setQuestions(questions.filter((q) => q.msgID !== id));
+    setQuestions((prev) => prev.filter((q) => q.msgID !== id));
   };
 
   const handleEdit = (q) => {
-    setNewQuestion(q.message || ""); // ✅ prevent undefined
-    setEditingId(q.msgID); // ✅ use msgID
+    setNewQuestion(q.message || "");
+    setEditingId(q.msgID);
   };
 
   const cancelEdit = () => {
@@ -136,7 +144,7 @@ const CourseQuestionsPage = () => {
         ? questions.filter((q) => q.reply)
         : questions.filter((q) => !q.reply);
 
-  // ✅ Move permission check AFTER hooks
+  // ✅ Permission guard
   if (!canViewCourses) {
     return (
       <div className="p-6 text-center text-red-500 font-semibold">
@@ -265,4 +273,4 @@ const CourseQuestionsPage = () => {
   );
 };
 
-export default (CourseQuestionsPage);
+export default CourseQuestionsPage;
