@@ -19,11 +19,12 @@ const CourseQuestionsPage = () => {
   const { canViewCourses, canSubmitQuestions, isAdmin, isCourseOwner } =
     useRoleAccess();
 
-  // ✅ Parse timestamps safely (backend sends UTC with Z)
+  // ✅ Parse DB timestamps safely as UTC and convert properly to local
   const normalizeToDate = (ts) => {
     if (!ts) return null;
     if (ts instanceof Date) return ts;
 
+    // Handle numeric timestamps
     if (typeof ts === "number") {
       const ms = ts > 1e12 ? ts : ts * 1000;
       return new Date(ms);
@@ -31,7 +32,15 @@ const CourseQuestionsPage = () => {
 
     if (typeof ts === "string") {
       let s = ts.trim();
-      if (!/[zZ]$|[+\-]\d{2}:\d{2}$/.test(s)) s += "Z";
+
+      // Convert "YYYY-MM-DD HH:mm:ss" → "YYYY-MM-DDTHH:mm:ssZ"
+      if (s.includes(" ") && !s.includes("T")) {
+        s = s.replace(" ", "T");
+      }
+      if (!/[zZ]$|[+\-]\d{2}:\d{2}$/.test(s)) {
+        s += "Z"; // ✅ explicitly mark as UTC
+      }
+
       const d = new Date(s);
       return isNaN(d) ? null : d;
     }
@@ -40,22 +49,23 @@ const CourseQuestionsPage = () => {
     return isNaN(d) ? null : d;
   };
 
-  // ✅ Format as UTC+10 (manual offset, always correct for your case)
+
+  // ✅ Convert UTC → Australia/Sydney for display
   const formatDateTime = (ts) => {
-    if (!ts) return "";
-    const dateUTC = new Date(ts);
-    const dateOffset = new Date(dateUTC.getTime() + 11 * 60 * 60 * 1000); // +10 hours
-    return (
-      dateOffset.toLocaleString([], {
-        month: "short",
-        day: "2-digit",
-        year: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-        hour12: true,
-      }) 
-    );
+    const date = normalizeToDate(ts);
+    if (!date) return "";
+
+    return date.toLocaleString("en-AU", {
+      timeZone: "Australia/Sydney",
+      month: "short",
+      day: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+    });
   };
+
 
   // ✅ Fetch & sort by newest first
   const fetchDms = () => {

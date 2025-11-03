@@ -431,7 +431,7 @@ const SchedulePage = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="max-w-6xl mx-auto py-12 px-4">
+      <div className="max-w-6xl mx-auto p-6">
         {/* 🔹 Banner for admins/owners */}
         {(isAdmin || isCourseOwner) && (
           <div className="mb-6 bg-yellow-100 border-l-4 border-yellow-500 text-yellow-800 p-3 rounded">
@@ -440,7 +440,7 @@ const SchedulePage = () => {
         )}
 
         <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-gray-900">📚 Study Schedule Planner</h1>
+          <h1 class="text-3xl font-bold text-gray-800 mb-6">📚 Study Schedule Planner</h1>
           <p className="text-gray-600 mt-2">Manage your study modules and sessions easily.</p>
         </div>
 
