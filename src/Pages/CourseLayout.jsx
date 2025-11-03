@@ -38,7 +38,7 @@ function CourseLayout() {
   return (
     <div className="flex bg-gray-50 min-h-screen">
       {/* Sidebar */}
-      <aside className="fixed top-[88px] left-0 w-64 bg-white border-r shadow-sm h-[calc(100vh-88px)] overflow-y-auto">
+      <aside className="fixed top-[100px] left-0 w-64 bg-white border-r shadow-sm h-[calc(100vh-88px)] overflow-y-auto">
         <NavLink
           to="."
           className="block text-lg font-bold px-4 py-3 border-b hover:bg-gray-100 text-blue-600 cursor-pointer"
