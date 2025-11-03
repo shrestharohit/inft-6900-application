@@ -54,19 +54,24 @@ export const AuthProvider = ({ children }) => {
     }
   }, []);
 
-  // ✅ Persist user (store both full object and userId separately)
-  const persistUser = (updatedUser) => {
+  // ✅ Persist user in localStorage (optional redirect)
+  const persistUser = (updatedUser, shouldRedirect = false) => {
     localStorage.setItem("user", JSON.stringify(updatedUser));
     if (updatedUser?.id) {
       localStorage.setItem("userId", updatedUser.id);
     }
     setLoggedInUser(updatedUser);
+
+    // ✅ Redirect only when explicitly requested
+    if (shouldRedirect) {
+      redirectBasedOnRole(updatedUser);
+    }
   };
 
+  // ✅ Set full user data and redirect (used at login)
   const setUserDataInState = (user) => {
     if (!user) return;
-    persistUser(user);
-    redirectBasedOnRole(user);
+    persistUser(user, true); // redirect after login only
   };
 
   // ✅ Clear user data safely
@@ -75,6 +80,13 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem("userId");
     setLoggedInUser(null);
     window.location.href = ROUTES.DEFAULT;
+  };
+
+  // ✅ Update specific fields of user and persist (no redirect)
+  const updateUserField = (fields) => {
+    if (!loggedInUser) return;
+    const updatedUser = { ...loggedInUser, ...fields };
+    persistUser(updatedUser, false); // 🚫 no redirect on minor updates
   };
 
   // ✅ Enroll in a pathway (auto-enroll its courses too)
@@ -111,10 +123,8 @@ export const AuthProvider = ({ children }) => {
     const enrolledCourses = { ...(loggedInUser.enrolledCourses || {}) };
     if (!enrolledCourses[courseId]) return;
 
-    // Mark current as completed
     enrolledCourses[courseId].status = "completed";
 
-    // Unlock next if part of a pathway
     for (const [pathwayId, courses] of Object.entries(pathwayCourseMap)) {
       const index = courses.indexOf(courseId);
       if (index !== -1 && index < courses.length - 1) {
@@ -139,7 +149,6 @@ export const AuthProvider = ({ children }) => {
     const enrolledCourses = { ...(loggedInUser.enrolledCourses || {}) };
     const pathwayCourses = pathwayCourseMap[pathwayId] || [];
 
-    // Remove only non-completed courses from this pathway
     pathwayCourses.forEach((courseId) => {
       if (enrolledCourses[courseId]?.status !== "completed") {
         delete enrolledCourses[courseId];
@@ -163,6 +172,7 @@ export const AuthProvider = ({ children }) => {
         enrollInPathway,
         completeCourse,
         disenrollFromPathway,
+        updateUserField, // ✅ Now safe, won’t trigger redirects
       }}
     >
       {children}

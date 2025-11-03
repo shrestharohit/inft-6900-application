@@ -7,25 +7,25 @@
 // import { useState } from "react";
 // import { useAuth } from "../contexts/AuthContext";
 // import { dummyCourses, dummyPathways } from "../Pages/dummyData"; // ✅ central data
-
+ 
 // const Header = () => {
 //   const [anchorEl, setAnchorEl] = useState(null);
 //   const [categoryAnchor, setCategoryAnchor] = useState(null);
 //   const [searchQuery, setSearchQuery] = useState("");
 //   const [searchCategory, setSearchCategory] = useState("all");
 //   const [notificationsEnabled, setNotificationsEnabled] = useState(false); // notification state
-
+ 
 //   const open = Boolean(anchorEl);
 //   const navigate = useNavigate();
 //   const { isLoggedIn, clearUserDataFromState, loggedInUser, setUserDataInState, updateUser } = useAuth();
-
+ 
 //   // Load initial notification state if logged in
 //   useState(() => {
 //     if (loggedInUser) {
 //       setNotificationsEnabled(loggedInUser.notificationsEnabled || false);
 //     }
 //   });
-
+ 
 //   const getPlaceholder = () => {
 //     switch (searchCategory) {
 //       case "courses":
@@ -36,24 +36,24 @@
 //         return "Search courses or pathways...";
 //     }
 //   };
-
+ 
 //   const handleMenuOpen = (event) => setAnchorEl(event.currentTarget);
 //   const handleMenuClose = () => setAnchorEl(null);
-
+ 
 //   const handleLogout = () => {
 //     setAnchorEl(null);
 //     navigate("/");
 //     clearUserDataFromState();
 //   };
-
+ 
 //   const handleCategoryOpen = (event) => setCategoryAnchor(event.currentTarget);
 //   const handleCategoryClose = () => setCategoryAnchor(null);
-
+ 
 //   const goTo = (path) => {
 //     navigate(path);
 //     handleCategoryClose();
 //   };
-
+ 
 //   const handleSearch = (e) => {
 //     e.preventDefault();
 //     if (searchQuery.trim()) {
@@ -63,11 +63,11 @@
 //       setSearchQuery("");
 //     }
 //   };
-
+ 
 //   const handleToggleNotifications = async () => {
 //     const newValue = !notificationsEnabled;
 //     setNotificationsEnabled(newValue);
-
+ 
 //     // Optionally, save this to the server if you have updateUser API
 //     if (loggedInUser) {
 //       try {
@@ -78,7 +78,7 @@
 //       }
 //     }
 //   };
-
+ 
 //   return (
 //     <header className="fixed top-0 left-0 right-0 z-50 flex justify-between items-center px-6 py-3 bg-green-500 text-white h-20 shadow-md">
 //       <div className="container mx-auto flex justify-between items-center max-w-7xl">
@@ -91,7 +91,7 @@
 //               className="w-40 h-28 cursor-pointer"
 //             />
 //           </Link>
-
+ 
 //           {/* Categories Dropdown */}
 //           <div>
 //             <Button
@@ -109,7 +109,7 @@
 //             >
 //               Categories
 //             </Button>
-
+ 
 //             <Menu
 //               anchorEl={categoryAnchor}
 //               open={Boolean(categoryAnchor)}
@@ -136,7 +136,7 @@
 //                   View All Pathways →
 //                 </MenuItem>
 //               </Box>
-
+ 
 //               {/* Courses */}
 //               <Box display="flex" flexDirection="column">
 //                 <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
@@ -158,7 +158,7 @@
 //             </Menu>
 //           </div>
 //         </div>
-
+ 
 //         {/* Search */}
 //         <form
 //           onSubmit={handleSearch}
@@ -187,7 +187,7 @@
 //             <SearchIcon />
 //           </button>
 //         </form>
-
+ 
 //         {/* User Section */}
 //         <div className="flex items-center space-x-4">
 //           {isLoggedIn ? (
@@ -209,7 +209,7 @@
 //                 <MenuItem onClick={() => navigate("/profilemanagement")}>
 //                   Edit Profile
 //                 </MenuItem>
-
+ 
 //                 {/* Notification Toggle */}
 //                 <MenuItem>
 //                   <div className="flex justify-between items-center w-full">
@@ -221,7 +221,7 @@
 //                   />
 //                   </div>
 //                 </MenuItem>
-
+ 
 //                 <MenuItem onClick={handleLogout}>Logout</MenuItem>
 //               </Menu>
 //             </>
@@ -237,9 +237,9 @@
 //     </header>
 //   );
 // };
-
+ 
 // export default Header;
-
+ 
 import {
   Avatar,
   Menu,
@@ -258,35 +258,40 @@ import { useState, useEffect } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import useUserApi from "../hooks/useUserApi";
 import { dummyCourses, dummyPathways } from "../Pages/dummyData";
-import useRoleAccess from "../hooks/useRoleAccess"; // ✅ Role detection hook
-
+import useRoleAccess from "../hooks/useRoleAccess";
+ 
 const Header = () => {
   const [anchorEl, setAnchorEl] = useState(null);
   const [categoryAnchor, setCategoryAnchor] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchCategory, setSearchCategory] = useState("all");
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
-
+ 
   const open = Boolean(anchorEl);
   const navigate = useNavigate();
+ 
   const {
     isLoggedIn,
     clearUserDataFromState,
     loggedInUser,
     setUserDataInState,
+    updateUserField, // ✅ Added from AuthContext
   } = useAuth();
+ 
   const { updateUserById } = useUserApi();
-
-  // ✅ Roles
   const { isAdmin, isCourseOwner } = useRoleAccess();
-
+ 
+  // ✅ Sync notification state on mount / user change
   useEffect(() => {
     if (loggedInUser) {
-      setNotificationsEnabled(!!loggedInUser.notificationEnabled); // Override default based on logged-in user
+      setNotificationsEnabled(
+        typeof loggedInUser.notificationEnabled === "boolean"
+          ? loggedInUser.notificationEnabled
+          : true
+      );
     }
   }, [loggedInUser]);
-
-  
+ 
   const getPlaceholder = () => {
     switch (searchCategory) {
       case "courses":
@@ -297,24 +302,24 @@ const Header = () => {
         return "Search courses or pathways...";
     }
   };
-
+ 
   const handleMenuOpen = (event) => setAnchorEl(event.currentTarget);
   const handleMenuClose = () => setAnchorEl(null);
-
+ 
   const handleLogout = () => {
     setAnchorEl(null);
-    navigate("/");
     clearUserDataFromState();
+    navigate("/");
   };
-
+ 
   const handleCategoryOpen = (event) => setCategoryAnchor(event.currentTarget);
   const handleCategoryClose = () => setCategoryAnchor(null);
-
+ 
   const goTo = (path) => {
     navigate(path);
     handleCategoryClose();
   };
-
+ 
   const handleSearch = (e) => {
     e.preventDefault();
     if (searchQuery.trim()) {
@@ -326,25 +331,33 @@ const Header = () => {
       setSearchQuery("");
     }
   };
-
+ 
+  // ✅ Refactored notification toggle
   const handleToggleNotifications = async () => {
-    const newValue = !notificationsEnabled;
-    setNotificationsEnabled(newValue);
     if (!loggedInUser) return;
-
+ 
+    const newValue = !notificationsEnabled;
+ 
+    // 1️⃣ Update local state immediately
+    setNotificationsEnabled(newValue);
+ 
+    // 2️⃣ Persist to localStorage via AuthContext
+    updateUserField({ notificationEnabled: newValue });
+ 
+    // 3️⃣ Update backend asynchronously
     try {
-      const response = await updateUserById({
+      await updateUserById({
         userID: loggedInUser.id,
         notificationEnabled: newValue,
       });
-      const updatedUser = response?.user || response;
-      if (updatedUser) setUserDataInState(updatedUser);
     } catch (err) {
       console.error("Failed to update notifications", err);
-      setNotificationsEnabled((prev) => !prev);
+      // Rollback on failure
+      setNotificationsEnabled(!newValue);
+      updateUserField({ notificationEnabled: !newValue });
     }
   };
-
+ 
   return (
     <header className="sticky top-0 z-50 bg-green-500 text-white shadow-md">
       <div className="container mx-auto max-w-7xl px-6 py-3">
@@ -358,7 +371,7 @@ const Header = () => {
                 style={{ height: "80px", width: "auto", objectFit: "contain" }}
               />
             </Link>
-
+ 
             {/* Categories Dropdown */}
             <div>
               <Button
@@ -377,7 +390,7 @@ const Header = () => {
               >
                 Categories
               </Button>
-
+ 
               <Menu
                 anchorEl={categoryAnchor}
                 open={Boolean(categoryAnchor)}
@@ -388,11 +401,7 @@ const Header = () => {
               >
                 {/* Pathways */}
                 <Box display="flex" flexDirection="column" mr={4}>
-                  <Typography
-                    variant="subtitle1"
-                    fontWeight="bold"
-                    gutterBottom
-                  >
+                  <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
                     Pathways
                   </Typography>
                   {dummyPathways.map((pathway) => (
@@ -408,14 +417,10 @@ const Header = () => {
                     View All Pathways →
                   </MenuItem>
                 </Box>
-
+ 
                 {/* Courses */}
                 <Box display="flex" flexDirection="column">
-                  <Typography
-                    variant="subtitle1"
-                    fontWeight="bold"
-                    gutterBottom
-                  >
+                  <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
                     Individual Courses
                   </Typography>
                   {dummyCourses.map((course) => (
@@ -434,7 +439,7 @@ const Header = () => {
               </Menu>
             </div>
           </div>
-
+ 
           {/* Search */}
           <form
             onSubmit={handleSearch}
@@ -464,7 +469,7 @@ const Header = () => {
               <SearchIcon />
             </button>
           </form>
-
+ 
           {/* User Section */}
           <div className="flex items-center gap-4">
             {isLoggedIn ? (
@@ -480,25 +485,13 @@ const Header = () => {
                   }}
                 />
                 <Menu anchorEl={anchorEl} open={open} onClose={handleMenuClose}>
-                  <MenuItem onClick={() => navigate("/dashboard")}>
-                    Dashboard
-                  </MenuItem>
-                  <MenuItem onClick={() => navigate("/profilemanagement")}>
-                    Edit Profile
-                  </MenuItem>
-
-                  {/* 🕒 Pomodoro Settings */}
-                  <MenuItem
-                    onClick={() => {
-                      handleMenuClose();
-                      navigate("/pomodoro-settings");
-                    }}
-                  >
+                  <MenuItem onClick={() => navigate("/dashboard")}>Dashboard</MenuItem>
+                  <MenuItem onClick={() => navigate("/profilemanagement")}>Edit Profile</MenuItem>
+                  <MenuItem onClick={() => { handleMenuClose(); navigate("/pomodoro-settings"); }}>
                     Pomodoro Settings
                   </MenuItem>
-
                   <Divider />
-
+ 
                   {/* Notifications Toggle */}
                   <MenuItem>
                     <div className="flex justify-between items-center w-full">
@@ -510,32 +503,24 @@ const Header = () => {
                       />
                     </div>
                   </MenuItem>
-
-                  {/* ✅ Admin / Course Owner Portals moved here */}
+ 
+                  {/* Admin / Course Owner */}
                   {isAdmin && (
                     <MenuItem
-                      onClick={() => {
-                        handleMenuClose();
-                        navigate("/admin/");
-                      }}
+                      onClick={() => { handleMenuClose(); navigate("/admin/"); }}
                     >
                       Admin Portal
                     </MenuItem>
                   )}
-
                   {isCourseOwner && (
                     <MenuItem
-                      onClick={() => {
-                        handleMenuClose();
-                        navigate("/course-management");
-                      }}
+                      onClick={() => { handleMenuClose(); navigate("/course-management"); }}
                     >
                       Course Owner Portal
                     </MenuItem>
                   )}
-
+ 
                   <Divider />
-
                   <MenuItem onClick={handleLogout}>Logout</MenuItem>
                 </Menu>
               </>
@@ -552,5 +537,5 @@ const Header = () => {
     </header>
   );
 };
-
+ 
 export default Header;
