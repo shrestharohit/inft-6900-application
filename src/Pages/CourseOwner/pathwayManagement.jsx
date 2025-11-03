@@ -15,15 +15,11 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  MenuItem,
-  Select,
-  FormControl,
-  InputLabel,
 } from "@mui/material";
 
 import usePathwayApi from "../../hooks/usePathwayApi";
+import { useAuth } from "../../contexts/AuthContext";
 
-// Allowed statuses without approval flow
 const STATUS_OPTIONS = ["draft", "active", "inactive"];
 
 const PathwayManagement = () => {
@@ -33,30 +29,42 @@ const PathwayManagement = () => {
     outline: "",
     status: "draft",
   });
-  const [editingIndex, setEditingIndex] = useState(null);
   const [editingPathwayId, setEditingPathwayId] = useState(null);
   const [descDialogOpen, setDescDialogOpen] = useState(false);
   const [descDraft, setDescDraft] = useState("");
 
-  const { fetchAllPathways, registerPathway, updatePathway } = usePathwayApi();
+  const { fetchUserPathways, registerPathway, updatePathway } = usePathwayApi();
+  const { loggedInUser } = useAuth();
 
+  // ✅ Load pathways once user is ready
   useEffect(() => {
+    if (!loggedInUser?.id) return; // wait for user
     let mounted = true;
+
     const load = async () => {
       try {
-        const res = await fetchAllPathways();
-        if (!mounted) return;
-        setPathways(res.pathways);
+        console.log("🔍 Fetching pathways for user:", loggedInUser.id);
+        const res = await fetchUserPathways(loggedInUser.id);
+
+        // Handle possible data structures safely
+        const data =
+          res?.pathways || res?.data?.pathways || res?.data || res || [];
+
+        if (mounted) {
+          console.log("✅ Pathways loaded:", data);
+          setPathways(Array.isArray(data) ? data : []);
+        }
       } catch (err) {
-        console.error("Failed to load pathways", err);
+        console.error("❌ Failed to load pathways:", err);
         if (mounted) setPathways([]);
       }
     };
+
     load();
     return () => {
       mounted = false;
     };
-  }, [fetchAllPathways]);
+  }, [fetchUserPathways, loggedInUser]);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -74,7 +82,6 @@ const PathwayManagement = () => {
 
   const clearForm = () => {
     setForm({ name: "", outline: "", status: "draft" });
-    setEditingIndex(null);
     setEditingPathwayId(null);
   };
 
@@ -88,19 +95,23 @@ const PathwayManagement = () => {
 
     const cleaned = {
       name: form.name.trim(),
+      userID: loggedInUser?.id,
       outline: form.outline.trim(),
       status: form.status,
     };
 
     try {
-      if (editingIndex !== null && editingPathwayId) {
-        await updatePathway(editingPathwayId, form);
+      if (editingPathwayId) {
+        await updatePathway(editingPathwayId, cleaned);
       } else {
         await registerPathway(cleaned);
       }
       clearForm();
-      const res = await fetchAllPathways();
-      setPathways(res.pathways);
+
+      // Refresh list
+      const res = await fetchUserPathways(loggedInUser?.id);
+      const data = res?.pathways || res?.data?.pathways || res?.data || res || [];
+      setPathways(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error("Failed to save pathway", err);
       alert("Failed to save pathway. Please try again.");
@@ -108,15 +119,27 @@ const PathwayManagement = () => {
   };
 
   const handleEdit = (pathway) => {
-    setForm(pathway);
-    setEditingIndex(pathway.pathwayID);
+    setForm({
+      name: pathway.name,
+      outline: pathway.outline,
+      status: pathway.status || "draft",
+    });
     setEditingPathwayId(pathway.pathwayID);
   };
 
   const toggleActive = async (pathway) => {
-    await updatePathway(pathway.pathwayID, { ...pathway, status: pathway.status === "active" ? "inactive" : "active" });
-    const res = await fetchAllPathways();
-    setPathways(res.pathways);
+    try {
+      await updatePathway(pathway.pathwayID, {
+        ...pathway,
+        status: pathway.status === "active" ? "inactive" : "active",
+      });
+
+      const res = await fetchUserPathways(loggedInUser?.id);
+      const data = res?.pathways || res?.data?.pathways || res?.data || res || [];
+      setPathways(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error("Failed to toggle status:", err);
+    }
   };
 
   return (
@@ -144,7 +167,7 @@ const PathwayManagement = () => {
               required
             />
 
-            {/* Outline uses dialog for long editing, read-only in the field */}
+            {/* Outline uses dialog for long editing */}
             <TextField
               label="Outline"
               name="outline"
@@ -160,9 +183,9 @@ const PathwayManagement = () => {
 
             <Stack direction="row" spacing={2}>
               <Button type="submit" variant="contained" color="primary">
-                {editingIndex !== null ? "Update Pathway" : "Add Pathway"}
+                {editingPathwayId ? "Update Pathway" : "Add Pathway"}
               </Button>
-              {editingIndex !== null && (
+              {editingPathwayId && (
                 <Button
                   variant="outlined"
                   color="secondary"
@@ -204,7 +227,7 @@ const PathwayManagement = () => {
               </TableRow>
             ) : (
               pathways.map((p, index) => (
-                <TableRow key={index} hover>
+                <TableRow key={p.pathwayID || index} hover>
                   <TableCell>{p.name}</TableCell>
                   <TableCell
                     sx={{
@@ -221,11 +244,7 @@ const PathwayManagement = () => {
                     {p.status}
                   </TableCell>
                   <TableCell align="right">
-                    <Stack
-                      direction="row"
-                      spacing={1}
-                      justifyContent="flex-end"
-                    >
+                    <Stack direction="row" spacing={1} justifyContent="flex-end">
                       <Button
                         variant="outlined"
                         size="small"

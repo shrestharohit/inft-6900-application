@@ -11,7 +11,7 @@ const pathwayCourseMap = {
 };
 
 export const AuthProvider = ({ children }) => {
-  // ✅ Restore user instantly from localStorage
+  // ✅ Restore user instantly from localStorage (prevents undefined on first render)
   const [loggedInUser, setLoggedInUser] = useState(() => {
     const storedUser = localStorage.getItem("user");
     return storedUser ? JSON.parse(storedUser) : null;
@@ -74,7 +74,7 @@ export const AuthProvider = ({ children }) => {
     persistUser(user, true); // redirect after login only
   };
 
-  // ✅ Clear user data
+  // ✅ Clear user data safely
   const clearUserDataFromState = () => {
     localStorage.removeItem("user");
     localStorage.removeItem("userId");

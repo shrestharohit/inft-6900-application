@@ -13,27 +13,44 @@ const CourseOwnerQuestionsPage = () => {
   const { fetchAllCourses } = useCourseApi();
   const { getAllDmsForCourse, replyDms } = useDms();
 
-  // 🕒 Format timestamps using user's OS timezone in AM/PM format
-  const formatDateTime = (isoString) => {
-    if (!isoString) return "";
+  // ✅ Normalize timestamp from DB safely
+  const normalizeToDate = (ts) => {
+    if (!ts) return null;
+    if (ts instanceof Date) return ts;
 
-    // Create a Date object from the ISO string (which is in UTC)
-    const dateUTC = new Date(isoString);
+    if (typeof ts === "number") {
+      const ms = ts > 1e12 ? ts : ts * 1000;
+      return new Date(ms);
+    }
 
-    // Apply the 11-hour offset (11 * 60 * 60 * 1000 ms = 11 hours)
-    const dateOffset = new Date(dateUTC.getTime() + 11 * 60 * 60 * 1000); // +11 hours
+    if (typeof ts === "string") {
+      let s = ts.trim();
+      if (s.includes(" ") && !s.includes("T")) s = s.replace(" ", "T");
+      // ⚠️ DO NOT append 'Z' — treat as local Sydney time
+      const d = new Date(s);
+      return isNaN(d) ? null : d;
+    }
 
-    // Format the date with toLocaleString
-    return dateOffset.toLocaleString([], {
+    const d = new Date(ts);
+    return isNaN(d) ? null : d;
+  };
+
+  // ✅ Format date-time in Sydney timezone
+  const formatDateTime = (ts) => {
+    const date = normalizeToDate(ts);
+    if (!date) return "";
+    return new Intl.DateTimeFormat("en-AU", {
+      timeZone: "Australia/Sydney",
       month: "short",
       day: "2-digit",
       year: "numeric",
       hour: "2-digit",
       minute: "2-digit",
-      hour12: true, // Show time in 12-hour format
-    });
+      hour12: true,
+    }).format(date);
   };
 
+  // ✅ Fetch owner's courses
   useEffect(() => {
     let mounted = true;
     fetchAllCourses()
@@ -45,44 +62,53 @@ const CourseOwnerQuestionsPage = () => {
         console.error("Failed to fetch courses", err);
         if (mounted) setOwnerCourses([]);
       });
-
     return () => (mounted = false);
-  }, [fetchAllCourses]);
+  }, [fetchAllCourses, loggedInUser?.id]);
 
-  const fetchDms = (courseId) => {
-    getAllDmsForCourse(courseId || selectedCourseId)
-      .then((res) => {
-        const dms = res?.dms || [];
-        // ✅ Sort newest first
-        const sorted = dms.sort(
-          (a, b) => new Date(b.created_at) - new Date(a.created_at)
-        );
-        setQuestions(sorted);
-      })
-      .catch((err) => {
-        console.error("Failed to fetch questions", err);
-        setQuestions([]);
-      });
+  // ✅ Fetch all questions for a course
+  const fetchDms = async (courseId) => {
+    try {
+      const res = await getAllDmsForCourse(courseId || selectedCourseId);
+      const dms = res?.dms || [];
+
+      const normalized = dms
+        .map((d) => ({
+          ...d,
+          created_at: normalizeToDate(d.created_at),
+        }))
+        .sort((a, b) => b.created_at - a.created_at);
+
+      setQuestions(normalized);
+    } catch (err) {
+      console.error("Failed to fetch questions", err);
+      setQuestions([]);
+    }
   };
 
   const handleReplyChange = (id, text) => {
     setReplyText((prev) => ({ ...prev, [id]: text }));
   };
 
-  const submitReply = (dm) => {
+  const submitReply = async (dm) => {
     const payload = {
       ...dm,
       reply: replyText[dm.msgID] || "",
       status: "active",
     };
-    replyDms(dm.msgID, payload)
-      .then(() => {
-        fetchDms();
-        setReplyText((prev) => ({ ...prev, [dm.msgID]: "" }));
-      })
-      .catch((err) => {
-        console.error("Failed to send reply", err);
-      });
+    try {
+      await replyDms(dm.msgID, payload);
+
+      // ✅ Update reply instantly instead of refetching all
+      setQuestions((prev) =>
+        prev.map((q) =>
+          q.msgID === dm.msgID ? { ...q, reply: payload.reply } : q
+        )
+      );
+
+      setReplyText((prev) => ({ ...prev, [dm.msgID]: "" }));
+    } catch (err) {
+      console.error("Failed to send reply", err);
+    }
   };
 
   const handleCourseSelect = (e) => {
@@ -108,11 +134,15 @@ const CourseOwnerQuestionsPage = () => {
           className="w-full border p-3 rounded"
         >
           <option value="">-- Choose one of your courses --</option>
-          {ownerCourses.map((c) => (
-            <option key={c.courseID} value={c.courseID}>
-              {c.title}
-            </option>
-          ))}
+          {ownerCourses.length > 0 ? (
+            ownerCourses.map((c) => (
+              <option key={c.courseID} value={c.courseID}>
+                {c.title}
+              </option>
+            ))
+          ) : (
+            <option disabled>No courses found for you</option>
+          )}
         </select>
       </div>
 

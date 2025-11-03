@@ -21,26 +21,44 @@ const CourseOwnerAnnouncementsPage = () => {
     deleteAnnouncementById,
   } = useAnnouncement();
 
-  const formatDateTime = (isoString) => {
-    if (!isoString) return "";
+  // ✅ Normalize DB timestamps safely (Sydney-local)
+  const normalizeToDate = (ts) => {
+    if (!ts) return null;
+    if (ts instanceof Date) return ts;
 
-    // Create a Date object from the ISO string (which is in UTC)
-    const dateUTC = new Date(isoString);
+    if (typeof ts === "number") {
+      const ms = ts > 1e12 ? ts : ts * 1000;
+      return new Date(ms);
+    }
 
-    // Apply the 11-hour offset (11 * 60 * 60 * 1000 ms = 11 hours)
-    const dateOffset = new Date(dateUTC.getTime() + 11 * 60 * 60 * 1000); // +11 hours
+    if (typeof ts === "string") {
+      let s = ts.trim();
+      if (s.includes(" ") && !s.includes("T")) s = s.replace(" ", "T");
+      // ⚠️ Do not append Z — treat as local time
+      const d = new Date(s);
+      return isNaN(d) ? null : d;
+    }
 
-    // Format the date with toLocaleString
-    return dateOffset.toLocaleString([], {
+    const d = new Date(ts);
+    return isNaN(d) ? null : d;
+  };
+
+  // ✅ Format as Australia/Sydney
+  const formatDateTime = (ts) => {
+    const date = normalizeToDate(ts);
+    if (!date) return "";
+    return new Intl.DateTimeFormat("en-AU", {
+      timeZone: "Australia/Sydney",
       month: "short",
       day: "2-digit",
       year: "numeric",
       hour: "2-digit",
       minute: "2-digit",
-      hour12: true, // Show time in 12-hour format
-    });
+      hour12: true,
+    }).format(date);
   };
 
+  // ✅ Fetch owner courses
   useEffect(() => {
     let mounted = true;
     fetchAllCourses()
@@ -54,30 +72,32 @@ const CourseOwnerAnnouncementsPage = () => {
       });
 
     return () => (mounted = false);
-  }, [fetchAllCourses]);
+  }, [fetchAllCourses, loggedInUser?.id]);
 
-  const fetchAnnouncements = (courseId) => {
-    getAllAnnouncementsForCourse(courseId || selectedCourseId)
-      .then((res) => {
-        const all = res?.announcements || [];
+  // ✅ Fetch announcements per course
+  const fetchAnnouncements = async (courseId) => {
+    try {
+      const res = await getAllAnnouncementsForCourse(courseId || selectedCourseId);
+      const all = res?.announcements || [];
 
-        // ✅ Sort both lists (descending)
-        const draftList = all
-          .filter((a) => a.status === "draft")
-          .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+      const normalizeList = (list) =>
+        list
+          .map((a) => ({
+            ...a,
+            created_at: normalizeToDate(a.created_at),
+          }))
+          .sort((a, b) => b.created_at - a.created_at);
 
-        const publishedList = all
-          .filter((a) => a.status === "active")
-          .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+      const draftList = normalizeList(all.filter((a) => a.status === "draft"));
+      const publishedList = normalizeList(all.filter((a) => a.status === "active"));
 
-        setDrafts(draftList);
-        setPublished(publishedList);
-      })
-      .catch((err) => {
-        console.error("Failed to fetch announcements", err);
-        setDrafts([]);
-        setPublished([]);
-      });
+      setDrafts(draftList);
+      setPublished(publishedList);
+    } catch (err) {
+      console.error("Failed to fetch announcements", err);
+      setDrafts([]);
+      setPublished([]);
+    }
   };
 
   const saveDraft = async () => {
@@ -85,20 +105,29 @@ const CourseOwnerAnnouncementsPage = () => {
       alert("Fill title and message before saving.");
       return;
     }
-    const draft = {
-      ...form,
-      status: "draft",
-    };
-    if (editingDraftId) {
-      await updateAnnouncement(editingDraftId, draft);
-      alert("Draft updated!");
-    } else {
-      await createAnnouncement(selectedCourseId, draft);
-      alert("Draft saved!");
+
+    const draft = { ...form, status: "draft" };
+    try {
+      if (editingDraftId) {
+        await updateAnnouncement(editingDraftId, draft);
+        alert("Draft updated!");
+      } else {
+        const res = await createAnnouncement(selectedCourseId, draft);
+        // ✅ Add locally to avoid flicker
+        const newDraft = {
+          ...(res?.data || draft),
+          announcementID: res?.data?.announcementID || Math.random().toString(36),
+          created_at: new Date(),
+        };
+        setDrafts((prev) => [newDraft, ...prev]);
+        alert("Draft saved!");
+      }
+      setEditingDraftId(null);
+      setForm({ title: "", content: "" });
+    } catch (err) {
+      console.error("Failed to save draft", err);
+      alert("Failed to save draft");
     }
-    fetchAnnouncements();
-    setEditingDraftId(null);
-    setForm({ title: "", content: "" });
   };
 
   const editDraft = (draft) => {
@@ -108,18 +137,33 @@ const CourseOwnerAnnouncementsPage = () => {
 
   const deleteDraft = async (draftId) => {
     if (!window.confirm("Delete this draft?")) return;
-    await deleteAnnouncementById(draftId);
-    alert("Draft deleted!");
-    fetchAnnouncements();
+    try {
+      await deleteAnnouncementById(draftId);
+      setDrafts((prev) => prev.filter((d) => d.announcementID !== draftId));
+      alert("Draft deleted!");
+    } catch (err) {
+      console.error("Failed to delete draft", err);
+      alert("Failed to delete draft");
+    }
   };
 
   const publishDraft = async (draft) => {
-    await updateAnnouncement(draft.announcementID, {
-      ...draft,
-      status: "active",
-    });
-    alert("Announcement published!");
-    fetchAnnouncements();
+    try {
+      await updateAnnouncement(draft.announcementID, {
+        ...draft,
+        status: "active",
+      });
+      // ✅ Move to published list locally
+      setDrafts((prev) => prev.filter((d) => d.announcementID !== draft.announcementID));
+      setPublished((prev) => [
+        { ...draft, status: "active", created_at: new Date() },
+        ...prev,
+      ]);
+      alert("Announcement published!");
+    } catch (err) {
+      console.error("Failed to publish announcement", err);
+      alert("Failed to publish announcement");
+    }
   };
 
   const handleCourseSelect = (e) => {
