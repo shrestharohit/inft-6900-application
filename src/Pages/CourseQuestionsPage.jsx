@@ -31,8 +31,8 @@ const CourseQuestionsPage = () => {
 
     if (typeof ts === "string") {
       let s = ts.trim();
-      if (!/[zZ]$|[+\-]\d{2}:\d{2}$/.test(s)) s += "Z";
-      const d = new Date(s);
+      if (s.includes(" ") && !s.includes("T")) s = s.replace(" ", "T");
+      const d = new Date(s); // ⚠️ treat as local, don't add "Z"
       return isNaN(d) ? null : d;
     }
 
@@ -42,19 +42,20 @@ const CourseQuestionsPage = () => {
 
   // Format as UTC+10
   const formatDateTime = (ts) => {
-    if (!ts) return "";
-    const dateUTC = new Date(ts);
-    const dateOffset = new Date(dateUTC.getTime() + 11 * 60 * 60 * 1000); // +10 hours
-    return (
-      dateOffset.toLocaleString([], {
-        month: "short",
-        day: "2-digit",
-        year: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-        hour12: true,
-      }) 
-    );
+    const date = normalizeToDate(ts);
+    if (!date) return "";
+
+    const formatted = new Intl.DateTimeFormat("en-AU", {
+      timeZone: "Australia/Sydney",
+      month: "short",
+      day: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+    }).format(date);
+
+    return formatted;
   };
 
   // Fetch & sort by newest first
@@ -70,16 +71,23 @@ const CourseQuestionsPage = () => {
         console.error("Failed to fetch questions", err);
         setQuestions([]);
       });
+      const sorted = normalized.sort((a, b) => b.created_at - a.created_at);
+      setQuestions(sorted);
+    } catch (err) {
+      console.error("Failed to fetch questions", err);
+      setQuestions([]);
+    }
   };
 
   useEffect(() => {
     if (loggedInUser?.id) fetchDms();
   }, [getAllDmsForUser, loggedInUser?.id]);
 
-  const handleSubmit = (e) => {
+  // ✅ Handle submit safely (no double re-fetch)
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!newQuestion.trim()) return;
-    if ((newQuestion || "").length > MAX_CHARS) {
+    if (newQuestion.length > MAX_CHARS) {
       alert(`Question must be under ${MAX_CHARS} characters.`);
       return;
     }
@@ -96,16 +104,29 @@ const CourseQuestionsPage = () => {
         courseID: courseId,
         message: newQuestion,
       };
-      createDms(question)
-        .then(() => fetchDms())
-        .catch((err) => console.error("Failed to create question", err));
+
+      try {
+        const res = await createDms(question);
+        // ✅ Normalize immediately before adding
+        const newQ = {
+          ...(res.data || res.dms || question),
+          created_at: normalizeToDate(
+            res.data?.created_at || res.dms?.created_at || new Date()
+          ),
+        };
+        // Add new question instantly (no re-fetch)
+        setQuestions((prev) => [newQ, ...prev]);
+      } catch (err) {
+        console.error("Failed to create question", err);
+      }
     }
+
     setNewQuestion("");
   };
 
   const handleDelete = (id) => {
     if (!window.confirm("Delete this question?")) return;
-    setQuestions(questions.filter((q) => q.msgID !== id));
+    setQuestions((prev) => prev.filter((q) => q.msgID !== id));
   };
 
   const handleEdit = (q) => {
