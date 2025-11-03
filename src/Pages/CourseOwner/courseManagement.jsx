@@ -582,16 +582,7 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
 } from "@mui/material";
-
-import MoreVertIcon from "@mui/icons-material/MoreVert";
-import Menu from "@mui/material/Menu";
-import IconButton from "@mui/material/IconButton";
-import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
-
 import useCourseApi from "../../hooks/useCourseApi";
 import usePathwayApi from "../../hooks/usePathwayApi";
 import { useAuth } from "../../contexts/AuthContext";
@@ -612,7 +603,7 @@ const LEVEL_LABEL = {
 export default function CourseManagement() {
   const { loggedInUser } = useAuth();
   const { fetchAllCourses, registerCourse, updateCourse } = useCourseApi();
-  const { fetchAllPathways } = usePathwayApi();
+  const { fetchUserPathways } = usePathwayApi();
 
   const [courses, setCourses] = useState([]);
   const [pathways, setPathways] = useState([]);
@@ -624,20 +615,6 @@ export default function CourseManagement() {
     level: "",
     pathwayId: "",
   });
-
-  // Dropdown menu state
-  const [menuAnchor, setMenuAnchor] = useState(null);
-  const [menuCourse, setMenuCourse] = useState(null); // { ...course, __idx: number }
-
-  const handleMenuOpen = (event, courseWithIndex) => {
-    setMenuAnchor(event.currentTarget);
-    setMenuCourse(courseWithIndex);
-  };
-  const handleMenuClose = () => {
-    setMenuAnchor(null);
-    setMenuCourse(null);
-  };
-
   const [editingIndex, setEditingIndex] = useState(null);
 
   // Outline dialog
@@ -680,7 +657,7 @@ export default function CourseManagement() {
 
       try {
         // --- Load PATHWAYS ---
-        const resPathways = await fetchAllPathways();
+        const resPathways = await fetchUserPathways(loggedInUser?.id);
         const listPathways = Array.isArray(resPathways)
           ? resPathways
           : resPathways?.pathways || [];
@@ -702,7 +679,7 @@ export default function CourseManagement() {
     return () => {
       mounted = false;
     };
-  }, [fetchAllCourses, fetchAllPathways]);
+  }, [fetchAllCourses, fetchUserPathways]);
 
   // ---- Helpers ----
   const handleChange = (e) => {
@@ -978,145 +955,96 @@ export default function CourseManagement() {
         </form>
       </Paper>
 
-      {/* --- Grouped (collapsible) table with dropdown actions --- */}
+      {/* --- Table --- */}
       <Paper
         sx={{
           borderRadius: 3,
           boxShadow: "0 6px 16px rgba(0,0,0,0.08)",
-          overflow: "hidden",
         }}
       >
         <Typography variant="h6" sx={{ padding: "1rem" }}>
           Existing Courses
         </Typography>
+        <Table>
+          <TableHead>
+            <TableRow>
+              <TableCell>Course Name</TableCell>
+              <TableCell>Category</TableCell>
+              {/* <TableCell>Pathway</TableCell> */}
+              <TableCell>Outline</TableCell>
+              <TableCell>Level</TableCell>
+              <TableCell>Status</TableCell>
+              <TableCell align="right">Actions</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {courses.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={7} align="center" sx={{ py: 3 }}>
+                  No courses added yet.
+                </TableCell>
+              </TableRow>
+            ) : (
+              courses.map((course, index) => {
+                const levelKey = (course.level || "").toLowerCase();
+                const statusKey = (course.status || "draft").toLowerCase();
 
-        {(() => {
-          // ✅ Only the logged-in owner's courses, and keep their original index
-          const ownerCoursesWithIndex = courses
-            .map((c, __idx) => ({ ...c, __idx }))
-            .filter((c) => c.userID === loggedInUser?.id);
+                return (
+                  <TableRow key={course.courseID || index} hover>
+                    <TableCell>{course.title}</TableCell>
+                    <TableCell>{course.category}</TableCell>
+                    <TableCell
+                      sx={{
+                        maxWidth: 240,
+                        whiteSpace: "nowrap",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                      }}
+                      title={course.outline}
+                    >
+                      {course.outline}
+                    </TableCell>
+                    <TableCell>{LEVEL_LABEL[levelKey] || "-"}</TableCell>
+                    <TableCell>{STATUS_LABEL[statusKey] || "-"}</TableCell>
+                    <TableCell align="right">
+                      <Stack direction="row" spacing={1} justifyContent="flex-end">
+                        <Button
+                          variant="outlined"
+                          size="small"
+                          onClick={() => handleEdit(index)}
+                        >
+                          Edit
+                        </Button>
 
-          // ✅ Group by status, ensure all statuses appear even if empty
-          const grouped = Object.keys(STATUS_LABEL).reduce((acc, statusKey) => {
-            acc[statusKey] = ownerCoursesWithIndex.filter(
-              (c) => (c.status || "draft").toLowerCase() === statusKey
-            );
-            return acc;
-          }, {});
+                        {statusKey === "draft" && (
+                          <Button
+                            variant="outlined"
+                            size="small"
+                            color="primary"
+                            onClick={() => handleRequestApproval(index)}
+                          >
+                            Request for Approval
+                          </Button>
+                        )}
 
-          return Object.entries(grouped).map(([statusKey, groupCourses]) => (
-            <Accordion key={statusKey} defaultExpanded>
-              <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                <Typography variant="subtitle1" fontWeight={600}>
-                  {STATUS_LABEL[statusKey]} ({groupCourses.length})
-                </Typography>
-              </AccordionSummary>
-              <AccordionDetails>
-                {groupCourses.length === 0 ? (
-                  <Typography
-                    variant="body2"
-                    sx={{ p: 2, color: "gray", textAlign: "center" }}
-                  >
-                    No courses in this status.
-                  </Typography>
-                ) : (
-                  <Table size="small">
-                    <TableHead>
-                      <TableRow>
-                        <TableCell>Course Name</TableCell>
-                        <TableCell>Category</TableCell>
-                        <TableCell>Outline</TableCell>
-                        <TableCell>Level</TableCell>
-                        <TableCell>Status</TableCell>
-                        <TableCell align="right">Actions</TableCell>
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {groupCourses.map((course) => {
-                        const levelKey = (course.level || "").toLowerCase();
-                        // IMPORTANT: use course.__idx (global index in courses)
-                        return (
-                          <TableRow key={course.courseID ?? course.__idx} hover>
-                            <TableCell>{course.title}</TableCell>
-                            <TableCell>{course.category}</TableCell>
-                            <TableCell
-                              sx={{
-                                maxWidth: 240,
-                                whiteSpace: "nowrap",
-                                overflow: "hidden",
-                                textOverflow: "ellipsis",
-                              }}
-                              title={course.outline}
-                            >
-                              {course.outline}
-                            </TableCell>
-                            <TableCell>{LEVEL_LABEL[levelKey] || "-"}</TableCell>
-                            <TableCell>{STATUS_LABEL[statusKey] || "-"}</TableCell>
-                            <TableCell align="right">
-                              <IconButton
-                                size="small"
-                                onClick={(e) =>
-                                  handleMenuOpen(e, course /* has __idx */)
-                                }
-                                aria-label="Actions"
-                              >
-                                <MoreVertIcon />
-                              </IconButton>
-                            </TableCell>
-                          </TableRow>
-                        );
-                      })}
-                    </TableBody>
-                  </Table>
-                )}
-              </AccordionDetails>
-            </Accordion>
-          ));
-        })()}
-
-        {/* Shared actions menu (uses global index via menuCourse.__idx) */}
-        <Menu
-          anchorEl={menuAnchor}
-          open={Boolean(menuAnchor)}
-          onClose={handleMenuClose}
-          anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
-          transformOrigin={{ vertical: "top", horizontal: "right" }}
-        >
-          {menuCourse && (
-            <>
-              <MenuItem
-                onClick={() => {
-                  handleEdit(menuCourse.__idx);
-                  handleMenuClose();
-                }}
-              >
-                Edit
-              </MenuItem>
-
-              {String(menuCourse.status).toLowerCase() === "draft" && (
-                <MenuItem
-                  onClick={() => {
-                    handleRequestApproval(menuCourse.__idx);
-                    handleMenuClose();
-                  }}
-                >
-                  Request for Approval
-                </MenuItem>
-              )}
-
-              {String(menuCourse.status).toLowerCase() === "active" && (
-                <MenuItem
-                  onClick={() => {
-                    handleInactivate(menuCourse.__idx);
-                    handleMenuClose();
-                  }}
-                >
-                  Inactivate
-                </MenuItem>
-              )}
-            </>
-          )}
-        </Menu>
+                        {statusKey === "active" && (
+                          <Button
+                            variant="outlined"
+                            size="small"
+                            color="error"
+                            onClick={() => handleInactivate(index)}
+                          >
+                            Inactivate
+                          </Button>
+                        )}
+                      </Stack>
+                    </TableCell>
+                  </TableRow>
+                );
+              })
+            )}
+          </TableBody>
+        </Table>
       </Paper>
 
       {/* Outline Dialog */}
