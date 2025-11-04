@@ -19,7 +19,7 @@ const CourseQuestionsPage = () => {
   const { canViewCourses, canSubmitQuestions, isAdmin, isCourseOwner } =
     useRoleAccess();
 
-  // ✅ Parse timestamps already in local (Sydney) time
+  // Parse timestamps safely
   const normalizeToDate = (ts) => {
     if (!ts) return null;
     if (ts instanceof Date) return ts;
@@ -40,7 +40,7 @@ const CourseQuestionsPage = () => {
     return isNaN(d) ? null : d;
   };
 
-  // ✅ Format Sydney-local time
+  // Format as UTC+10
   const formatDateTime = (ts) => {
     const date = normalizeToDate(ts);
     if (!date) return "";
@@ -58,15 +58,18 @@ const CourseQuestionsPage = () => {
     return formatted;
   };
 
-  // ✅ Fetch & sort messages (normalize strings only)
-  const fetchDms = async () => {
-    try {
-      const res = await getAllDmsForUser(loggedInUser?.id);
-      const normalized = (res.dms || []).map((d) => {
-        if (typeof d.created_at === "string") {
-          return { ...d, created_at: normalizeToDate(d.created_at) };
-        }
-        return d; // already normalized
+  // Fetch & sort by newest first
+  const fetchDms = () => {
+    getAllDmsForUser(loggedInUser?.id)
+      .then((res) => {
+        const sorted = [...res.dms].sort(
+          (a, b) => normalizeToDate(b.created_at) - normalizeToDate(a.created_at)
+        );
+        setQuestions(sorted);
+      })
+      .catch((err) => {
+        console.error("Failed to fetch questions", err);
+        setQuestions([]);
       });
       const sorted = normalized.sort((a, b) => b.created_at - a.created_at);
       setQuestions(sorted);
@@ -127,8 +130,8 @@ const CourseQuestionsPage = () => {
   };
 
   const handleEdit = (q) => {
-    setNewQuestion(q.message || "");
-    setEditingId(q.msgID);
+    setNewQuestion(q.message || ""); // prevent undefined
+    setEditingId(q.msgID); // use msgID
   };
 
   const cancelEdit = () => {
@@ -136,7 +139,7 @@ const CourseQuestionsPage = () => {
     setEditingId(null);
   };
 
-  // ✅ Filtering logic
+  // Filtering logic
   const filteredQuestions =
     filter === "all"
       ? questions
@@ -144,7 +147,6 @@ const CourseQuestionsPage = () => {
         ? questions.filter((q) => q.reply)
         : questions.filter((q) => !q.reply);
 
-  // ✅ Permission guard
   if (!canViewCourses) {
     return (
       <div className="p-6 text-center text-red-500 font-semibold">
@@ -165,7 +167,7 @@ const CourseQuestionsPage = () => {
         Questions for Course Owner
       </h1>
 
-      {/* ✅ Ask/edit form */}
+      {/* Ask/edit form */}
       {canSubmitQuestions ? (
         <form
           onSubmit={handleSubmit}
@@ -208,7 +210,7 @@ const CourseQuestionsPage = () => {
         </div>
       )}
 
-      {/* ✅ Filter buttons */}
+      {/* Filter buttons */}
       <div className="mb-6 flex gap-3 text-sm">
         {["all", "answered", "unanswered"].map((type) => (
           <button
@@ -224,7 +226,7 @@ const CourseQuestionsPage = () => {
         ))}
       </div>
 
-      {/* ✅ Questions list */}
+      {/* Questions list */}
       <div>
         {filteredQuestions.length === 0 ? (
           <p className="text-gray-500">No questions found.</p>
@@ -248,7 +250,8 @@ const CourseQuestionsPage = () => {
                   <p className="mt-2 text-yellow-600">⏳ Awaiting reply</p>
                 )}
 
-                {canSubmitQuestions && q.userID === loggedInUser?.id && (
+                {/* ✅ Only show edit/delete if user owns question AND it has no reply */}
+                {canSubmitQuestions && q.userID === loggedInUser?.id && !q.reply && (
                   <div className="absolute top-3 right-3 flex gap-3 text-xs">
                     <button
                       onClick={() => handleEdit(q)}
