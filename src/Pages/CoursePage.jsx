@@ -19,6 +19,7 @@ const CoursePage = () => {
 
   const [loading, setLoading] = useState(false);
   const [hasEnrolled, setHasEnrolled] = useState(false);
+  const [enrolmentID, setEnrolmentID] = useState(null);
 
   const [reviews, setReviews] = useState(null);
   const [rating, setRating] = useState(0);
@@ -99,6 +100,21 @@ const CoursePage = () => {
 
     return () => (mounted = false);
   }, [fetchCourse, courseId]);
+
+  // get enrolment ID
+  useEffect(() => {
+    let mounted = true;
+    getEnrolledCoursesById(loggedInUser?.id)
+      .then((resp) => {
+        const activeEnrollment = resp?.enrolments?.find((x) => x.courseID == courseId);
+        if (mounted) setEnrolmentID(activeEnrollment?.enrolmentID);
+      })
+      .catch((err) => {
+        console.error("Failed to fetch enrollment", err);
+        if (mounted) setEnrolmentID(null);
+      });
+    return () => (mounted = false);
+  }, [getEnrolledCoursesById, loggedInUser, courseId]);
 
   // ✅ Fetch course reviews
   useEffect(() => {
@@ -190,8 +206,7 @@ const CoursePage = () => {
         const newReview = {
           rating,
           comment,
-          userID: loggedInUser?.id,
-          courseID: courseId,
+          enrolmentID: enrolmentID
         };
         await createReview(newReview);
         alert("Review submitted!");
@@ -207,6 +222,16 @@ const CoursePage = () => {
     const res = await getAllReviewsForCourse(courseId);
     setReviews(res);
   };
+
+  const capitalizeFirst = (str) => {
+    if (!str) return "";
+    return str
+      .split(" ")
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(" ");
+  };
+
+
 
   const handleDelete = async (reviewId) => {
     if (window.confirm("Are you sure you want to delete your review?")) {
@@ -270,18 +295,20 @@ const CoursePage = () => {
                 to={`/search?category=all&query=${courseFromApi?.level}`}
                 className="text-blue-500 hover:underline"
               >
-                {courseFromApi?.level}
+                {capitalizeFirst(courseFromApi?.level)}
               </Link>
             </p>
+
             <p>
               <span className="font-semibold">Category:</span>{" "}
               <Link
                 to={`/search?category=all&query=${courseFromApi?.category}`}
                 className="text-blue-500 hover:underline"
               >
-                {courseFromApi?.category}
+                {capitalizeFirst(courseFromApi?.category)}
               </Link>
             </p>
+
             <p>
               <span className="font-semibold">Released Date:</span>{" "}
               {formatDateTime(courseFromApi?.created_at)}
@@ -378,7 +405,7 @@ const CoursePage = () => {
                     >
                       <div className="flex items-center gap-2 mb-2">
                         <span className="font-semibold">
-                          {"User name not sent in API"}
+                          {r.firstName} {r.lastName}
                         </span>
                         <span className="text-yellow-500">
                           {"★".repeat(r.rating)}
