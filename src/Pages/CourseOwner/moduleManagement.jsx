@@ -597,10 +597,10 @@ export default function ModuleManagement() {
                             </TableCell>
                             <TableCell>{m.moduleNumber}</TableCell>
                             <TableCell>{m.title}</TableCell>
-                            <TableCell>
-                              {(m.description || "").slice(0, 50)}
-                              {m.description?.length > 50 && "..."}
+                            <TableCell sx={{ whiteSpace: "pre-line", maxWidth: 300 }}>
+                              {m.description || "-"}
                             </TableCell>
+
                             <TableCell>{m.contents?.length || 0}</TableCell>
                             <TableCell>{STATUS_LABEL[m.status] || "-"}</TableCell>
                             <TableCell align="right">
