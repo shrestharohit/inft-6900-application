@@ -1,4 +1,3 @@
-// src/Pages/CourseOwner/quizManagement.jsx
 import { useState, useEffect } from "react";
 import {
   Box,
@@ -22,6 +21,10 @@ import {
   MenuItem,
   Card,
   CardContent,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
+  Menu,
 } from "@mui/material";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
@@ -29,18 +32,24 @@ import { TimePicker } from "@mui/x-date-pickers/TimePicker";
 import dayjs from "dayjs";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
+import MoreVertIcon from "@mui/icons-material/MoreVert";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import useCourseApi from "../../hooks/useCourseApi";
 import useModuleApi from "../../hooks/useModuleApi";
 import useQuizApi from "../../hooks/useQuizApi";
 import { useAuth } from "../../contexts/AuthContext";
 
-const STORAGE_KEY_QUIZZES = "course_owner_quizzes";
+const STATUS_LABEL = {
+  wait_for_approval: "Wait For Approval",
+  draft: "Draft",
+  active: "Active",
+  inactive: "Inactive",
+};
 
 export default function QuizManagement() {
   const [quizzes, setQuizzes] = useState([]);
   const [allModules, setAllModules] = useState([]);
   const [allCourses, setAllCourses] = useState([]);
-
   const [form, setForm] = useState({
     courseID: "",
     moduleID: "",
@@ -58,23 +67,31 @@ export default function QuizManagement() {
       { optionText: "", isCorrect: false, feedbackText: "" },
     ],
   });
+
   const { fetchAllCourses } = useCourseApi();
   const { fetchAllModulesInACourse } = useModuleApi();
   const { registerQuiz, fetchQuizForCourseOwner, updateQuiz } = useQuizApi();
   const { loggedInUser } = useAuth();
 
-  // Normalize various time representations to a dayjs object for the TimePicker.
+  // --- Menu state (for dropdown actions)
+  const [menuAnchor, setMenuAnchor] = useState(null);
+  const [menuQuiz, setMenuQuiz] = useState(null);
+
+  const handleMenuOpen = (event, quizWithIndex) => {
+    setMenuAnchor(event.currentTarget);
+    setMenuQuiz(quizWithIndex);
+  };
+  const handleMenuClose = () => {
+    setMenuAnchor(null);
+    setMenuQuiz(null);
+  };
+
   const normalizeToDayjs = (value) => {
     if (value == null) return null;
-    // already a dayjs-like object
     if (typeof value === "object" && typeof value.isValid === "function")
       return value;
-    // accept HH:mm or HH:mm:ss strings
     if (typeof value === "string" && /^(\d{2}:\d{2})(:\d{2})?$/.test(value)) {
-      const parts = value.split(":");
-      const h = parseInt(parts[0], 10);
-      const m = parseInt(parts[1], 10);
-      const s = parts[2] ? parseInt(parts[2], 10) : 0;
+      const [h, m, s = 0] = value.split(":").map(Number);
       return dayjs().hour(h).minute(m).second(s);
     }
     return null;
@@ -83,7 +100,8 @@ export default function QuizManagement() {
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
-    if (name === "courseID")
+
+    if (name === "courseID") {
       (async () => {
         setForm((prev) => ({ ...prev, moduleID: "" }));
         try {
@@ -98,6 +116,7 @@ export default function QuizManagement() {
           setAllModules([]);
         }
       })();
+    }
   };
 
   const handleQuestionChange = (e) => {
@@ -107,9 +126,7 @@ export default function QuizManagement() {
 
   const handleOptionChange = (index, field, value) => {
     let newOptions = [...questionForm.options];
-
     if (field === "isCorrect" && value === true) {
-      // when one option is selected as correct, clear others
       newOptions = newOptions.map((opt, i) => ({
         ...opt,
         isCorrect: i === index,
@@ -117,7 +134,6 @@ export default function QuizManagement() {
     } else {
       newOptions[index] = { ...newOptions[index], [field]: value };
     }
-
     setQuestionForm({ ...questionForm, options: newOptions });
   };
 
@@ -140,8 +156,10 @@ export default function QuizManagement() {
       alert("⚠️ A question must have at least 2 options.");
       return;
     }
-    const updatedOptions = questionForm.options.filter((_, i) => i !== index);
-    setQuestionForm({ ...questionForm, options: updatedOptions });
+    setQuestionForm({
+      ...questionForm,
+      options: questionForm.options.filter((_, i) => i !== index),
+    });
   };
 
   const addQuestion = () => {
@@ -158,20 +176,11 @@ export default function QuizManagement() {
       return;
     }
 
-    const updatedQuestions = [...questions];
+    const updated = [...questions];
     if (editingIndex !== null) {
-      updatedQuestions[editingIndex] = {
-        ...questionForm,
-        options: questionForm.options.map((o) => ({ ...o })),
-      };
-    } else {
-      updatedQuestions.push({
-        ...questionForm,
-        options: questionForm.options.map((o) => ({ ...o })),
-      });
-    }
-    setQuestions(updatedQuestions);
-
+      updated[editingIndex] = { ...questionForm };
+    } else updated.push({ ...questionForm });
+    setQuestions(updated);
     setQuestionForm({
       questionText: "",
       options: [
@@ -182,49 +191,13 @@ export default function QuizManagement() {
     setEditingIndex(null);
   };
 
-  const deleteQuestion = (qIndex) => {
-    if (questions.length === 1) {
-      if (editingQuizIndex !== null) {
-        const updatedQuizzes = quizzes.filter((_, i) => i !== editingQuizIndex);
-        setQuizzes(updatedQuizzes);
-      }
-      setQuestions([]);
-      setForm({
-        courseID: "",
-        moduleID: "",
-        title: "",
-        timeLimit: null,
-      });
-      setQuestionForm({
-        questionText: "",
-        options: [
-          { optionText: "", isCorrect: false, feedbackText: "" },
-          { optionText: "", isCorrect: false, feedbackText: "" },
-        ],
-      });
-      setEditingIndex(null);
-      setEditingQuizIndex(null);
-      return;
-    }
-
-    const updatedQuestions = questions.filter((_, i) => i !== qIndex);
-    setQuestions(updatedQuestions);
-
-    if (editingIndex === qIndex) {
-      setQuestionForm({
-        questionText: "",
-        options: [
-          { optionText: "", isCorrect: false, feedbackText: "" },
-          { optionText: "", isCorrect: false, feedbackText: "" },
-        ],
-      });
-      setEditingIndex(null);
-    }
+  const deleteQuestion = (index) => {
+    setQuestions(questions.filter((_, i) => i !== index));
   };
 
-  const handleEditQuestion = (qIndex) => {
-    setQuestionForm({ ...questions[qIndex] });
-    setEditingIndex(qIndex);
+  const handleEditQuestion = (index) => {
+    setQuestionForm({ ...questions[index] });
+    setEditingIndex(index);
   };
 
   const handleSaveQuiz = () => {
@@ -239,14 +212,10 @@ export default function QuizManagement() {
 
     const updatedQuestions = questions.map((q, i) => ({
       ...q,
-      options: q.options.map((o, index) => ({
-        ...o,
-        optionOrder: index + 1,
-        status: "active",
-      })),
       questionNumber: i + 1,
       status: "active",
     }));
+
     const normalized = normalizeToDayjs(form.timeLimit);
     const payload = {
       ...form,
@@ -256,14 +225,15 @@ export default function QuizManagement() {
           : form.timeLimit,
       questions: updatedQuestions,
     };
-    const newQuiz = payload;
-    if (quizId !== null) {
-      newQuiz.status = "wait_for_approval";
-      updateQuiz(quizId, newQuiz);
-    } else {
-      newQuiz.status = "draft";
-      registerQuiz(newQuiz);
-    }
+
+    const newQuiz = {
+      ...payload,
+      status: quizId ? "wait_for_approval" : "draft",
+    };
+
+    if (quizId) updateQuiz(quizId, newQuiz);
+    else registerQuiz(newQuiz);
+
     clearFields();
   };
 
@@ -275,78 +245,64 @@ export default function QuizManagement() {
     setEditingQuizIndex(null);
   };
 
-  const handleEditQuiz = async (index, quizId) => {
-    setQuizId(quizId);
+  const handleEditQuiz = async (index, quizID) => {
     const quiz = quizzes[index];
-    const res = await fetchAllModulesInACourse(quiz.courseID);
-    setAllModules(res);
+    setQuizId(quizID);
+    const modules = await fetchAllModulesInACourse(quiz.courseID);
+    setAllModules(modules);
+
     setForm({
       courseID: quiz.courseID,
       moduleID: quiz.moduleID,
       title: quiz.title,
-      timeLimit:
-        quiz.timeLimit &&
-        typeof quiz.timeLimit === "string" &&
-        /^(\d{2}:\d{2})(:\d{2})?$/.test(quiz.timeLimit)
-          ? (() => {
-              const parts = quiz.timeLimit.split(":");
-              const h = parseInt(parts[0], 10);
-              const m = parseInt(parts[1], 10);
-              const s = parts[2] ? parseInt(parts[2], 10) : 0;
-              return dayjs().hour(h).minute(m).second(s);
-            })()
-          : quiz.timeLimit,
+      timeLimit: normalizeToDayjs(quiz.timeLimit),
     });
-    setQuestions(
-      quiz.questions.map((q) => ({
-        ...q,
-        options: q.options.map((o) => ({ ...o })),
-      }))
-    );
+    setQuestions(quiz.questions);
     setEditingQuizIndex(index);
     setEditingIndex(null);
-
-    // Reset status to Draft when editing if Active or Inactive
-    const updated = [...quizzes];
-    if (quiz.status === "Active" || quiz.status === "Inactive")
-      updated[index].status = "Draft";
-    setQuizzes(updated);
   };
 
   const handleStatusChange = async (quiz, status) => {
-    const payload = { ...quiz, status };
-    await updateQuiz(quiz.quizID, payload);
+    await updateQuiz(quiz.quizID, { ...quiz, status });
     const res = await fetchQuizForCourseOwner(loggedInUser?.id);
     setQuizzes(res);
   };
 
   useEffect(() => {
     let mounted = true;
-    const loadInitialData = async () => {
+    const loadData = async () => {
       try {
-        const res = await fetchQuizForCourseOwner(loggedInUser?.id);
-
-        const coursesResponse = await fetchAllCourses();
-        const courseList = coursesResponse || [];
+        const [quizRes, courseRes] = await Promise.all([
+          fetchQuizForCourseOwner(loggedInUser?.id),
+          fetchAllCourses(),
+        ]);
 
         if (!mounted) return;
-        setAllCourses(courseList);
-        setQuizzes(res);
-      } catch (e) {
-        console.error("Failed to load data", e);
+        const courses = courseRes || [];
+
+        // attach readable titles
+        const withTitles = quizRes.map((q, idx) => {
+          const c = courses.find((x) => x.courseID === q.courseID);
+          const m = (q.modules || []).find(
+            (mod) => mod.moduleID === q.moduleID
+          );
+          return {
+            ...q,
+            __idx: idx,
+            courseTitle: c?.title || `Course ${q.courseID}`,
+            moduleTitle: m?.title || q.moduleID || "-",
+          };
+        });
+
+        setAllCourses(courses);
+        setQuizzes(withTitles);
+      } catch (err) {
+        console.error("❌ Failed to load data:", err);
       }
     };
-
-    loadInitialData();
+    loadData();
     return () => (mounted = false);
-  }, [fetchQuizForCourseOwner, fetchAllCourses]);
-
-  const statusMapper = {
-    wait_for_approval: "Wait For Approval",
-    draft: "Draft",
-    active: "Active",
-    inactive: "Inactive",
-  };
+  }, [fetchQuizForCourseOwner, fetchAllCourses, loggedInUser]);
 
   return (
     <Box sx={{ padding: "2rem", maxWidth: "1200px", margin: "0 auto" }}>
@@ -372,25 +328,24 @@ export default function QuizManagement() {
               onChange={handleChange}
               label="Course Title"
             >
-              {allCourses.map((c, idx) => (
-                <MenuItem key={idx} value={c.courseID}>
+              {allCourses.map((c) => (
+                <MenuItem key={c.courseID} value={c.courseID}>
                   {c.title}
                 </MenuItem>
               ))}
             </Select>
           </FormControl>
 
-          <FormControl fullWidth size="small">
+          <FormControl fullWidth size="small" disabled={!form.courseID}>
             <InputLabel>Module Title</InputLabel>
             <Select
               name="moduleID"
               value={form.moduleID}
               onChange={handleChange}
               label="Module Title"
-              disabled={!form.courseID}
             >
-              {allModules.map((m, idx) => (
-                <MenuItem key={idx} value={m.moduleID}>
+              {allModules.map((m) => (
+                <MenuItem key={m.moduleID} value={m.moduleID}>
                   {m.title}
                 </MenuItem>
               ))}
@@ -428,9 +383,7 @@ export default function QuizManagement() {
             </Grid>
           </Grid>
 
-
-
-          {/* Question Card */}
+          {/* Add/Edit Questions */}
           <Card sx={{ mt: 2, p: 2, backgroundColor: "#f9f9f9" }}>
             <CardContent>
               <Typography variant="h6" gutterBottom>
@@ -474,7 +427,6 @@ export default function QuizManagement() {
                       }
                       fullWidth
                     />
-                    {/* Delete Option Button */}
                     <IconButton
                       color="error"
                       onClick={() => deleteOption(i)}
@@ -485,6 +437,7 @@ export default function QuizManagement() {
                   </Stack>
                 ))}
               </Stack>
+
               <Stack direction="row" spacing={2} mt={2}>
                 <Button
                   startIcon={<AddCircleOutlineIcon />}
@@ -494,20 +447,8 @@ export default function QuizManagement() {
                 >
                   Add Option
                 </Button>
-                {/* <Button variant="contained" color="primary" component="label">
-                  Upload Image
-                  <input type="file" hidden onChange={handleQuestionImage} />
-                </Button> */}
               </Stack>
-              {/* {questionForm.image && (
-                <Box mt={2}>
-                  <img
-                    src={questionForm.image}
-                    alt="Question"
-                    style={{ maxWidth: 250, borderRadius: 8 }}
-                  />
-                </Box>
-              )} */}
+
               <Button
                 variant="contained"
                 color="primary"
@@ -519,192 +460,137 @@ export default function QuizManagement() {
             </CardContent>
           </Card>
 
-          {/* Questions Preview */}
-          {questions.length > 0 && (
-            <Paper sx={{ mt: 3, p: 2 }}>
-              <Typography variant="h6" gutterBottom>
-                Questions Preview
-              </Typography>
-              <Divider sx={{ mb: 2 }} />
-              <Table>
-                <TableHead>
-                  <TableRow>
-                    <TableCell>#</TableCell>
-                    <TableCell>Question</TableCell>
-                    <TableCell>Options</TableCell>
-                    <TableCell>Correct</TableCell>
-                    <TableCell>Feedback</TableCell>
-                    <TableCell>Actions</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {questions.map((q, idx) => (
-                    <TableRow key={idx}>
-                      <TableCell>{idx + 1}</TableCell>
-                      <TableCell>{q.questionText}</TableCell>
-                      <TableCell>
-                        {q.options.map((o, i) => (
-                          <div key={i}>
-                            {i + 1}. {o.optionText}
-                          </div>
-                        ))}
-                      </TableCell>
-                      <TableCell>
-                        {q.options
-                          .map((o, i) =>
-                            o.isCorrect ? `Option ${i + 1}` : null
-                          )
-                          .filter(Boolean)
-                          .join(", ")}
-                      </TableCell>
-                      <TableCell>
-                        {q.options.map((o, i) => (
-                          <div key={i}>
-                            {i + 1}. {o.feedbackText}
-                          </div>
-                        ))}
-                      </TableCell>
-                      <TableCell>
-                        <Stack direction="row" spacing={1}>
-                          <Button
-                            size="small"
-                            onClick={() => handleEditQuestion(idx)}
-                          >
-                            Edit
-                          </Button>
-                          <IconButton
-                            color="error"
-                            onClick={() => deleteQuestion(idx)}
-                          >
-                            <DeleteOutlineIcon />
-                          </IconButton>
-                        </Stack>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </Paper>
-          )}
-
           <Button
             variant="contained"
             color="primary"
             onClick={handleSaveQuiz}
             sx={{ mt: 3, alignSelf: "flex-start" }}
           >
-            {quizId !== null ? "Update Quiz" : "Save Quiz"}
+            {quizId ? "Update Quiz" : "Save Quiz"}
           </Button>
         </Stack>
       </Paper>
 
-      {/* Existing Quizzes */}
+      {/* --- Grouped Quizzes with Dropdown Actions --- */}
       <Paper
         sx={{
-          padding: "1.5rem",
           borderRadius: 3,
-          boxShadow: "0 8px 20px rgba(0,0,0,0.1)",
+          boxShadow: "0 6px 16px rgba(0,0,0,0.08)",
+          overflow: "hidden",
         }}
       >
-        <Typography variant="h6" gutterBottom>
+        <Typography variant="h6" sx={{ padding: "1rem" }}>
           Existing Quizzes
         </Typography>
-        <Divider sx={{ mb: 2 }} />
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>Course Title</TableCell>
-              <TableCell>Module Title</TableCell>
-              <TableCell>Quiz Title</TableCell>
-              <TableCell>Time Limit</TableCell>
-              <TableCell>Questions</TableCell>
-              <TableCell>Status</TableCell>
-              <TableCell align="right">Actions</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {quizzes.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={7} align="center" sx={{ py: 3 }}>
-                  No quizzes added yet.
-                </TableCell>
-              </TableRow>
-            ) : (
-              quizzes.map((quiz, idx) => (
-                <TableRow key={idx}>
-                  <TableCell>{quiz.courseID}</TableCell>
-                  <TableCell>{quiz.moduleID}</TableCell>
-                  <TableCell>{quiz.title}</TableCell>
-                  <TableCell>
-                    {quiz.timeLimit
-                      ? typeof quiz.timeLimit === "string"
-                        ? /^(\d{2}:\d{2})(:\d{2})?$/.test(quiz.timeLimit)
-                          ? quiz.timeLimit.length === 5
-                            ? `${quiz.timeLimit}:00`
-                            : quiz.timeLimit
-                          : `${quiz.timeLimit}min`
-                        : `${quiz.timeLimit}min`
-                      : "-"}
-                  </TableCell>
-                  <TableCell>{quiz.questions.length}</TableCell>
-                  <TableCell>{statusMapper[quiz.status]}</TableCell>
-                  <TableCell align="right">
-                    <Stack
-                      direction="row"
-                      spacing={1}
-                      justifyContent="flex-end"
-                    >
-                      {(quiz.status === "draft" ||
-                        quiz.status === "inactive") && (
-                        <>
-                          <Button
-                            size="small"
-                            onClick={() => handleEditQuiz(idx, quiz.quizID)}
-                          >
-                            Edit
-                          </Button>
-                          <Button
-                            size="small"
-                            variant="outlined"
-                            color="secondary"
-                            onClick={() =>
-                              handleStatusChange(quiz, "wait_for_approval")
-                            }
-                          >
-                            Request Approval
-                          </Button>
-                        </>
-                      )}
-                      {quiz.status === "active" && (
-                        <>
-                          <Button
-                            size="small"
-                            onClick={() => handleEditQuiz(idx, quiz.quizID)}
-                          >
-                            Edit
-                          </Button>
-                          <Button
-                            size="small"
-                            variant="outlined"
-                            color="warning"
-                            onClick={() => handleStatusChange(quiz, "inactive")}
-                          >
-                            Inactivate
-                          </Button>
-                        </>
-                      )}
-                      {quiz.status === "wait_for_approval" && (
-                        <Typography variant="body2" color="text.secondary">
-                          Pending with Admin
-                        </Typography>
-                      )}
-                    </Stack>
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
+
+        {(() => {
+          const grouped = Object.keys(STATUS_LABEL).reduce((acc, key) => {
+            acc[key] = quizzes.filter(
+              (q) => (q.status || "draft").toLowerCase() === key
+            );
+            return acc;
+          }, {});
+
+          return Object.entries(grouped).map(([statusKey, groupQuizzes]) => (
+            <Accordion key={statusKey} defaultExpanded>
+              <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                <Typography variant="subtitle1" fontWeight={600}>
+                  {STATUS_LABEL[statusKey]} ({groupQuizzes.length})
+                </Typography>
+              </AccordionSummary>
+              <AccordionDetails>
+                {groupQuizzes.length === 0 ? (
+                  <Typography
+                    variant="body2"
+                    sx={{ p: 2, color: "gray", textAlign: "center" }}
+                  >
+                    No quizzes in this status.
+                  </Typography>
+                ) : (
+                  <Table size="small">
+                    <TableHead>
+                      <TableRow>
+                        <TableCell>Course</TableCell>
+                        <TableCell>Module</TableCell>
+                        <TableCell>Quiz Title</TableCell>
+                        <TableCell>Time Limit</TableCell>
+                        <TableCell>Questions</TableCell>
+                        <TableCell>Status</TableCell>
+                        <TableCell align="right">Actions</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {groupQuizzes.map((quiz) => (
+                        <TableRow key={quiz.quizID ?? quiz.__idx} hover>
+                          <TableCell>{quiz.courseTitle}</TableCell>
+                          <TableCell>{quiz.moduleTitle}</TableCell>
+                          <TableCell>{quiz.title}</TableCell>
+                          <TableCell>{quiz.timeLimit || "-"}</TableCell>
+                          <TableCell>{quiz.questions?.length || 0}</TableCell>
+                          <TableCell>
+                            {STATUS_LABEL[quiz.status] || "-"}
+                          </TableCell>
+                          <TableCell align="right">
+                            <IconButton
+                              size="small"
+                              onClick={(e) => handleMenuOpen(e, quiz)}
+                            >
+                              <MoreVertIcon />
+                            </IconButton>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
+              </AccordionDetails>
+            </Accordion>
+          ));
+        })()}
+
+        {/* Shared Dropdown Menu */}
+        <Menu
+          anchorEl={menuAnchor}
+          open={Boolean(menuAnchor)}
+          onClose={handleMenuClose}
+          anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+          transformOrigin={{ vertical: "top", horizontal: "right" }}
+        >
+          {menuQuiz && (
+            <>
+              <MenuItem
+                onClick={() => {
+                  handleEditQuiz(menuQuiz.__idx, menuQuiz.quizID);
+                  handleMenuClose();
+                }}
+              >
+                Edit
+              </MenuItem>
+
+              {String(menuQuiz.status).toLowerCase() === "draft" && (
+                <MenuItem
+                  onClick={() => {
+                    handleStatusChange(menuQuiz, "wait_for_approval");
+                    handleMenuClose();
+                  }}
+                >
+                  Request for Approval
+                </MenuItem>
+              )}
+
+              {String(menuQuiz.status).toLowerCase() === "active" && (
+                <MenuItem
+                  onClick={() => {
+                    handleStatusChange(menuQuiz, "inactive");
+                    handleMenuClose();
+                  }}
+                >
+                  Inactivate
+                </MenuItem>
+              )}
+            </>
+          )}
+        </Menu>
       </Paper>
     </Box>
   );

@@ -13,6 +13,42 @@ const StudentAnnouncementsPageContent = () => {
 
   const course = dummyCourses.find((c) => String(c.id) === String(courseId));
 
+  // ✅ Sydney-local time helpers
+  const normalizeToDate = (ts) => {
+    if (!ts) return null;
+    if (ts instanceof Date) return ts;
+
+    if (typeof ts === "number") {
+      const ms = ts > 1e12 ? ts : ts * 1000;
+      return new Date(ms);
+    }
+
+    if (typeof ts === "string") {
+      let s = ts.trim();
+      if (s.includes(" ") && !s.includes("T")) s = s.replace(" ", "T");
+      // ⚠️ Do NOT add "Z" — treat as local Sydney time
+      const d = new Date(s);
+      return isNaN(d) ? null : d;
+    }
+
+    const d = new Date(ts);
+    return isNaN(d) ? null : d;
+  };
+
+  const formatDateTime = (ts) => {
+    const date = normalizeToDate(ts);
+    if (!date) return "";
+    return new Intl.DateTimeFormat("en-AU", {
+      timeZone: "Australia/Sydney",
+      month: "short",
+      day: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+    }).format(date);
+  };
+
   // 🚫 Role restriction
   if (!canViewAnnouncements) {
     return (
@@ -28,8 +64,10 @@ const StudentAnnouncementsPageContent = () => {
         const publishedList =
           res.announcements
             ?.filter((a) => a.status === "active")
-            .sort((a, b) => new Date(b.created_at) - new Date(a.created_at)) ||
-          [];
+            .sort(
+              (a, b) =>
+                normalizeToDate(b.created_at) - normalizeToDate(a.created_at)
+            ) || [];
         setPublished(publishedList);
       })
       .catch((err) => {
@@ -44,7 +82,8 @@ const StudentAnnouncementsPageContent = () => {
 
   // ✅ Helper to check if announcement is NEW (within last 7 days)
   const isNew = (publishedAt) => {
-    const publishedDate = new Date(publishedAt);
+    const publishedDate = normalizeToDate(publishedAt);
+    if (!publishedDate) return false;
     const now = new Date();
     const diffInDays = (now - publishedDate) / (1000 * 60 * 60 * 24);
     return diffInDays <= 7;
@@ -68,9 +107,7 @@ const StudentAnnouncementsPageContent = () => {
       )}
 
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold text-gray-800">
-          📢 Announcements
-        </h1>
+        <h1 className="text-3xl font-bold text-gray-800">📢 Announcements</h1>
 
         {/* ✅ Only admins & course owners can post */}
         {canCreateAnnouncement && (
@@ -106,11 +143,9 @@ const StudentAnnouncementsPageContent = () => {
                   </span>
                 )}
               </div>
-              <p className="text-gray-700 mt-2 whitespace-pre-line">
-                {a.message}
-              </p>
+              <p className="text-gray-700 mt-2 whitespace-pre-line">{a.message}</p>
               <p className="text-xs text-gray-500 mt-3">
-                Published on: {a.created_at}
+                Published on: {formatDateTime(a.created_at)}
               </p>
             </li>
           ))}
@@ -120,4 +155,4 @@ const StudentAnnouncementsPageContent = () => {
   );
 };
 
-export default (StudentAnnouncementsPageContent);
+export default StudentAnnouncementsPageContent;
