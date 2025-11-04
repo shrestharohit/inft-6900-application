@@ -11,9 +11,8 @@ const CoursePage = () => {
   const { courseId } = useParams();
   const navigate = useNavigate();
   const { loggedInUser, isLoggedIn } = useAuth();
-  const userRole = loggedInUser?.role; // ✅ added
+  const userRole = loggedInUser?.role;
 
-  const [course, setCourse] = useState(null);
   const [courseFromApi, setCourseFromApi] = useState(null);
   const [loadingCourse, setLoadingCourse] = useState(true);
   const [notFound, setNotFound] = useState(false);
@@ -24,7 +23,6 @@ const CoursePage = () => {
   const [reviews, setReviews] = useState(null);
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState("");
-  const [editingReview, setEditingReview] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [reviewId, setReviewId] = useState(null);
 
@@ -36,6 +34,42 @@ const CoursePage = () => {
     getAllReviewsForCourse,
     deleteReviewById,
   } = useReview();
+
+  // ✅ Sydney-local time helpers
+  const normalizeToDate = (ts) => {
+    if (!ts) return null;
+    if (ts instanceof Date) return ts;
+
+    if (typeof ts === "number") {
+      const ms = ts > 1e12 ? ts : ts * 1000;
+      return new Date(ms);
+    }
+
+    if (typeof ts === "string") {
+      let s = ts.trim();
+      if (s.includes(" ") && !s.includes("T")) s = s.replace(" ", "T");
+      // ⚠️ Do NOT add "Z" — treat as local Sydney time
+      const d = new Date(s);
+      return isNaN(d) ? null : d;
+    }
+
+    const d = new Date(ts);
+    return isNaN(d) ? null : d;
+  };
+
+  const formatDateTime = (ts) => {
+    const date = normalizeToDate(ts);
+    if (!date) return "";
+    return new Intl.DateTimeFormat("en-AU", {
+      timeZone: "Australia/Sydney",
+      month: "short",
+      day: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+    }).format(date);
+  };
 
   // ✅ Fetch course info
   useEffect(() => {
@@ -250,7 +284,7 @@ const CoursePage = () => {
             </p>
             <p>
               <span className="font-semibold">Released Date:</span>{" "}
-              {courseFromApi?.created_at}
+              {formatDateTime(courseFromApi?.created_at)}
             </p>
             <p>
               <span className="font-semibold">Rating:</span>{" "}
@@ -352,7 +386,9 @@ const CoursePage = () => {
                         </span>
                       </div>
                       <p className="text-gray-700">{r.comment}</p>
-                      <p className="text-xs text-gray-400">{r.created_at}</p>
+                      <p className="text-xs text-gray-400">
+                        {formatDateTime(r.created_at)}
+                      </p>
 
                       {isLoggedIn && r.userID === loggedInUser?.id && (
                         <div className="mt-2 flex gap-2">
