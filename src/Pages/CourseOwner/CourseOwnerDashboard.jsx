@@ -1,12 +1,7 @@
-// src/Pages/CourseOwnerDashboard.jsx
 import React, { useEffect, useState } from "react";
-import { useAuth } from "../../contexts/AuthContext"; // adjust path if needed
-import { dummyCourses } from "../../Pages/dummyData";
-import { dummyModules } from "../../Pages/dummyModule";
-
+import { useAuth } from "../../contexts/AuthContext";
+import useAnalyticsApi from "../../hooks/useAnalyticsApi";
 import {
-  LineChart,
-  Line,
   BarChart,
   Bar,
   PieChart,
@@ -18,7 +13,6 @@ import {
   CartesianGrid,
   ResponsiveContainer,
 } from "recharts";
-import useAnalyticsApi from "../../hooks/useAnalyticsApi";
 
 const COLORS = ["#1f2a60", "#4856a6", "#22c55e", "#f97316", "#e11d48"];
 
@@ -28,12 +22,58 @@ const CourseOwnerDashboardContent = () => {
 
   const { getCourseOwnerDashboard } = useAnalyticsApi();
 
+  // ✅ Sydney-local date helpers
+  const normalizeToDate = (ts) => {
+    if (!ts) return null;
+    if (ts instanceof Date) return ts;
+
+    if (typeof ts === "number") {
+      const ms = ts > 1e12 ? ts : ts * 1000;
+      return new Date(ms);
+    }
+
+    if (typeof ts === "string") {
+      let s = ts.trim();
+      if (s.includes(" ") && !s.includes("T")) s = s.replace(" ", "T");
+      // ⚠️ Do NOT add "Z" — treat as local Sydney time
+      const d = new Date(s);
+      return isNaN(d) ? null : d;
+    }
+
+    const d = new Date(ts);
+    return isNaN(d) ? null : d;
+  };
+
+  const formatDateTime = (ts) => {
+    const date = normalizeToDate(ts);
+    if (!date) return "";
+    return new Intl.DateTimeFormat("en-AU", {
+      timeZone: "Australia/Sydney",
+      month: "short",
+      day: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+    }).format(date);
+  };
+
   useEffect(() => {
     let mounted = true;
     if (!loggedInUser?.id) return;
     getCourseOwnerDashboard(loggedInUser?.id)
       .then((res) => {
-        if (mounted) setOwnerCourses(res);
+        if (mounted) {
+          // ✅ Sort courses by release date (newest first)
+          if (res?.individualCourseData?.length > 0) {
+            res.individualCourseData.sort(
+              (a, b) =>
+                normalizeToDate(b.releasedDate) -
+                normalizeToDate(a.releasedDate)
+            );
+          }
+          setOwnerCourses(res);
+        }
       })
       .catch((err) => {
         console.error("Failed to fetch courses", err);
@@ -42,19 +82,15 @@ const CourseOwnerDashboardContent = () => {
     return () => (mounted = false);
   }, [getCourseOwnerDashboard, loggedInUser]);
 
-  const enrollmentData = ownerCourses?.individualCourseData?.map((x) => {
-    return {
-      name: x.title,
-      enrolled: x.enrolments,
-    };
-  });
+  const enrollmentData = ownerCourses?.individualCourseData?.map((x) => ({
+    name: x.title,
+    enrolled: x.enrolments,
+  }));
 
-  const ratingData = ownerCourses?.individualCourseData?.map((x) => {
-    return {
-      name: x.title,
-      rating: x.avgRating,
-    };
-  });
+  const ratingData = ownerCourses?.individualCourseData?.map((x) => ({
+    name: x.title,
+    rating: x.avgRating,
+  }));
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
@@ -110,7 +146,10 @@ const CourseOwnerDashboardContent = () => {
                 label
               >
                 {enrollmentData?.map((_, index) => (
-                  <Cell key={`enroll-cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  <Cell
+                    key={`enroll-cell-${index}`}
+                    fill={COLORS[index % COLORS.length]}
+                  />
                 ))}
               </Pie>
               <Tooltip />
@@ -128,20 +167,24 @@ const CourseOwnerDashboardContent = () => {
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis
                 dataKey="name"
-                tickFormatter={(t) => (t?.length > 10 ? `${t.slice(0, 10)}…` : t)}
+                tickFormatter={(t) =>
+                  t?.length > 10 ? `${t.slice(0, 10)}…` : t
+                }
               />
               <YAxis domain={[0, 5]} ticks={[0, 1, 2, 3, 4, 5]} />
               <Tooltip formatter={(val) => Number(val).toFixed(1)} />
               <Bar dataKey="rating">
                 {ratingData?.map((_, index) => (
-                  <Cell key={`rating-cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  <Cell
+                    key={`rating-cell-${index}`}
+                    fill={COLORS[index % COLORS.length]}
+                  />
                 ))}
               </Bar>
             </BarChart>
           </ResponsiveContainer>
         </div>
       </div>
-
 
       {/* Table */}
       <div className="bg-white p-6 rounded-lg shadow">
@@ -164,7 +207,9 @@ const CourseOwnerDashboardContent = () => {
                   <td className="p-3 border font-medium">{c.title}</td>
                   <td className="p-3 border">{c.enrolments}</td>
                   <td className="p-3 border">{c.avgRating}</td>
-                  <td className="p-3 border">{c.releasedDate}</td>
+                  <td className="p-3 border">
+                    {formatDateTime(c.releasedDate)}
+                  </td>
                 </tr>
               ))}
             </tbody>
