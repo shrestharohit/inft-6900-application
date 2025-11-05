@@ -5,7 +5,7 @@
 // import { useAuth } from "../contexts/AuthContext";
 // import useEnrollment from "../hooks/useEnrollment";
 // import useRoleAccess from "../hooks/useRoleAccess";
-
+ 
 // const QuizPage = () => {
 //   const navigate = useNavigate();
 //   const { courseId, moduleId } = useParams();
@@ -17,12 +17,12 @@
 //   const [quiz, setQuiz] = useState(null);
 //   const [enrolmentID, setEnrolmentID] = useState(null);
 //   const [attemptID, setAttemptID] = useState(null);
-
+ 
 //   const { startQuiz, submitQuiz, fetchQuizForCourse, getQuizResultForUser } = useQuizApi();
 //   const { getEnrolledCoursesById } = useEnrollment();
 //   const { loggedInUser } = useAuth();
 //   const { isAdmin, isCourseOwner, canAttemptQuiz, canViewCourses } = useRoleAccess();
-
+ 
 //   // 🚫 Restrict unauthorized
 //   if (!canViewCourses) {
 //     return (
@@ -31,21 +31,21 @@
 //       </div>
 //     );
 //   }
-
+ 
 //   // ✅ Normalize scores
 //   const normalizeScore = (score) => (score <= 1 ? score * 100 : score);
-
+ 
 //   useEffect(() => {
 //     let mounted = true;
 //     fetchQuizForCourse(courseId)
 //       .then(async (res) => {
 //         const activeQuiz = res?.find((x) => x.moduleID == moduleId);
 //         if (mounted) setQuiz(activeQuiz);
-
+ 
 //         const resp = await getQuizResultForUser(activeQuiz?.quizID, loggedInUser?.id);
 //         const normalized = resp.map((a) => ({ ...a, score: normalizeScore(a.score) }));
 //         setAttempts(normalized);
-
+ 
 //         if (normalized.length > 0) {
 //           setShowResult(true);
 //           setCurrentAttempt(normalized[0]);
@@ -57,7 +57,7 @@
 //       });
 //     return () => (mounted = false);
 //   }, [fetchQuizForCourse, courseId, moduleId, getQuizResultForUser, loggedInUser]);
-
+ 
 //   useEffect(() => {
 //     let mounted = true;
 //     getEnrolledCoursesById(loggedInUser?.id)
@@ -71,7 +71,7 @@
 //       });
 //     return () => (mounted = false);
 //   }, [getEnrolledCoursesById, loggedInUser, courseId]);
-
+ 
 //   const mapAnswers = () => ({
 //     enrolmentID,
 //     attemptID,
@@ -80,12 +80,12 @@
 //       optionID: Number(optionID),
 //     })),
 //   });
-
+ 
 //   const calculateResult = async () => {
 //     const payload = mapAnswers();
 //     const res = await submitQuiz(quiz.quizID, payload);
 //     const fixedAttempt = { ...res.attempt, score: normalizeScore(res.attempt.score) };
-
+ 
 //     setCurrentAttempt(fixedAttempt);
 //     setShowResult(true);
 //     setQuiz(null);
@@ -93,10 +93,10 @@
 //     setAttemptID(null);
 //     setAttempts((prev) => [fixedAttempt, ...prev]);
 //   };
-
+ 
 //   const handleOptionChange = (questionId, optionId) =>
 //     setAnswers({ ...answers, [questionId]: optionId });
-
+ 
 //   const handleStartQuiz = async () => {
 //     if (!canAttemptQuiz) return alert("You do not have permission to attempt this quiz.");
 //     setShowResult(false);
@@ -104,7 +104,7 @@
 //     const res = await startQuiz(quiz.quizID, { enrolmentID });
 //     setAttemptID(res.attempt.attemptID);
 //   };
-
+ 
 //   return (
 //     <div className="p-6 min-h-screen bg-gray-50">
 //       <div className="max-w-5xl mx-auto">
@@ -114,11 +114,11 @@
 //             {isAdmin ? "Admin" : "Course Owner"} Preview Mode — quizzes are view-only.
 //           </div>
 //         )}
-
+ 
 //         <h1 className="text-4xl font-extrabold text-gray-800 mb-8 text-center">
 //           Module Quiz
 //         </h1>
-
+ 
 //         {/* Info before quiz (students only) */}
 //         {!quizStarted && !showResult && !attempts?.length && (
 //           <div className="bg-white p-10 rounded-2xl shadow-xl border border-gray-200 text-center">
@@ -147,7 +147,7 @@
 //             )}
 //           </div>
 //         )}
-
+ 
 //         {/* Quiz in progress */}
 //         {quizStarted && canAttemptQuiz && !showResult && (
 //           <div className="space-y-6">
@@ -187,7 +187,7 @@
 //             </button>
 //           </div>
 //         )}
-
+ 
 //         {/* Results screen */}
 //         {showResult && currentAttempt && (
 //           <div className="space-y-6">
@@ -211,7 +211,7 @@
 //                 </span>
 //               </p>
 //             </div>
-
+ 
 //             <h3 className="text-lg font-semibold text-gray-800">Feedback</h3>
 //             {currentAttempt?.feedback?.map((f, idx) => (
 //               <div
@@ -228,7 +228,7 @@
 //                 <p className="italic text-gray-700">{f.feedback}</p>
 //               </div>
 //             ))}
-
+ 
 //             <div className="flex gap-4 mt-4">
 //               {canAttemptQuiz && currentAttempt.passed ? (
 //                 <button
@@ -254,7 +254,7 @@
 //                   Retake Quiz
 //                 </button>
 //               ) : null}
-
+ 
 //               <button
 //                 onClick={() => navigate(-1)}
 //                 className="flex-1 py-3 bg-gray-600 hover:bg-gray-700 text-white rounded-lg font-semibold shadow-md"
@@ -264,7 +264,7 @@
 //             </div>
 //           </div>
 //         )}
-
+ 
 //         {/* Previous attempts */}
 //         {attempts.length > 0 && (
 //           <div className="mt-12">
@@ -308,11 +308,11 @@
 //     </div>
 //   );
 // };
-
+ 
 // export default QuizPage;
-
-
-
+ 
+ 
+ 
 import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import beforeAuthLayout from "../components/BeforeAuth";
@@ -320,7 +320,7 @@ import useQuizApi from "../hooks/useQuizApi";
 import { useAuth } from "../contexts/AuthContext";
 import useEnrollment from "../hooks/useEnrollment";
 import useRoleAccess from "../hooks/useRoleAccess";
-
+ 
 const QuizPage = () => {
   const navigate = useNavigate();
   const { courseId, moduleId } = useParams();
@@ -332,12 +332,12 @@ const QuizPage = () => {
   const [quiz, setQuiz] = useState(null);
   const [enrolmentID, setEnrolmentID] = useState(null);
   const [attemptID, setAttemptID] = useState(null);
-
+ 
   const { startQuiz, submitQuiz, fetchQuizForCourse, getQuizResultForUser } = useQuizApi();
   const { getEnrolledCoursesById } = useEnrollment();
   const { loggedInUser } = useAuth();
   const { isAdmin, isCourseOwner, canAttemptQuiz, canViewCourses } = useRoleAccess();
-
+ 
   // 🚫 Restrict unauthorized
   if (!canViewCourses) {
     return (
@@ -346,9 +346,9 @@ const QuizPage = () => {
       </div>
     );
   }
-
+ 
   const normalizeScore = (score) => (score <= 1 ? score * 100 : score);
-
+ 
   // 🔹 Fetch quiz & attempts
   useEffect(() => {
     let mounted = true;
@@ -356,11 +356,12 @@ const QuizPage = () => {
       .then(async (res) => {
         const activeQuiz = res?.find((x) => x.moduleID == moduleId);
         if (mounted) setQuiz(activeQuiz);
-
+ 
         const resp = await getQuizResultForUser(activeQuiz?.quizID, loggedInUser?.id);
+        console.log("Fetched attempts:", resp);
         const normalized = resp.map((a) => ({ ...a, score: normalizeScore(a.score) }));
         setAttempts(normalized);
-
+ 
         if (normalized.length > 0) {
           setShowResult(true);
           setCurrentAttempt(normalized[0]);
@@ -372,7 +373,7 @@ const QuizPage = () => {
       });
     return () => (mounted = false);
   }, [fetchQuizForCourse, courseId, moduleId, getQuizResultForUser, loggedInUser]);
-
+ 
   // 🔹 Fetch enrolment
   useEffect(() => {
     let mounted = true;
@@ -387,7 +388,7 @@ const QuizPage = () => {
       });
     return () => (mounted = false);
   }, [getEnrolledCoursesById, loggedInUser, courseId]);
-
+ 
   const mapAnswers = () => ({
     enrolmentID,
     attemptID,
@@ -396,12 +397,12 @@ const QuizPage = () => {
       optionID: Number(optionID),
     })),
   });
-
+ 
   const calculateResult = async () => {
     const payload = mapAnswers();
     const res = await submitQuiz(quiz.quizID, payload);
     const fixedAttempt = { ...res.attempt, score: normalizeScore(res.attempt.score) };
-
+ 
     setCurrentAttempt(fixedAttempt);
     setShowResult(true);
     setQuiz(null);
@@ -409,10 +410,10 @@ const QuizPage = () => {
     setAttemptID(null);
     setAttempts((prev) => [fixedAttempt, ...prev]);
   };
-
+ 
   const handleOptionChange = (questionId, optionId) =>
     setAnswers({ ...answers, [questionId]: optionId });
-
+ 
   const handleStartQuiz = async () => {
     if (!canAttemptQuiz) return alert("You do not have permission to attempt this quiz.");
     setShowResult(false);
@@ -420,7 +421,7 @@ const QuizPage = () => {
     const res = await startQuiz(quiz.quizID, { enrolmentID });
     setAttemptID(res.attempt.attemptID);
   };
-
+ 
   return (
     <div className="p-6 min-h-screen bg-gray-50">
       <div className="max-w-5xl mx-auto">
@@ -430,11 +431,11 @@ const QuizPage = () => {
             {isAdmin ? "Admin" : "Course Owner"} Preview Mode — quizzes are view-only.
           </div>
         )}
-
+ 
         <h1 className="text-4xl font-extrabold text-gray-800 mb-8 text-center">
           Module Quiz
         </h1>
-
+ 
         {/* Info before quiz */}
         {!quizStarted && !showResult && !attempts?.length && (
           <div className="bg-white p-10 rounded-2xl shadow-xl border border-gray-200 text-center">
@@ -463,7 +464,7 @@ const QuizPage = () => {
             )}
           </div>
         )}
-
+ 
         {/* Quiz in progress */}
         {quizStarted && canAttemptQuiz && !showResult && (
           <div className="space-y-6">
@@ -506,7 +507,7 @@ const QuizPage = () => {
             </button>
           </div>
         )}
-
+ 
         {/* Results */}
         {showResult && currentAttempt && (
           <div className="mt-8">
@@ -522,14 +523,14 @@ const QuizPage = () => {
               >
                 {currentAttempt.passed ? "✅ Congratulations!" : "❌ Try Again"}
               </h2>
-
+ 
               <p className="text-gray-700 text-lg mb-2">
                 You scored <strong>{Math.round(currentAttempt.score)}%</strong>
               </p>
               <p className="text-gray-500 mb-6">
                 Attempt #{currentAttempt.attemptID}
               </p>
-
+ 
               {canAttemptQuiz && !currentAttempt.passed && (
                 <button
                   onClick={handleStartQuiz}
@@ -538,7 +539,7 @@ const QuizPage = () => {
                   Retake Quiz
                 </button>
               )}
-
+ 
               {currentAttempt.passed ? (
                 <p className="text-green-700 font-medium mt-4">
                   Great job! Your certificate will appear in your profile soon.
@@ -549,7 +550,7 @@ const QuizPage = () => {
                 </p>
               )}
             </div>
-
+ 
             {/* Feedback section */}
             <div className="mt-8">
               <h3 className="text-xl font-semibold text-gray-800 mb-4">
@@ -573,7 +574,7 @@ const QuizPage = () => {
             </div>
           </div>
         )}
-
+ 
         {/* Previous Attempts */}
         {attempts.length > 0 && (
           <div className="mt-12">
@@ -612,5 +613,6 @@ const QuizPage = () => {
     </div>
   );
 };
-
+ 
 export default QuizPage;
+ 

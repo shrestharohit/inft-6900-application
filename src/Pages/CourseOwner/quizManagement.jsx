@@ -50,6 +50,8 @@ export default function QuizManagement() {
   const [quizzes, setQuizzes] = useState([]);
   const [allModules, setAllModules] = useState([]);
   const [allCourses, setAllCourses] = useState([]);
+  const [allModulesGlobal, setAllModulesGlobal] = useState([]);
+
   const [form, setForm] = useState({
     courseID: "",
     moduleID: "",
@@ -88,8 +90,7 @@ export default function QuizManagement() {
 
   const normalizeToDayjs = (value) => {
     if (value == null) return null;
-    if (typeof value === "object" && typeof value.isValid === "function")
-      return value;
+    if (typeof value === "object" && typeof value.isValid === "function") return value;
     if (typeof value === "string" && /^(\d{2}:\d{2})(:\d{2})?$/.test(value)) {
       const [h, m, s = 0] = value.split(":").map(Number);
       return dayjs().hour(h).minute(m).second(s);
@@ -100,23 +101,20 @@ export default function QuizManagement() {
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
-
-    if (name === "courseID") {
-      (async () => {
-        setForm((prev) => ({ ...prev, moduleID: "" }));
-        try {
-          if (!value) {
-            setAllModules([]);
-            return;
-          }
-          const res = await fetchAllModulesInACourse(value);
-          setAllModules(res);
-        } catch (err) {
-          console.error("Failed to load modules for course", err);
+    if (name === "courseID") (async () => {
+      setForm((prev) => ({ ...prev, moduleID: "" }));
+      try {
+        if (!value) {
           setAllModules([]);
+          return;
         }
-      })();
-    }
+        const res = await fetchAllModulesInACourse(value);
+        setAllModules(res);
+      } catch (err) {
+        console.error("Failed to load modules for course", err);
+        setAllModules([]);
+      }
+    })();
   };
 
   const handleQuestionChange = (e) => {
@@ -127,10 +125,7 @@ export default function QuizManagement() {
   const handleOptionChange = (index, field, value) => {
     let newOptions = [...questionForm.options];
     if (field === "isCorrect" && value === true) {
-      newOptions = newOptions.map((opt, i) => ({
-        ...opt,
-        isCorrect: i === index,
-      }));
+      newOptions = newOptions.map((opt, i) => ({ ...opt, isCorrect: i === index }));
     } else {
       newOptions[index] = { ...newOptions[index], [field]: value };
     }
@@ -144,10 +139,7 @@ export default function QuizManagement() {
     }
     setQuestionForm((prev) => ({
       ...prev,
-      options: [
-        ...prev.options,
-        { optionText: "", isCorrect: false, feedbackText: "" },
-      ],
+      options: [...prev.options, { optionText: "", isCorrect: false, feedbackText: "" }],
     }));
   };
 
@@ -178,21 +170,34 @@ export default function QuizManagement() {
 
     const updated = [...questions];
     if (editingIndex !== null) {
-      updated[editingIndex] = { ...questionForm };
-    } else updated.push({ ...questionForm });
-    setQuestions(updated);
-    setQuestionForm({
-      questionText: "",
-      options: [
-        { optionText: "", isCorrect: false, feedbackText: "" },
-        { optionText: "", isCorrect: false, feedbackText: "" },
-      ],
-    });
+      updatedQuestions[editingIndex] = { ...questionForm, options: questionForm.options.map((o) => ({ ...o })) };
+    } else {
+      updatedQuestions.push({ ...questionForm, options: questionForm.options.map((o) => ({ ...o })) });
+    }
+    setQuestions(updatedQuestions);
+    setQuestionForm({ questionText: "", options: [{ optionText: "", isCorrect: false, feedbackText: "" }, { optionText: "", isCorrect: false, feedbackText: "" }] });
     setEditingIndex(null);
   };
 
-  const deleteQuestion = (index) => {
-    setQuestions(questions.filter((_, i) => i !== index));
+  const deleteQuestion = (qIndex) => {
+    if (questions.length === 1) {
+      if (editingQuizIndex !== null) {
+        const updatedQuizzes = quizzes.filter((_, i) => i !== editingQuizIndex);
+        setQuizzes(updatedQuizzes);
+      }
+      setQuestions([]);
+      setForm({ courseID: "", moduleID: "", title: "", timeLimit: null });
+      setQuestionForm({ questionText: "", options: [{ optionText: "", isCorrect: false, feedbackText: "" }, { optionText: "", isCorrect: false, feedbackText: "" }] });
+      setEditingIndex(null);
+      setEditingQuizIndex(null);
+      return;
+    }
+    const updatedQuestions = questions.filter((_, i) => i !== qIndex);
+    setQuestions(updatedQuestions);
+    if (editingIndex === qIndex) {
+      setQuestionForm({ questionText: "", options: [{ optionText: "", isCorrect: false, feedbackText: "" }, { optionText: "", isCorrect: false, feedbackText: "" }] });
+      setEditingIndex(null);
+    }
   };
 
   const handleEditQuestion = (index) => {
@@ -212,6 +217,7 @@ export default function QuizManagement() {
 
     const updatedQuestions = questions.map((q, i) => ({
       ...q,
+      options: q.options.map((o, index) => ({ ...o, optionOrder: index + 1, status: "active" })),
       questionNumber: i + 1,
       status: "active",
     }));
@@ -219,10 +225,7 @@ export default function QuizManagement() {
     const normalized = normalizeToDayjs(form.timeLimit);
     const payload = {
       ...form,
-      timeLimit:
-        normalized && normalized.isValid()
-          ? normalized.format("HH:mm:ss")
-          : form.timeLimit,
+      timeLimit: normalized && normalized.isValid() ? normalized.format("HH:mm:ss") : form.timeLimit,
       questions: updatedQuestions,
     };
 
@@ -255,11 +258,17 @@ export default function QuizManagement() {
       courseID: quiz.courseID,
       moduleID: quiz.moduleID,
       title: quiz.title,
-      timeLimit: normalizeToDayjs(quiz.timeLimit),
+      timeLimit: quiz.timeLimit && typeof quiz.timeLimit === "string" && /^(\d{2}:\d{2})(:\d{2})?$/.test(quiz.timeLimit)
+        ? (() => { const parts = quiz.timeLimit.split(":"); return dayjs().hour(parseInt(parts[0],10)).minute(parseInt(parts[1],10)).second(parts[2]?parseInt(parts[2],10):0); })()
+        : quiz.timeLimit,
     });
-    setQuestions(quiz.questions);
+    setQuestions(quiz.questions.map((q) => ({ ...q, options: q.options.map((o) => ({ ...o })) })));
     setEditingQuizIndex(index);
     setEditingIndex(null);
+
+    const updated = [...quizzes];
+    if (quiz.status === "Active" || quiz.status === "Inactive") updated[index].status = "Draft";
+    setQuizzes(updated);
   };
 
   const handleStatusChange = async (quiz, status) => {
@@ -272,11 +281,9 @@ export default function QuizManagement() {
     let mounted = true;
     const loadData = async () => {
       try {
-        const [quizRes, courseRes] = await Promise.all([
-          fetchQuizForCourseOwner(loggedInUser?.id),
-          fetchAllCourses(),
-        ]);
-
+        const res = await fetchQuizForCourseOwner(loggedInUser?.id);
+        const coursesResponse = await fetchAllCourses();
+        const courseList = coursesResponse || [];
         if (!mounted) return;
         const courses = courseRes || [];
 
@@ -300,15 +307,59 @@ export default function QuizManagement() {
         console.error("❌ Failed to load data:", err);
       }
     };
-    loadData();
+    loadInitialData();
     return () => (mounted = false);
-  }, [fetchQuizForCourseOwner, fetchAllCourses, loggedInUser]);
+  }, [fetchQuizForCourseOwner, fetchAllCourses]);
+
+  useEffect(() => {
+  let mounted = true;
+  const loadInitialData = async () => {
+    try {
+      const res = await fetchQuizForCourseOwner(loggedInUser?.id);
+      const coursesResponse = await fetchAllCourses();
+      const courseList = coursesResponse || [];
+
+      // Fetch all modules for all courses
+      let modulesList = [];
+      for (const course of courseList) {
+        const mods = await fetchAllModulesInACourse(course.courseID);
+        modulesList = modulesList.concat(mods);
+      }
+
+      if (!mounted) return;
+      setAllCourses(courseList);
+      setAllModulesGlobal(modulesList);
+      setQuizzes(res);
+    } catch (e) {
+      console.error("Failed to load data", e);
+    }
+  };
+  loadInitialData();
+  return () => (mounted = false);
+}, [fetchQuizForCourseOwner, fetchAllCourses]);
+
+
+  const statusMapper = {
+    wait_for_approval: "Wait For Approval",
+    draft: "Draft",
+    active: "Active",
+    inactive: "Inactive",
+  };
+
+  // ✅ Helper functions to map IDs → Titles
+  const getCourseTitle = (id) => {
+    const course = allCourses.find((c) => c.courseID === id);
+    return course ? course.title : id;
+  };
+  const getModuleTitle = (id) => {
+  const module = allModulesGlobal.find((m) => m.moduleID === id);
+  return module ? module.title : id;
+};
+
 
   return (
     <Box sx={{ padding: "2rem", maxWidth: "1200px", margin: "0 auto" }}>
-      <Typography variant="h4" gutterBottom fontWeight="bold">
-        Quiz Management
-      </Typography>
+      <Typography variant="h4" gutterBottom fontWeight="bold">Quiz Management</Typography>
 
       {/* Quiz Form */}
       <Paper
@@ -471,126 +522,60 @@ export default function QuizManagement() {
         </Stack>
       </Paper>
 
-      {/* --- Grouped Quizzes with Dropdown Actions --- */}
-      <Paper
-        sx={{
-          borderRadius: 3,
-          boxShadow: "0 6px 16px rgba(0,0,0,0.08)",
-          overflow: "hidden",
-        }}
-      >
-        <Typography variant="h6" sx={{ padding: "1rem" }}>
-          Existing Quizzes
-        </Typography>
-
-        {(() => {
-          const grouped = Object.keys(STATUS_LABEL).reduce((acc, key) => {
-            acc[key] = quizzes.filter(
-              (q) => (q.status || "draft").toLowerCase() === key
-            );
-            return acc;
-          }, {});
-
-          return Object.entries(grouped).map(([statusKey, groupQuizzes]) => (
-            <Accordion key={statusKey} defaultExpanded>
-              <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                <Typography variant="subtitle1" fontWeight={600}>
-                  {STATUS_LABEL[statusKey]} ({groupQuizzes.length})
-                </Typography>
-              </AccordionSummary>
-              <AccordionDetails>
-                {groupQuizzes.length === 0 ? (
-                  <Typography
-                    variant="body2"
-                    sx={{ p: 2, color: "gray", textAlign: "center" }}
-                  >
-                    No quizzes in this status.
-                  </Typography>
-                ) : (
-                  <Table size="small">
-                    <TableHead>
-                      <TableRow>
-                        <TableCell>Course</TableCell>
-                        <TableCell>Module</TableCell>
-                        <TableCell>Quiz Title</TableCell>
-                        <TableCell>Time Limit</TableCell>
-                        <TableCell>Questions</TableCell>
-                        <TableCell>Status</TableCell>
-                        <TableCell align="right">Actions</TableCell>
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {groupQuizzes.map((quiz) => (
-                        <TableRow key={quiz.quizID ?? quiz.__idx} hover>
-                          <TableCell>{quiz.courseTitle}</TableCell>
-                          <TableCell>{quiz.moduleTitle}</TableCell>
-                          <TableCell>{quiz.title}</TableCell>
-                          <TableCell>{quiz.timeLimit || "-"}</TableCell>
-                          <TableCell>{quiz.questions?.length || 0}</TableCell>
-                          <TableCell>
-                            {STATUS_LABEL[quiz.status] || "-"}
-                          </TableCell>
-                          <TableCell align="right">
-                            <IconButton
-                              size="small"
-                              onClick={(e) => handleMenuOpen(e, quiz)}
-                            >
-                              <MoreVertIcon />
-                            </IconButton>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                )}
-              </AccordionDetails>
-            </Accordion>
-          ));
-        })()}
-
-        {/* Shared Dropdown Menu */}
-        <Menu
-          anchorEl={menuAnchor}
-          open={Boolean(menuAnchor)}
-          onClose={handleMenuClose}
-          anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
-          transformOrigin={{ vertical: "top", horizontal: "right" }}
-        >
-          {menuQuiz && (
-            <>
-              <MenuItem
-                onClick={() => {
-                  handleEditQuiz(menuQuiz.__idx, menuQuiz.quizID);
-                  handleMenuClose();
-                }}
-              >
-                Edit
-              </MenuItem>
-
-              {String(menuQuiz.status).toLowerCase() === "draft" && (
-                <MenuItem
-                  onClick={() => {
-                    handleStatusChange(menuQuiz, "wait_for_approval");
-                    handleMenuClose();
-                  }}
-                >
-                  Request for Approval
-                </MenuItem>
-              )}
-
-              {String(menuQuiz.status).toLowerCase() === "active" && (
-                <MenuItem
-                  onClick={() => {
-                    handleStatusChange(menuQuiz, "inactive");
-                    handleMenuClose();
-                  }}
-                >
-                  Inactivate
-                </MenuItem>
-              )}
-            </>
-          )}
-        </Menu>
+      {/* Existing Quizzes */}
+      <Paper sx={{ padding: "1.5rem", borderRadius: 3, boxShadow: "0 8px 20px rgba(0,0,0,0.1)" }}>
+        <Typography variant="h6" gutterBottom>Existing Quizzes</Typography>
+        <Divider sx={{ mb: 2 }} />
+        <Table>
+          <TableHead>
+            <TableRow>
+              <TableCell>Course Title</TableCell>
+              <TableCell>Module Title</TableCell>
+              <TableCell>Quiz Title</TableCell>
+              <TableCell>Time Limit</TableCell>
+              <TableCell>Questions</TableCell>
+              <TableCell>Status</TableCell>
+              <TableCell align="right">Actions</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {quizzes.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={7} align="center" sx={{ py: 3 }}>No quizzes added yet.</TableCell>
+              </TableRow>
+            ) : (
+              quizzes.map((quiz, idx) => (
+                <TableRow key={idx}>
+                  <TableCell>{getCourseTitle(quiz.courseID)}</TableCell>
+                  <TableCell>{getModuleTitle(quiz.moduleID)}</TableCell>
+                  <TableCell>{quiz.title}</TableCell>
+                  <TableCell>{quiz.timeLimit ? quiz.timeLimit : "-"}</TableCell>
+                  <TableCell>{quiz.questions.length}</TableCell>
+                  <TableCell>{statusMapper[quiz.status]}</TableCell>
+                  <TableCell align="right">
+                    <Stack direction="row" spacing={1} justifyContent="flex-end">
+                      {(quiz.status === "draft" || quiz.status === "inactive") && (
+                        <>
+                          <Button size="small" onClick={() => handleEditQuiz(idx, quiz.quizID)}>Edit</Button>
+                          <Button size="small" variant="outlined" color="secondary" onClick={() => handleStatusChange(quiz, "wait_for_approval")}>Request Approval</Button>
+                        </>
+                      )}
+                      {quiz.status === "active" && (
+                        <>
+                          <Button size="small" onClick={() => handleEditQuiz(idx, quiz.quizID)}>Edit</Button>
+                          <Button size="small" variant="outlined" color="warning" onClick={() => handleStatusChange(quiz, "inactive")}>Inactivate</Button>
+                        </>
+                      )}
+                      {quiz.status === "wait_for_approval" && (
+                        <Typography variant="body2" color="text.secondary">Pending with Admin</Typography>
+                      )}
+                    </Stack>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
       </Paper>
     </Box>
   );

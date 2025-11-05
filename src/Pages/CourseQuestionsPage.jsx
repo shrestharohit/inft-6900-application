@@ -352,26 +352,19 @@ const CourseQuestionsPage = () => {
   };
 
   // Fetch & sort by newest first
-  const fetchDms = () => {
-    try {
-      getAllDmsForUser(loggedInUser?.id)
-        .then((res) => {
-          const sorted = [...res.dms].sort(
-            (a, b) => normalizeToDate(b.created_at) - normalizeToDate(a.created_at)
-          );
-          setQuestions(sorted);
-        })
-        .catch((err) => {
-          console.error("Failed to fetch questions", err);
-          setQuestions([]);
-        });
-      const sorted = normalized.sort((a, b) => b.created_at - a.created_at);
+const fetchDms = () => {
+  getAllDmsForUser(loggedInUser?.id)
+    .then((res) => {
+      const sorted = [...res.dms].sort(
+        (a, b) => normalizeToDate(b.created_at) - normalizeToDate(a.created_at)
+      );
       setQuestions(sorted);
-    } catch (err) {
+    })
+    .catch((err) => {
       console.error("Failed to fetch questions", err);
       setQuestions([]);
-    }
-  };
+    });
+};
 
   useEffect(() => {
     if (loggedInUser?.id) fetchDms();

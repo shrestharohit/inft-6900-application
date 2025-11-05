@@ -275,7 +275,7 @@ const Header = () => {
     clearUserDataFromState,
     loggedInUser,
     setUserDataInState,
-    updateUserField, // ✅ Added from AuthContext
+    updateUserField,
   } = useAuth();
  
   const { updateUserById } = useUserApi();
@@ -474,20 +474,39 @@ const Header = () => {
           <div className="flex items-center gap-4">
             {isLoggedIn ? (
               <>
-                <Avatar
+                {/* ✅ Avatar + Logged-in user's name */}
+                <div
+                  className="flex items-center gap-2 cursor-pointer"
                   onClick={handleMenuOpen}
-                  sx={{
-                    cursor: "pointer",
-                    width: 40,
-                    height: 40,
-                    bgcolor: "white",
-                    color: "black",
-                  }}
-                />
-                <Menu anchorEl={anchorEl} open={open} onClose={handleMenuClose}>
+                >
+                  <Avatar
+                    src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png"
+                    alt="User Avatar"
+                    sx={{
+                      width: 40,
+                      height: 40,
+                      bgcolor: "white",
+                    }}
+                  />
+                  <Typography
+                    variant="body1"
+                    sx={{ color: "white", fontWeight: 600 }}
+                  >
+                  {`${loggedInUser?.firstName || ""} ${loggedInUser?.lastName || ""}`.trim() || "Logged User"}
+                  </Typography>
+                </div>
+ 
+                <Menu anchorEl={anchorEl} open={open} onClose={handleMenuClose} disableScrollLock={true} >
                   <MenuItem onClick={() => navigate("/dashboard")}>Dashboard</MenuItem>
-                  <MenuItem onClick={() => navigate("/profilemanagement")}>Edit Profile</MenuItem>
-                  <MenuItem onClick={() => { handleMenuClose(); navigate("/pomodoro-settings"); }}>
+                  <MenuItem onClick={() => navigate("/profilemanagement")}>
+                    Edit Profile
+                  </MenuItem>
+                  <MenuItem
+                    onClick={() => {
+                      handleMenuClose();
+                      navigate("/pomodoro-settings");
+                    }}
+                  >
                     Pomodoro Settings
                   </MenuItem>
                   <Divider />
@@ -507,14 +526,20 @@ const Header = () => {
                   {/* Admin / Course Owner */}
                   {isAdmin && (
                     <MenuItem
-                      onClick={() => { handleMenuClose(); navigate("/admin/"); }}
+                      onClick={() => {
+                        handleMenuClose();
+                        navigate("/admin/");
+                      }}
                     >
                       Admin Portal
                     </MenuItem>
                   )}
                   {isCourseOwner && (
                     <MenuItem
-                      onClick={() => { handleMenuClose(); navigate("/course-management"); }}
+                      onClick={() => {
+                        handleMenuClose();
+                        navigate("/course-management");
+                      }}
                     >
                       Course Owner Portal
                     </MenuItem>
