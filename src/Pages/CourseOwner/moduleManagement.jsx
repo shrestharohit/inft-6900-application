@@ -25,20 +25,30 @@ import {
   DialogActions,
   Alert,
   CircularProgress,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
+  Menu,
 } from "@mui/material";
-
+import { Add, Delete, Edit, MoreVert } from "@mui/icons-material";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { TimePicker } from "@mui/x-date-pickers/TimePicker";
 import dayjs from "dayjs";
-import { Add, Delete, Edit } from "@mui/icons-material";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import Autocomplete from "@mui/material/Autocomplete";
 
 import useModuleApi from "../../hooks/useModuleApi";
 import useCourseApi from "../../hooks/useCourseApi";
 import { useAuth } from "../../contexts/AuthContext";
 
-// Status kept in submit logic (default draft / preserve on edit) but not shown in UI
+const STATUS_LABEL = {
+  wait_for_approval: "Wait For Approval",
+  draft: "Draft",
+  active: "Active",
+  inactive: "Inactive",
+};
+
 const DEFAULT_STATUS = "draft";
 
 export default function ModuleManagement() {
@@ -47,7 +57,6 @@ export default function ModuleManagement() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [editingModuleIndex, setEditingModuleIndex] = useState(null);
-
   const { registerModule, updateModule } = useModuleApi();
   const { fetchAllModules, fetchAllCourses } = useCourseApi();
   const { loggedInUser } = useAuth();
@@ -57,162 +66,159 @@ export default function ModuleManagement() {
     title: "",
     description: "",
     moduleNumber: "",
-    expectedHours: "", // HH:MM (we convert to HH:MM:00 on submit)
+    expectedHours: "",
     contents: [],
   });
-
-  const [pageForm, setPageForm] = useState({
-    title: "",
-    content: "",
-  });
-
+  const [pageForm, setPageForm] = useState({ title: "", content: "" });
   const [editingPageIndex, setEditingPageIndex] = useState(null);
   const [contentDialogOpen, setContentDialogOpen] = useState(false);
 
+  // Dropdown menu for actions
+  const [menuAnchor, setMenuAnchor] = useState(null);
+  const [menuModule, setMenuModule] = useState(null);
+  const handleMenuOpen = (e, module) => {
+    setMenuAnchor(e.currentTarget);
+    setMenuModule(module);
+  };
+  const handleMenuClose = () => {
+    setMenuAnchor(null);
+    setMenuModule(null);
+  };
+
   useEffect(() => {
     let mounted = true;
-
     const loadData = async () => {
       try {
         setLoading(true);
-        setError(null);
+        const [coursesResponse, modulesResponse] = await Promise.all([
+          fetchAllCourses(),
+          fetchAllModules(loggedInUser?.id),
+        ]);
 
-        const coursesResponse = await fetchAllCourses();
         const courseList = Array.isArray(coursesResponse)
           ? coursesResponse
           : coursesResponse?.courses || [];
-
-        const modulesResponse = await fetchAllModules(loggedInUser?.id);
-        const modulesList = Array.isArray(modulesResponse)
+        const moduleList = Array.isArray(modulesResponse)
           ? modulesResponse
           : modulesResponse?.modules || [];
 
         if (!mounted) return;
         setCourses(courseList);
-        setModules(modulesList);
+        setModules(moduleList);
       } catch (err) {
-        console.error("Failed to load data", err);
-        if (mounted) {
-          setError("Failed to load courses and modules. Please try again.");
-          setCourses([]);
-          setModules([]);
-        }
+        console.error("Failed to load modules/courses", err);
+        if (mounted) setError("Failed to load modules or courses.");
       } finally {
-        if (mounted) {
-          setLoading(false);
-        }
+        if (mounted) setLoading(false);
       }
     };
-
     loadData();
+    return () => (mounted = false);
+  }, [fetchAllModules, fetchAllCourses, loggedInUser?.id]);
 
-    return () => {
-      mounted = false;
-    };
-  }, [fetchAllCourses, fetchAllModules, loggedInUser?.id]);
-
-  // Helpers
+  // Utility
   const toHHMMSS = (hhmm) => {
     if (!hhmm) return null;
-    // Accepts "H:MM" or "HH:MM"
     const [hh = "00", mm = "00"] = hhmm.split(":");
-    const HH = String(hh).padStart(2, "0");
-    const MM = String(mm).padStart(2, "0");
-    return `${HH}:${MM}:00`;
+    return `${hh.padStart(2, "0")}:${mm.padStart(2, "0")}:00`;
   };
 
-  // Module form handlers
+  // Form handlers
+  // 🧩 Safe form change handler
   const handleModuleFormChange = (e) => {
     const { name, value } = e.target;
-    setModuleForm((prev) => ({ ...prev, [name]: value }));
+
+    if (name === "moduleNumber") {
+      // Allow empty string (for typing), but always keep positive integers only
+      if (value === "") {
+        setModuleForm((prev) => ({ ...prev, moduleNumber: "" }));
+        return;
+      }
+
+      // Convert to number safely
+      const num = Math.floor(Number(value));
+
+      // Ignore invalid or negative entries
+      if (isNaN(num) || num < 1) return;
+
+      // Set sanitized value
+      setModuleForm((prev) => ({ ...prev, moduleNumber: num }));
+    } else {
+    // Generic handler for all other fields
+      setModuleForm((prev) => ({ ...prev, [name]: value }));
+    }
   };
 
-  const handleCourseChange = (e) => {
+  const handleCourseChange = (e) =>
     setModuleForm((prev) => ({ ...prev, courseID: e.target.value }));
-  };
 
-  // Page form handlers
   const handlePageFormChange = (e) => {
     const { name, value } = e.target;
     setPageForm((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleOpenPageDialog = () => {
-    setContentDialogOpen(true);
-  };
-
+  const handleOpenPageDialog = () => setContentDialogOpen(true);
   const handleClosePageDialog = () => {
     setContentDialogOpen(false);
-    if (editingPageIndex === null) {
-      setPageForm({ title: "", content: "" });
-    }
+    if (editingPageIndex === null) setPageForm({ title: "", content: "" });
   };
 
   const handleSavePage = () => {
     const trimmedTitle = pageForm.title.trim();
     const trimmedContent = pageForm.content.trim();
-
     if (!trimmedTitle || !trimmedContent) {
       alert("Page title and content are required.");
       return;
     }
 
-    // duplicate title check within the module
-    const isDuplicate = moduleForm.contents.some(
-      (page, idx) =>
+    const duplicate = moduleForm.contents.some(
+      (p, idx) =>
         idx !== editingPageIndex &&
-        (page.title || "")
-          .trim()
-          .toLowerCase() === trimmedTitle.toLowerCase()
+        p.title.trim().toLowerCase() === trimmedTitle.toLowerCase()
     );
-
-    if (isDuplicate) {
-      alert("A page with this title already exists in this module.");
+    if (duplicate) {
+      alert("Duplicate page title in module.");
       return;
     }
 
     const newPage = {
       title: trimmedTitle,
-      content: trimmedContent, // keep content in FE; we map to description on submit
+      content: trimmedContent,
       pageNumber:
         editingPageIndex !== null
           ? editingPageIndex + 1
           : moduleForm.contents.length + 1,
     };
 
-    if (editingPageIndex !== null) {
-      const updated = [...moduleForm.contents];
-      updated[editingPageIndex] = newPage;
-      setModuleForm((prev) => ({ ...prev, contents: updated }));
-    } else {
-      setModuleForm((prev) => ({
-        ...prev,
-        contents: [...prev.contents, newPage],
-      }));
-    }
-
-    setPageForm({ title: "", content: "" });
+    const updated =
+      editingPageIndex !== null
+        ? moduleForm.contents.map((p, i) =>
+          i === editingPageIndex ? newPage : p
+        )
+        : [...moduleForm.contents, newPage];
+    setModuleForm((prev) => ({ ...prev, contents: updated }));
     setEditingPageIndex(null);
+    setPageForm({ title: "", content: "" });
     setContentDialogOpen(false);
   };
 
-  const handleEditPage = (pageIndex) => {
-    const page = moduleForm.contents[pageIndex];
-    // Fix: backend often returns description instead of content
-    const safeContent = page?.content ?? page?.description ?? "";
+  const handleEditPage = (idx) => {
+    const page = moduleForm.contents[idx];
     setPageForm({
-      title: page?.title || "",
-      content: safeContent,
+      title: page.title || "",
+      content: page.content || page.description || "",
     });
-    setEditingPageIndex(pageIndex);
+    setEditingPageIndex(idx);
     setContentDialogOpen(true);
   };
 
-  const handleRemovePage = (pageIndex) => {
-    const updated = moduleForm.contents
-      .filter((_, idx) => idx !== pageIndex)
-      .map((page, idx) => ({ ...page, pageNumber: idx + 1 }));
-    setModuleForm((prev) => ({ ...prev, contents: updated }));
+  const handleRemovePage = (idx) => {
+    setModuleForm((prev) => ({
+      ...prev,
+      contents: prev.contents
+        .filter((_, i) => i !== idx)
+        .map((p, i) => ({ ...p, pageNumber: i + 1 })),
+    }));
   };
 
   const resetForm = () => {
@@ -229,109 +235,127 @@ export default function ModuleManagement() {
     setEditingPageIndex(null);
   };
 
-  // Submit
+  // 🧩 Safe submit handler (create or update module)
   const handleSubmitModule = async (e) => {
     e.preventDefault();
 
+    // ✅ Validate course selection
     if (!moduleForm.courseID) {
       alert("Please select a course.");
       return;
     }
 
+    // ✅ Validate module number
+    let moduleNum = Number(moduleForm.moduleNumber);
+    if (!Number.isInteger(moduleNum) || moduleNum <= 0) {
+      alert("⚠️ Please enter a valid positive Module Number.");
+      return;
+    }
+
+    // Snapshot safe local variable to avoid React async lag
+    const safeModuleNumber = moduleNum;
+
+    // ✅ Construct payload
     const payload = {
       courseID: moduleForm.courseID,
-      title: moduleForm.title.trim(),
-      description: moduleForm.description.trim(),
-      moduleNumber: parseInt(moduleForm.moduleNumber, 10),
-      expectedHours: toHHMMSS(moduleForm.expectedHours) || null, // convert HH:MM -> HH:MM:00
-      // UI doesn't show status; keep existing when editing, else default draft
+      title: moduleForm.title?.trim(),
+      description: moduleForm.description?.trim(),
+      moduleNumber: safeModuleNumber,
+      expectedHours: toHHMMSS(moduleForm.expectedHours),
       status:
         editingModuleIndex !== null
           ? modules[editingModuleIndex]?.status ?? DEFAULT_STATUS
           : DEFAULT_STATUS,
-      contents: moduleForm.contents?.map((x, index) => ({
+      contents: moduleForm.contents.map((x, i) => ({
         ...x,
-        description: x.content, // backend expects description
-        pageNumber: index + 1,
+        description: x.content,
+        pageNumber: i + 1,
         status: "inactive",
       })),
     };
 
+    console.log("🚀 Submitting module payload:", payload);
+
     try {
+      let response;
       if (editingModuleIndex !== null) {
-        const moduleToUpdate = modules[editingModuleIndex];
+        // --- UPDATE EXISTING MODULE ---
+        const target = modules[editingModuleIndex];
+        response = await updateModule(target.moduleID, payload);
 
-        const response = await updateModule(moduleToUpdate.moduleID, {
-          title: payload.title,
-          description: payload.description,
-          moduleNumber: payload.moduleNumber,
-          expectedHours: payload.expectedHours,
-          status: payload.status,
-          contents: payload.contents,
-        });
+        // Merge backend + local safely (don’t let backend override moduleNumber)
+        const updated = {
+          ...modules[editingModuleIndex],
+          ...payload, // keep our version first
+          ...(response?.module || response || {}),
+        };
 
-        const updatedModule = response?.module || response || payload;
         const courseName =
-          courses.find((c) => (c.courseID ?? c.id) === payload.courseID)
-            ?.title || "";
+          courses.find((c) => c.courseID === payload.courseID)?.title || "";
 
         setModules((prev) =>
-          prev.map((mod, idx) =>
-            idx === editingModuleIndex ? { ...updatedModule, courseName } : mod
+          prev.map((m, i) =>
+            i === editingModuleIndex ? { ...updated, courseName } : m
           )
         );
 
-        alert("Module updated successfully!");
+        alert("✅ Module updated successfully!");
       } else {
-        const response = await registerModule(payload);
-        const createdModule = response?.module || response || payload;
-        const courseName =
-          courses.find((c) => (c.courseID ?? c.id) === payload.courseID)
-            ?.title || "";
+        // --- CREATE NEW MODULE ---
+        response = await registerModule(payload);
 
-        setModules((prev) => [...prev, { ...createdModule, courseName }]);
-        alert("Module created successfully!");
+        const created = {
+          ...payload,
+          ...(response?.module || response || {}),
+        };
+
+        const courseName =
+          courses.find((c) => c.courseID === payload.courseID)?.title || "";
+
+        setModules((prev) => [...prev, { ...created, courseName }]);
+
+        alert("✅ Module created successfully!");
       }
+
       resetForm();
-      // stay in current mode; user can use Cancel Edit to switch
     } catch (err) {
-      console.error("Failed to save module", err);
-      alert(
-        `Failed to ${editingModuleIndex !== null ? "update" : "create"
-        } module. Please try again.`
-      );
+      console.error("❌ Failed to save module:", err);
+      alert("Failed to save module. Please try again.");
     }
   };
 
   const handleEditModule = (index) => {
-    const module = modules[index];
-
-    // Normalize contents: ensure .content exists (fallback to .description)
-    const normalizedContents = (module.contents || []).map((p, i) => ({
+    const m = modules[index];
+    const normalizedContents = (m.contents || []).map((p, i) => ({
       ...p,
-      content: p?.content ?? p?.description ?? "",
-      pageNumber: p?.pageNumber ?? i + 1,
+      content: p.content ?? p.description ?? "",
+      pageNumber: p.pageNumber ?? i + 1,
     }));
-
     setModuleForm({
-      courseID: module.courseID,
-      title: module.title || "",
-      description: module.description || "",
-      moduleNumber: module.moduleNumber,
-      expectedHours: (module.expectedHours || "")
-        .slice(0, 5) // accept "HH:MM:SS" -> "HH:MM"
-        .replace(/^$/, ""),
+      courseID: m.courseID,
+      title: m.title,
+      description: m.description,
+      moduleNumber: m.moduleNumber,
+      expectedHours: (m.expectedHours || "").slice(0, 5),
       contents: normalizedContents,
     });
     setEditingModuleIndex(index);
   };
 
-  // Existing module titles for autocomplete (same course)
-  const existingModuleTitles = modules
-    .filter((mod) => mod.courseID === moduleForm.courseID)
-    .map((mod) => mod.title);
+  // Menu actions
+  const handleRequestApproval = async (mod) => {
+    await updateModule(mod.moduleID, { ...mod, status: "wait_for_approval" });
+    const refreshed = await fetchAllModules(loggedInUser?.id);
+    setModules(refreshed);
+  };
 
-  if (loading) {
+  const handleInactivate = async (mod) => {
+    await updateModule(mod.moduleID, { ...mod, status: "inactive" });
+    const refreshed = await fetchAllModules(loggedInUser?.id);
+    setModules(refreshed);
+  };
+
+  if (loading)
     return (
       <Box
         sx={{
@@ -344,7 +368,6 @@ export default function ModuleManagement() {
         <CircularProgress />
       </Box>
     );
-  }
 
   return (
     <Box sx={{ padding: "2rem", maxWidth: 1200, margin: "0 auto" }}>
@@ -358,28 +381,22 @@ export default function ModuleManagement() {
         </Alert>
       )}
 
-      {/* Module Form */}
+      {/* --- Module Form --- */}
       <Paper
         sx={{
           padding: "1.5rem",
-          marginBottom: "2rem",
+          mb: "2rem",
           borderRadius: 3,
           boxShadow: "0 6px 16px rgba(0,0,0,0.08)",
         }}
       >
-        <Stack
-          direction="row"
-          alignItems="center"
-          justifyContent="space-between"
-          sx={{ mb: 1 }}
-        >
+        <Stack direction="row" justifyContent="space-between" mb={1}>
           <Typography variant="h6">
             {editingModuleIndex !== null ? "Edit Module" : "Create New Module"}
           </Typography>
-
           {editingModuleIndex !== null && (
             <Button variant="text" color="secondary" onClick={resetForm}>
-              Cancel Edit (Create New)
+              Cancel Edit
             </Button>
           )}
         </Stack>
@@ -394,12 +411,9 @@ export default function ModuleManagement() {
                 onChange={handleCourseChange}
                 disabled={editingModuleIndex !== null}
               >
-                {courses.map((course) => (
-                  <MenuItem
-                    key={course.courseID ?? course.id}
-                    value={course.courseID ?? course.id}
-                  >
-                    {course.title || course.name}
+                {courses.map((c) => (
+                  <MenuItem key={c.courseID} value={c.courseID}>
+                    {c.title}
                   </MenuItem>
                 ))}
               </Select>
@@ -413,18 +427,16 @@ export default function ModuleManagement() {
               onChange={handleModuleFormChange}
               required
               fullWidth
-              inputProps={{ min: 1 }}
             />
 
             <Autocomplete
               freeSolo
-              options={existingModuleTitles}
+              options={modules
+                .filter((m) => m.courseID === moduleForm.courseID)
+                .map((m) => m.title)}
               value={moduleForm.title}
-              onChange={(_, newValue) =>
-                setModuleForm((prev) => ({ ...prev, title: newValue || "" }))
-              }
-              onInputChange={(_, newInput) =>
-                setModuleForm((prev) => ({ ...prev, title: newInput }))
+              onInputChange={(_, val) =>
+                setModuleForm((p) => ({ ...p, title: val }))
               }
               renderInput={(params) => (
                 <TextField {...params} label="Module Title" required />
@@ -441,108 +453,88 @@ export default function ModuleManagement() {
               fullWidth
             />
 
-            {/* Expected Hours using TimePicker */}
             <LocalizationProvider dateAdapter={AdapterDayjs}>
               <TimePicker
                 ampm={false}
                 views={["hours", "minutes", "seconds"]}
                 format="HH:mm:ss"
-                label="Expected Hours (HH:mm:ss)"
-                value={moduleForm.expectedHours ? dayjs(moduleForm.expectedHours, "HH:mm:ss") : null}
-                onChange={(newValue) => {
-                  setModuleForm((prev) => ({
-                    ...prev,
-                    expectedHours: newValue ? newValue.format("HH:mm:ss") : "",
-                  }));
-                }}
-                renderInput={(params) => (
-                  <TextField {...params} fullWidth helperText="Optional duration for this module." />
-                )}
+                label="Expected Hours"
+                value={
+                  moduleForm.expectedHours
+                    ? dayjs(moduleForm.expectedHours, "HH:mm:ss")
+                    : null
+                }
+                onChange={(val) =>
+                  setModuleForm((p) => ({
+                    ...p,
+                    expectedHours: val ? val.format("HH:mm:ss") : "",
+                  }))
+                }
               />
             </LocalizationProvider>
 
             <Divider sx={{ my: 2 }} />
 
             {/* Pages Section */}
-            <Box>
-              <Typography variant="h6" gutterBottom>
-                Module Pages
+            <Typography variant="h6" gutterBottom>
+              Module Pages
+            </Typography>
+            <Button
+              variant="outlined"
+              startIcon={<Add />}
+              onClick={handleOpenPageDialog}
+              sx={{ mb: 2 }}
+            >
+              Add Page
+            </Button>
+
+            {moduleForm.contents.length > 0 ? (
+              moduleForm.contents.map((p, i) => (
+                <Card key={i} variant="outlined" sx={{ mb: 1 }}>
+                  <CardContent>
+                    <Stack
+                      direction="row"
+                      justifyContent="space-between"
+                      alignItems="center"
+                    >
+                      <Typography variant="subtitle1">
+                        Page {p.pageNumber}: {p.title}
+                      </Typography>
+                      <Box>
+                        <IconButton
+                          size="small"
+                          color="primary"
+                          onClick={() => handleEditPage(i)}
+                        >
+                          <Edit fontSize="small" />
+                        </IconButton>
+                        <IconButton
+                          size="small"
+                          color="error"
+                          onClick={() => handleRemovePage(i)}
+                        >
+                          <Delete fontSize="small" />
+                        </IconButton>
+                      </Box>
+                    </Stack>
+                  </CardContent>
+                </Card>
+              ))
+            ) : (
+              <Typography variant="body2" color="text.secondary">
+                No pages added yet.
               </Typography>
-
-              <Button
-                variant="outlined"
-                startIcon={<Add />}
-                onClick={handleOpenPageDialog}
-                sx={{ mb: 2 }}
-              >
-                Add Page
-              </Button>
-
-              {moduleForm.contents.length > 0 ? (
-                <Stack spacing={2}>
-                  {moduleForm.contents.map((page, idx) => (
-                    <Card key={idx} variant="outlined" sx={{ borderRadius: 2 }}>
-                      <CardContent>
-                        <Box
-                          display="flex"
-                          justifyContent="space-between"
-                          alignItems="center"
-                        >
-                          <Typography variant="subtitle1" fontWeight={600}>
-                            Page {page.pageNumber}: {page.title}
-                          </Typography>
-                          <Box>
-                            <IconButton
-                              size="small"
-                              color="primary"
-                              onClick={() => handleEditPage(idx)}
-                              sx={{ mr: 1 }}
-                            >
-                              <Edit fontSize="small" />
-                            </IconButton>
-                            <IconButton
-                              size="small"
-                              color="error"
-                              onClick={() => handleRemovePage(idx)}
-                            >
-                              <Delete fontSize="small" />
-                            </IconButton>
-                          </Box>
-                        </Box>
-                        <Divider sx={{ my: 1 }} />
-                        <Typography
-                          variant="body2"
-                          color="text.secondary"
-                          sx={{ mb: 1 }}
-                        >
-                          {(page.content ?? page.description ?? "").substring(
-                            0,
-                            150
-                          )}
-                          {((page.content ?? page.description ?? "").length >
-                            150) &&
-                            "..."}
-                        </Typography>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </Stack>
-              ) : (
-                <Typography variant="body2" color="text.secondary">
-                  No pages added yet.
-                </Typography>
-              )}
-            </Box>
+            )}
 
             <Stack direction="row" spacing={2} sx={{ mt: 3 }}>
-              <Button type="submit" variant="contained" color="primary">
+              <Button type="submit" variant="contained">
                 {editingModuleIndex !== null
                   ? "Update Module"
                   : "Create Module"}
               </Button>
               {editingModuleIndex !== null && (
-                <Button variant="outlined" color="secondary" onClick={resetForm}>
-                  Cancel Edit
+                <Button variant="outlined" onClick={resetForm}>
+                  Cancel
                 </Button>
               )}
             </Stack>
@@ -550,99 +542,131 @@ export default function ModuleManagement() {
         </form>
       </Paper>
 
-      {/* Existing Modules Table */}
+      {/* --- Grouped Modules --- */}
       <Paper
         sx={{
           borderRadius: 3,
           boxShadow: "0 6px 16px rgba(0,0,0,0.08)",
         }}
       >
-        <Typography variant="h6" sx={{ padding: "1rem" }}>
+        <Typography variant="h6" sx={{ p: 2 }}>
           Existing Modules
         </Typography>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>Course</TableCell>
-              <TableCell>Module #</TableCell>
-              <TableCell>Title</TableCell>
-              <TableCell>Description</TableCell>
-              <TableCell>No of Pages</TableCell>
-              <TableCell>Status</TableCell>
-              <TableCell align="right">Actions</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {modules.map((module, index) => (
-              <TableRow key={index} hover>
-                <TableCell>
-                  {courses?.find((x) => x.courseID === module.courseID)?.title}
-                </TableCell>
-                {/* Show moduleNumber instead of PK */}
-                <TableCell>{module.moduleNumber}</TableCell>
-                <TableCell>{module.title}</TableCell>
-                <TableCell>
-                  {module.description
-                    ? module.description.substring(0, 50) +
-                    (module.description.length > 50 ? "..." : "")
-                    : "—"}
-                </TableCell>
-                <TableCell>{module.contents?.length || 0}</TableCell>
-                <TableCell>
+
+        {(() => {
+          const grouped = Object.keys(STATUS_LABEL).reduce((acc, k) => {
+            acc[k] = modules.filter(
+              (m) => (m.status || DEFAULT_STATUS).toLowerCase() === k
+            );
+            return acc;
+          }, {});
+          return Object.entries(grouped).map(([key, group]) => (
+            <Accordion key={key} defaultExpanded>
+              <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                <Typography fontWeight={600}>
+                  {STATUS_LABEL[key]} ({group.length})
+                </Typography>
+              </AccordionSummary>
+              <AccordionDetails>
+                {group.length === 0 ? (
                   <Typography
-                    variant="caption"
-                    sx={{
-                      px: 1,
-                      py: 0.5,
-                      borderRadius: 1,
-                      bgcolor:
-                        module.status === "active"
-                          ? "success.light"
-                          : module.status === "draft"
-                            ? "grey.300"
-                            : "warning.light",
-                      color:
-                        module.status === "active"
-                          ? "success.dark"
-                          : module.status === "draft"
-                            ? "grey.700"
-                            : "warning.dark",
-                    }}
+                    sx={{ textAlign: "center", py: 2 }}
+                    color="text.secondary"
                   >
-                    {String(module.status || DEFAULT_STATUS)
-                      .replace(/_/g, " ")
-                      .toUpperCase()}
+                    No modules in this status.
                   </Typography>
-                </TableCell>
-                <TableCell align="right">
-                  <Button
-                    variant="outlined"
-                    size="small"
-                    onClick={() => handleEditModule(index)}
-                  >
-                    Edit
-                  </Button>
-                </TableCell>
-              </TableRow>
-            ))}
-            {modules.length === 0 && (
-              <TableRow>
-                <TableCell colSpan={8} align="center" sx={{ py: 3 }}>
-                  No modules found. Create your first module above.
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
+                ) : (
+                  <Table size="small">
+                    <TableHead>
+                      <TableRow>
+                        <TableCell>Course</TableCell>
+                        <TableCell>Module #</TableCell>
+                        <TableCell>Title</TableCell>
+                        <TableCell>Description</TableCell>
+                          <TableCell>Pages</TableCell>
+                          <TableCell>Status</TableCell>
+                          <TableCell align="right">Actions</TableCell>
+                        </TableRow>
+                      </TableHead>
+                      <TableBody>
+                        {group.map((m, i) => (
+                          <TableRow key={m.moduleID ?? i}>
+                            <TableCell>
+                              {courses.find((c) => c.courseID === m.courseID)
+                                ?.title || "-"}
+                            </TableCell>
+                            <TableCell>{m.moduleNumber}</TableCell>
+                            <TableCell>{m.title}</TableCell>
+                            <TableCell sx={{ whiteSpace: "pre-line", maxWidth: 300 }}>
+                              {m.description || "-"}
+                            </TableCell>
+
+                            <TableCell>{m.contents?.length || 0}</TableCell>
+                            <TableCell>{STATUS_LABEL[m.status] || "-"}</TableCell>
+                            <TableCell align="right">
+                              <IconButton
+                                size="small"
+                                onClick={(e) => handleMenuOpen(e, m)}
+                              >
+                                <MoreVert fontSize="small" />
+                              </IconButton>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                )}
+              </AccordionDetails>
+            </Accordion>
+          ));
+        })()}
+
+        <Menu
+          anchorEl={menuAnchor}
+          open={Boolean(menuAnchor)}
+          onClose={handleMenuClose}
+          anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+          transformOrigin={{ vertical: "top", horizontal: "right" }}
+        >
+          {menuModule && (
+            <>
+              <MenuItem
+                onClick={() => {
+                  handleEditModule(
+                    modules.findIndex((m) => m.moduleID === menuModule.moduleID)
+                  );
+                  handleMenuClose();
+                }}
+              >
+                Edit
+              </MenuItem>
+              {String(menuModule.status).toLowerCase() === "draft" && (
+                <MenuItem
+                  onClick={() => {
+                    handleRequestApproval(menuModule);
+                    handleMenuClose();
+                  }}
+                >
+                  Request Approval
+                </MenuItem>
+              )}
+              {String(menuModule.status).toLowerCase() === "active" && (
+                <MenuItem
+                  onClick={() => {
+                    handleInactivate(menuModule);
+                    handleMenuClose();
+                  }}
+                >
+                  Inactivate
+                </MenuItem>
+              )}
+            </>
+          )}
+        </Menu>
       </Paper>
 
-      {/* Page Content Dialog */}
-      <Dialog
-        open={contentDialogOpen}
-        onClose={handleClosePageDialog}
-        maxWidth="md"
-        fullWidth
-      >
+      {/* --- Page Dialog --- */}
+      <Dialog open={contentDialogOpen} onClose={handleClosePageDialog} maxWidth="md" fullWidth>
         <DialogTitle>
           {editingPageIndex !== null ? "Edit Page" : "Add New Page"}
         </DialogTitle>
@@ -670,7 +694,7 @@ export default function ModuleManagement() {
         </DialogContent>
         <DialogActions>
           <Button onClick={handleClosePageDialog}>Cancel</Button>
-          <Button onClick={handleSavePage} variant="contained" color="primary">
+          <Button onClick={handleSavePage} variant="contained">
             {editingPageIndex !== null ? "Update Page" : "Add Page"}
           </Button>
         </DialogActions>

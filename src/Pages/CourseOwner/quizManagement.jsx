@@ -1,4 +1,3 @@
-// src/Pages/CourseOwner/quizManagement.jsx
 import { useState, useEffect } from "react";
 import {
   Box,
@@ -22,6 +21,10 @@ import {
   MenuItem,
   Card,
   CardContent,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
+  Menu,
 } from "@mui/material";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
@@ -29,12 +32,19 @@ import { TimePicker } from "@mui/x-date-pickers/TimePicker";
 import dayjs from "dayjs";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
+import MoreVertIcon from "@mui/icons-material/MoreVert";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import useCourseApi from "../../hooks/useCourseApi";
 import useModuleApi from "../../hooks/useModuleApi";
 import useQuizApi from "../../hooks/useQuizApi";
 import { useAuth } from "../../contexts/AuthContext";
 
-const STORAGE_KEY_QUIZZES = "course_owner_quizzes";
+const STATUS_LABEL = {
+  wait_for_approval: "Wait For Approval",
+  draft: "Draft",
+  active: "Active",
+  inactive: "Inactive",
+};
 
 export default function QuizManagement() {
   const [quizzes, setQuizzes] = useState([]);
@@ -59,20 +69,30 @@ export default function QuizManagement() {
       { optionText: "", isCorrect: false, feedbackText: "" },
     ],
   });
+
   const { fetchAllCourses } = useCourseApi();
   const { fetchAllModulesInACourse } = useModuleApi();
   const { registerQuiz, fetchQuizForCourseOwner, updateQuiz } = useQuizApi();
   const { loggedInUser } = useAuth();
 
-  // Normalize various time representations to a dayjs object for the TimePicker.
+  // --- Menu state (for dropdown actions)
+  const [menuAnchor, setMenuAnchor] = useState(null);
+  const [menuQuiz, setMenuQuiz] = useState(null);
+
+  const handleMenuOpen = (event, quizWithIndex) => {
+    setMenuAnchor(event.currentTarget);
+    setMenuQuiz(quizWithIndex);
+  };
+  const handleMenuClose = () => {
+    setMenuAnchor(null);
+    setMenuQuiz(null);
+  };
+
   const normalizeToDayjs = (value) => {
     if (value == null) return null;
     if (typeof value === "object" && typeof value.isValid === "function") return value;
     if (typeof value === "string" && /^(\d{2}:\d{2})(:\d{2})?$/.test(value)) {
-      const parts = value.split(":");
-      const h = parseInt(parts[0], 10);
-      const m = parseInt(parts[1], 10);
-      const s = parts[2] ? parseInt(parts[2], 10) : 0;
+      const [h, m, s = 0] = value.split(":").map(Number);
       return dayjs().hour(h).minute(m).second(s);
     }
     return null;
@@ -128,8 +148,10 @@ export default function QuizManagement() {
       alert("⚠️ A question must have at least 2 options.");
       return;
     }
-    const updatedOptions = questionForm.options.filter((_, i) => i !== index);
-    setQuestionForm({ ...questionForm, options: updatedOptions });
+    setQuestionForm({
+      ...questionForm,
+      options: questionForm.options.filter((_, i) => i !== index),
+    });
   };
 
   const addQuestion = () => {
@@ -146,7 +168,7 @@ export default function QuizManagement() {
       return;
     }
 
-    const updatedQuestions = [...questions];
+    const updated = [...questions];
     if (editingIndex !== null) {
       updatedQuestions[editingIndex] = { ...questionForm, options: questionForm.options.map((o) => ({ ...o })) };
     } else {
@@ -178,9 +200,9 @@ export default function QuizManagement() {
     }
   };
 
-  const handleEditQuestion = (qIndex) => {
-    setQuestionForm({ ...questions[qIndex] });
-    setEditingIndex(qIndex);
+  const handleEditQuestion = (index) => {
+    setQuestionForm({ ...questions[index] });
+    setEditingIndex(index);
   };
 
   const handleSaveQuiz = () => {
@@ -199,20 +221,22 @@ export default function QuizManagement() {
       questionNumber: i + 1,
       status: "active",
     }));
+
     const normalized = normalizeToDayjs(form.timeLimit);
     const payload = {
       ...form,
       timeLimit: normalized && normalized.isValid() ? normalized.format("HH:mm:ss") : form.timeLimit,
       questions: updatedQuestions,
     };
-    const newQuiz = payload;
-    if (quizId !== null) {
-      newQuiz.status = "wait_for_approval";
-      updateQuiz(quizId, newQuiz);
-    } else {
-      newQuiz.status = "draft";
-      registerQuiz(newQuiz);
-    }
+
+    const newQuiz = {
+      ...payload,
+      status: quizId ? "wait_for_approval" : "draft",
+    };
+
+    if (quizId) updateQuiz(quizId, newQuiz);
+    else registerQuiz(newQuiz);
+
     clearFields();
   };
 
@@ -224,11 +248,12 @@ export default function QuizManagement() {
     setEditingQuizIndex(null);
   };
 
-  const handleEditQuiz = async (index, quizId) => {
-    setQuizId(quizId);
+  const handleEditQuiz = async (index, quizID) => {
     const quiz = quizzes[index];
-    const res = await fetchAllModulesInACourse(quiz.courseID);
-    setAllModules(res);
+    setQuizId(quizID);
+    const modules = await fetchAllModulesInACourse(quiz.courseID);
+    setAllModules(modules);
+
     setForm({
       courseID: quiz.courseID,
       moduleID: quiz.moduleID,
@@ -247,24 +272,39 @@ export default function QuizManagement() {
   };
 
   const handleStatusChange = async (quiz, status) => {
-    const payload = { ...quiz, status };
-    await updateQuiz(quiz.quizID, payload);
+    await updateQuiz(quiz.quizID, { ...quiz, status });
     const res = await fetchQuizForCourseOwner(loggedInUser?.id);
     setQuizzes(res);
   };
 
   useEffect(() => {
     let mounted = true;
-    const loadInitialData = async () => {
+    const loadData = async () => {
       try {
         const res = await fetchQuizForCourseOwner(loggedInUser?.id);
         const coursesResponse = await fetchAllCourses();
         const courseList = coursesResponse || [];
         if (!mounted) return;
-        setAllCourses(courseList);
-        setQuizzes(res);
-      } catch (e) {
-        console.error("Failed to load data", e);
+        const courses = courseRes || [];
+
+        // attach readable titles
+        const withTitles = quizRes.map((q, idx) => {
+          const c = courses.find((x) => x.courseID === q.courseID);
+          const m = (q.modules || []).find(
+            (mod) => mod.moduleID === q.moduleID
+          );
+          return {
+            ...q,
+            __idx: idx,
+            courseTitle: c?.title || `Course ${q.courseID}`,
+            moduleTitle: m?.title || q.moduleID || "-",
+          };
+        });
+
+        setAllCourses(courses);
+        setQuizzes(withTitles);
+      } catch (err) {
+        console.error("❌ Failed to load data:", err);
       }
     };
     loadInitialData();
@@ -339,25 +379,24 @@ export default function QuizManagement() {
               onChange={handleChange}
               label="Course Title"
             >
-              {allCourses.map((c, idx) => (
-                <MenuItem key={idx} value={c.courseID}>
+              {allCourses.map((c) => (
+                <MenuItem key={c.courseID} value={c.courseID}>
                   {c.title}
                 </MenuItem>
               ))}
             </Select>
           </FormControl>
 
-          <FormControl fullWidth size="small">
+          <FormControl fullWidth size="small" disabled={!form.courseID}>
             <InputLabel>Module Title</InputLabel>
             <Select
               name="moduleID"
               value={form.moduleID}
               onChange={handleChange}
               label="Module Title"
-              disabled={!form.courseID}
             >
-              {allModules.map((m, idx) => (
-                <MenuItem key={idx} value={m.moduleID}>
+              {allModules.map((m) => (
+                <MenuItem key={m.moduleID} value={m.moduleID}>
                   {m.title}
                 </MenuItem>
               ))}
@@ -395,9 +434,7 @@ export default function QuizManagement() {
             </Grid>
           </Grid>
 
-
-
-          {/* Question Card */}
+          {/* Add/Edit Questions */}
           <Card sx={{ mt: 2, p: 2, backgroundColor: "#f9f9f9" }}>
             <CardContent>
               <Typography variant="h6" gutterBottom>
@@ -441,7 +478,6 @@ export default function QuizManagement() {
                       }
                       fullWidth
                     />
-                    {/* Delete Option Button */}
                     <IconButton
                       color="error"
                       onClick={() => deleteOption(i)}
@@ -452,6 +488,7 @@ export default function QuizManagement() {
                   </Stack>
                 ))}
               </Stack>
+
               <Stack direction="row" spacing={2} mt={2}>
                 <Button
                   startIcon={<AddCircleOutlineIcon />}
@@ -461,20 +498,8 @@ export default function QuizManagement() {
                 >
                   Add Option
                 </Button>
-                {/* <Button variant="contained" color="primary" component="label">
-                  Upload Image
-                  <input type="file" hidden onChange={handleQuestionImage} />
-                </Button> */}
               </Stack>
-              {/* {questionForm.image && (
-                <Box mt={2}>
-                  <img
-                    src={questionForm.image}
-                    alt="Question"
-                    style={{ maxWidth: 250, borderRadius: 8 }}
-                  />
-                </Box>
-              )} */}
+
               <Button
                 variant="contained"
                 color="primary"
@@ -486,81 +511,13 @@ export default function QuizManagement() {
             </CardContent>
           </Card>
 
-          {/* Questions Preview */}
-          {questions.length > 0 && (
-            <Paper sx={{ mt: 3, p: 2 }}>
-              <Typography variant="h6" gutterBottom>
-                Questions Preview
-              </Typography>
-              <Divider sx={{ mb: 2 }} />
-              <Table>
-                <TableHead>
-                  <TableRow>
-                    <TableCell>#</TableCell>
-                    <TableCell>Question</TableCell>
-                    <TableCell>Options</TableCell>
-                    <TableCell>Correct</TableCell>
-                    <TableCell>Feedback</TableCell>
-                    <TableCell>Actions</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {questions.map((q, idx) => (
-                    <TableRow key={idx}>
-                      <TableCell>{idx + 1}</TableCell>
-                      <TableCell>{q.questionText}</TableCell>
-                      <TableCell>
-                        {q.options.map((o, i) => (
-                          <div key={i}>
-                            {i + 1}. {o.optionText}
-                          </div>
-                        ))}
-                      </TableCell>
-                      <TableCell>
-                        {q.options
-                          .map((o, i) =>
-                            o.isCorrect ? `Option ${i + 1}` : null
-                          )
-                          .filter(Boolean)
-                          .join(", ")}
-                      </TableCell>
-                      <TableCell>
-                        {q.options.map((o, i) => (
-                          <div key={i}>
-                            {i + 1}. {o.feedbackText}
-                          </div>
-                        ))}
-                      </TableCell>
-                      <TableCell>
-                        <Stack direction="row" spacing={1}>
-                          <Button
-                            size="small"
-                            onClick={() => handleEditQuestion(idx)}
-                          >
-                            Edit
-                          </Button>
-                          <IconButton
-                            color="error"
-                            onClick={() => deleteQuestion(idx)}
-                          >
-                            <DeleteOutlineIcon />
-                          </IconButton>
-                        </Stack>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </Paper>
-          )}
-
           <Button
             variant="contained"
             color="primary"
             onClick={handleSaveQuiz}
             sx={{ mt: 3, alignSelf: "flex-start" }}
           >
-            {quizId !== null ? "Update Quiz" : "Save Quiz"}
+            {quizId ? "Update Quiz" : "Save Quiz"}
           </Button>
         </Stack>
       </Paper>

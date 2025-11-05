@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from "react";
+// src/Pages/CourseOwner/PathwayManagement.jsx
+import React, { useState, useEffect, useRef } from "react";
 import {
   Box,
   Button,
@@ -15,44 +16,71 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
+  IconButton,
+  Menu,
+  MenuItem,
 } from "@mui/material";
+
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import MoreVertIcon from "@mui/icons-material/MoreVert";
 
 import usePathwayApi from "../../hooks/usePathwayApi";
 import { useAuth } from "../../contexts/AuthContext";
 
-const STATUS_OPTIONS = ["draft", "active", "inactive"];
+// ✅ Status labels for consistent display
+const STATUS_LABEL = {
+  draft: "Draft",
+  active: "Active",
+  inactive: "Inactive",
+};
 
-const PathwayManagement = () => {
-  const [pathways, setPathways] = useState([]);
-  const [form, setForm] = useState({
-    name: "",
-    outline: "",
-    status: "draft",
-  });
-  const [editingPathwayId, setEditingPathwayId] = useState(null);
-  const [descDialogOpen, setDescDialogOpen] = useState(false);
-  const [descDraft, setDescDraft] = useState("");
-
-  const { fetchUserPathways, registerPathway, updatePathway } = usePathwayApi();
+export default function PathwayManagement() {
   const { loggedInUser } = useAuth();
+  const { fetchUserPathways, registerPathway, updatePathway } = usePathwayApi();
 
-  // ✅ Load pathways once user is ready
+  const [pathways, setPathways] = useState([]);
+  const [form, setForm] = useState({ name: "", outline: "" });
+  const [editingIndex, setEditingIndex] = useState(null);
+
+  // Outline dialog
+  const [outlineDialogOpen, setOutlineDialogOpen] = useState(false);
+  const [outlinedraft, setOutlinedraft] = useState("");
+  const outlineFieldRef = useRef(null);
+  const focusGuardRef = useRef(false);
+
+  // Dropdown menu
+  const [menuAnchor, setMenuAnchor] = useState(null);
+  const [menuPathway, setMenuPathway] = useState(null);
+
+  // ---- Load pathways ----
   useEffect(() => {
-    if (!loggedInUser?.id) return; // wait for user
+    if (!loggedInUser?.id) return;
     let mounted = true;
 
     const load = async () => {
       try {
-        console.log("🔍 Fetching pathways for user:", loggedInUser.id);
         const res = await fetchUserPathways(loggedInUser.id);
-
-        // Handle possible data structures safely
-        const data =
-          res?.pathways || res?.data?.pathways || res?.data || res || [];
+        const list = Array.isArray(res?.pathways)
+          ? res.pathways
+          : res?.data?.pathways || res?.data || res || [];
 
         if (mounted) {
-          console.log("✅ Pathways loaded:", data);
-          setPathways(Array.isArray(data) ? data : []);
+          const normalized = list.map((p, idx) => ({
+            ...p,
+            status: (p.status || "draft").toLowerCase(),
+            pathwayID: p.pathwayID || idx + 1,
+            userID: p.userID ?? p.userid ?? p.ownerID ?? null, // normalize possible field names
+          }));
+
+          // ✅ Strict filter: only show this owner’s pathways
+          const ownerOnly = normalized.filter(
+            (p) => String(p.userID) === String(loggedInUser.id)
+          );
+
+          setPathways(ownerOnly);
         }
       } catch (err) {
         console.error("❌ Failed to load pathways:", err);
@@ -66,80 +94,136 @@ const PathwayManagement = () => {
     };
   }, [fetchUserPathways, loggedInUser]);
 
-  const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
-  };
 
-  const openDescDialog = () => {
-    setDescDraft(form.outline || "");
-    setDescDialogOpen(true);
-  };
-  const closeDescDialog = () => setDescDialogOpen(false);
-  const saveDescription = () => {
-    setForm((prev) => ({ ...prev, outline: descDraft }));
-    closeDescDialog();
+  // ---- Handlers ----
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setForm((prev) => ({ ...prev, [name]: value }));
   };
 
   const clearForm = () => {
-    setForm({ name: "", outline: "", status: "draft" });
-    setEditingPathwayId(null);
+    setForm({ name: "", outline: "" });
+    setEditingIndex(null);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    const { name, outline } = form;
 
-    if (!form.name.trim() || !form.outline.trim()) {
-      alert("❌ Please fill pathway name and outline.");
+    if (!name?.trim() || !outline?.trim()) {
+      alert("❌ Please fill all required fields.");
       return;
     }
 
-    const cleaned = {
-      name: form.name.trim(),
+    const payload = {
+      name: name.trim(),
+      outline: outline.trim(),
       userID: loggedInUser?.id,
-      outline: form.outline.trim(),
-      status: form.status,
+      status: "draft",
     };
 
     try {
-      if (editingPathwayId) {
-        await updatePathway(editingPathwayId, cleaned);
+      if (editingIndex !== null) {
+        // --- UPDATE ---
+        const pathwayId = pathways[editingIndex]?.pathwayID;
+        if (!pathwayId) return alert("Missing pathway ID");
+
+        const res = await updatePathway(pathwayId, payload);
+        const updated = res?.pathway || res || payload;
+
+        const normalized = {
+          ...updated,
+          status: (updated.status || "draft").toLowerCase(),
+        };
+
+        const updatedList = pathways.map((p, i) =>
+          i === editingIndex ? normalized : p
+        );
+        setPathways(updatedList);
       } else {
-        await registerPathway(cleaned);
+        // --- CREATE ---
+        const res = await registerPathway(payload);
+        const created = res?.pathway || res || payload;
+        const normalized = {
+          ...created,
+          status: (created.status || "draft").toLowerCase(),
+        };
+        setPathways((prev) => [...prev, normalized]);
       }
+
       clearForm();
-
-      // Refresh list
-      const res = await fetchUserPathways(loggedInUser?.id);
-      const data = res?.pathways || res?.data?.pathways || res?.data || res || [];
-      setPathways(Array.isArray(data) ? data : []);
     } catch (err) {
-      console.error("Failed to save pathway", err);
-      alert("Failed to save pathway. Please try again.");
+      console.error("❌ Failed to save pathway:", err);
+      alert("Failed to save pathway");
     }
   };
 
-  const handleEdit = (pathway) => {
-    setForm({
-      name: pathway.name,
-      outline: pathway.outline,
-      status: pathway.status || "draft",
-    });
-    setEditingPathwayId(pathway.pathwayID);
+  const handleEdit = (index) => {
+    const p = pathways[index];
+    setForm({ name: p.name || "", outline: p.outline || "" });
+    setEditingIndex(index);
   };
 
-  const toggleActive = async (pathway) => {
+  const handleToggleStatus = async (index) => {
+    const target = pathways[index];
+    const pathwayId = target?.pathwayID;
+    if (!pathwayId) return alert("Missing pathway ID");
+
+    const newStatus =
+      target.status === "active" ? "inactive" : "active";
+
     try {
-      await updatePathway(pathway.pathwayID, {
-        ...pathway,
-        status: pathway.status === "active" ? "inactive" : "active",
-      });
+      const res = await updatePathway(pathwayId, { ...target, status: newStatus });
+      const updated = res?.pathway || res || { ...target, status: newStatus };
+      const normalized = {
+        ...updated,
+        status: (updated.status || newStatus).toLowerCase(),
+      };
 
-      const res = await fetchUserPathways(loggedInUser?.id);
-      const data = res?.pathways || res?.data?.pathways || res?.data || res || [];
-      setPathways(Array.isArray(data) ? data : []);
+      const updatedList = pathways.map((p, i) =>
+        i === index ? normalized : p
+      );
+      setPathways(updatedList);
     } catch (err) {
-      console.error("Failed to toggle status:", err);
+      console.error("Failed to update status:", err);
+      alert("Failed to change status");
     }
+  };
+
+  // ---- Outline Dialog ----
+  const openOutlineDialog = () => {
+    setOutlinedraft(form.outline || "");
+    setOutlineDialogOpen(true);
+  };
+  const closeOutlineDialogSafely = () => {
+    focusGuardRef.current = true;
+    setOutlineDialogOpen(false);
+    outlineFieldRef.current?.blur?.();
+    setTimeout(() => {
+      focusGuardRef.current = false;
+    }, 200);
+  };
+  const handleOutlineCancel = () => {
+    setOutlinedraft("");
+    closeOutlineDialogSafely();
+  };
+  const handleOutlineSave = () => {
+    setForm((prev) => ({ ...prev, outline: outlinedraft }));
+    closeOutlineDialogSafely();
+  };
+  const handleOutlineFieldFocus = () => {
+    if (focusGuardRef.current) return;
+    if (!outlineDialogOpen) openOutlineDialog();
+  };
+
+  // ---- Dropdown menu ----
+  const handleMenuOpen = (event, pathwayWithIndex) => {
+    setMenuAnchor(event.currentTarget);
+    setMenuPathway(pathwayWithIndex);
+  };
+  const handleMenuClose = () => {
+    setMenuAnchor(null);
+    setMenuPathway(null);
   };
 
   return (
@@ -148,7 +232,7 @@ const PathwayManagement = () => {
         Pathway Management
       </Typography>
 
-      {/* Form */}
+      {/* --- Form --- */}
       <Paper
         sx={{
           padding: "1.5rem",
@@ -167,30 +251,27 @@ const PathwayManagement = () => {
               required
             />
 
-            {/* Outline uses dialog for long editing */}
             <TextField
               label="Outline"
               name="outline"
               value={form.outline}
-              onClick={openDescDialog}
+              onClick={openOutlineDialog}
+              onFocus={handleOutlineFieldFocus}
+              inputRef={outlineFieldRef}
+              readOnly
               multiline
               rows={2}
               fullWidth
-              InputProps={{ readOnly: true }}
               required
-              helperText="Click to open full editor"
+              helperText="Click to open the full editor"
             />
 
             <Stack direction="row" spacing={2}>
-              <Button type="submit" variant="contained" color="primary">
-                {editingPathwayId ? "Update Pathway" : "Add Pathway"}
+              <Button type="submit" variant="contained">
+                {editingIndex !== null ? "Update Pathway" : "Add Pathway"}
               </Button>
-              {editingPathwayId && (
-                <Button
-                  variant="outlined"
-                  color="secondary"
-                  onClick={clearForm}
-                >
+              {editingIndex !== null && (
+                <Button variant="outlined" onClick={clearForm}>
                   Cancel
                 </Button>
               )}
@@ -199,90 +280,142 @@ const PathwayManagement = () => {
         </form>
       </Paper>
 
-      {/* Existing Pathways Table */}
+      {/* --- Grouped Accordion Table --- */}
       <Paper
         sx={{
           borderRadius: 3,
           boxShadow: "0 6px 16px rgba(0,0,0,0.08)",
+          overflow: "hidden",
         }}
       >
         <Typography variant="h6" sx={{ padding: "1rem" }}>
           Existing Pathways
         </Typography>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>Name</TableCell>
-              <TableCell>Outline</TableCell>
-              <TableCell>Status</TableCell>
-              <TableCell align="right">Actions</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {pathways.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={4} align="center" sx={{ py: 3 }}>
-                  No pathways added yet.
-                </TableCell>
-              </TableRow>
-            ) : (
-              pathways.map((p, index) => (
-                <TableRow key={p.pathwayID || index} hover>
-                  <TableCell>{p.name}</TableCell>
-                  <TableCell
-                    sx={{
-                      maxWidth: 260,
-                      whiteSpace: "nowrap",
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                    }}
-                    title={p.outline}
+
+        {(() => {
+          // ✅ Only the owner's pathways, keep global index
+          const ownerPathwaysWithIndex = pathways.map((p, __idx) => ({
+            ...p,
+            __idx,
+          }));
+
+          // ✅ Group by status
+          const grouped = Object.keys(STATUS_LABEL).reduce((acc, statusKey) => {
+            acc[statusKey] = ownerPathwaysWithIndex.filter(
+              (p) => (p.status || "draft").toLowerCase() === statusKey
+            );
+            return acc;
+          }, {});
+
+          return Object.entries(grouped).map(([statusKey, group]) => (
+            <Accordion key={statusKey} defaultExpanded>
+              <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                <Typography variant="subtitle1" fontWeight={600}>
+                  {STATUS_LABEL[statusKey]} ({group.length})
+                </Typography>
+              </AccordionSummary>
+              <AccordionDetails>
+                {group.length === 0 ? (
+                  <Typography
+                    variant="body2"
+                    sx={{ p: 2, color: "gray", textAlign: "center" }}
                   >
-                    {p.outline}
-                  </TableCell>
-                  <TableCell sx={{ textTransform: "uppercase" }}>
-                    {p.status}
-                  </TableCell>
-                  <TableCell align="right">
-                    <Stack direction="row" spacing={1} justifyContent="flex-end">
-                      <Button
-                        variant="outlined"
-                        size="small"
-                        onClick={() => handleEdit(p)}
-                      >
-                        Edit
-                      </Button>
-                      <Button
-                        variant="outlined"
-                        size="small"
-                        color={p.status === "active" ? "warning" : "success"}
-                        onClick={() => toggleActive(p)}
-                      >
-                        {p.status === "active" ? "Inactivate" : "Activate"}
-                      </Button>
-                    </Stack>
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
+                    No pathways in this status.
+                  </Typography>
+                ) : (
+                  <Table size="small">
+                    <TableHead>
+                      <TableRow>
+                        <TableCell>Name</TableCell>
+                        <TableCell>Outline</TableCell>
+                        <TableCell>Status</TableCell>
+                        <TableCell align="right">Actions</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {group.map((pathway) => (
+                        <TableRow key={pathway.pathwayID ?? pathway.__idx} hover>
+                          <TableCell>{pathway.name}</TableCell>
+                          <TableCell
+                            sx={{
+                              maxWidth: 260,
+                              whiteSpace: "nowrap",
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                            }}
+                            title={pathway.outline}
+                          >
+                            {pathway.outline}
+                          </TableCell>
+                          <TableCell>{STATUS_LABEL[statusKey] || "-"}</TableCell>
+                          <TableCell align="right">
+                            <IconButton
+                              size="small"
+                              onClick={(e) =>
+                                handleMenuOpen(e, pathway /* has __idx */)
+                              }
+                              aria-label="Actions"
+                            >
+                              <MoreVertIcon />
+                            </IconButton>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
+              </AccordionDetails>
+            </Accordion>
+          ));
+        })()}
+
+        {/* Shared actions menu */}
+        <Menu
+          anchorEl={menuAnchor}
+          open={Boolean(menuAnchor)}
+          onClose={handleMenuClose}
+          anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+          transformOrigin={{ vertical: "top", horizontal: "right" }}
+        >
+          {menuPathway && (
+            <>
+              <MenuItem
+                onClick={() => {
+                  handleEdit(menuPathway.__idx);
+                  handleMenuClose();
+                }}
+              >
+                Edit
+              </MenuItem>
+              <MenuItem
+                onClick={() => {
+                  handleToggleStatus(menuPathway.__idx);
+                  handleMenuClose();
+                }}
+              >
+                {menuPathway.status === "active"
+                  ? "Deactivate"
+                  : "Activate"}
+              </MenuItem>
+            </>
+          )}
+        </Menu>
       </Paper>
 
       {/* Outline Dialog */}
       <Dialog
-        open={descDialogOpen}
-        onClose={closeDescDialog}
+        open={outlineDialogOpen}
+        onClose={handleOutlineCancel}
         maxWidth="md"
         fullWidth
         scroll="paper"
       >
-        <DialogTitle>Edit Outline</DialogTitle>
+        <DialogTitle>Edit Pathway Outline</DialogTitle>
         <DialogContent dividers>
           <TextField
-            label="Outline"
-            value={descDraft}
-            onChange={(e) => setDescDraft(e.target.value)}
+            label="Pathway Outline"
+            value={outlinedraft}
+            onChange={(e) => setOutlinedraft(e.target.value)}
             multiline
             rows={15}
             fullWidth
@@ -290,14 +423,12 @@ const PathwayManagement = () => {
           />
         </DialogContent>
         <DialogActions>
-          <Button onClick={closeDescDialog}>Cancel</Button>
-          <Button onClick={saveDescription} variant="contained">
+          <Button onClick={handleOutlineCancel}>Cancel</Button>
+          <Button onClick={handleOutlineSave} variant="contained">
             Save
           </Button>
         </DialogActions>
       </Dialog>
     </Box>
   );
-};
-
-export default PathwayManagement;
+}
