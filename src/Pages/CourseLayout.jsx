@@ -3,16 +3,16 @@ import React, { useEffect, useState } from "react";
 import useQuizApi from "../hooks/useQuizApi";
 import useModuleApi from "../hooks/useModuleApi";
 import beforeAuthLayout from "../components/BeforeAuth";
-
+ 
 function CourseLayout() {
   const { courseId } = useParams();
   const [modules, setModules] = useState([]);
   const [quiz, setQuiz] = useState([]);
   const [openModule, setOpenModule] = useState(null);
-
+ 
   const { fetchAllModulesInACourse } = useModuleApi();
   const { fetchQuizForCourse } = useQuizApi();
-
+ 
   // ✅ Load modules
   useEffect(() => {
     let mounted = true;
@@ -23,7 +23,7 @@ function CourseLayout() {
       .catch(() => mounted && setModules([]));
     return () => (mounted = false);
   }, [fetchAllModulesInACourse, courseId]);
-
+ 
   // ✅ Load quizzes
   useEffect(() => {
     let mounted = true;
@@ -34,7 +34,7 @@ function CourseLayout() {
       .catch(() => mounted && setQuiz([]));
     return () => (mounted = false);
   }, [fetchQuizForCourse, courseId]);
-
+ 
   return (
     <div className="flex bg-gray-50 min-h-screen">
       {/* Sidebar */}
@@ -45,7 +45,7 @@ function CourseLayout() {
         >
           Course Overview
         </NavLink>
-
+ 
         <nav className="flex flex-col space-y-1 p-2">
           {modules?.map((module) => (
             <div key={module.moduleID}>
@@ -60,7 +60,7 @@ function CourseLayout() {
                 {module.title}
                 <span>{openModule === module.moduleID ? "▲" : "▼"}</span>
               </button>
-
+ 
               {openModule === module.moduleID && (
                 <ul className="ml-4 mt-1 space-y-1">
                   {module.contents?.map((content) => (
@@ -73,21 +73,24 @@ function CourseLayout() {
                       </NavLink>
                     </li>
                   ))}
-                  <li>
-                    <NavLink
-                      to={`modules/${module.moduleID}/quizzes/${quiz?.find(
-                        (x) => x.moduleID === module.moduleID
-                      )?.quizID || ""}`}
-                      className="block px-3 py-1 text-sm rounded hover:bg-gray-100"
-                    >
-                      Quiz
-                    </NavLink>
-                  </li>
+                  {quiz?.find((x) => x.moduleID === module.moduleID) && (
+  <li>
+    <NavLink
+      to={`modules/${module.moduleID}/quizzes/${quiz.find(
+        (x) => x.moduleID === module.moduleID
+      ).quizID}`}
+      className="block px-3 py-1 text-sm rounded hover:bg-gray-100"
+    >
+      Quiz
+    </NavLink>
+  </li>
+)}
+ 
                 </ul>
               )}
             </div>
           ))}
-
+ 
           <NavLink
             to="announcements"
             className="px-4 py-2 rounded hover:bg-gray-100"
@@ -106,18 +109,22 @@ function CourseLayout() {
           >
             Ask Question
           </NavLink>
-
+ 
           <NavLink to="schedule" className="px-4 py-2 rounded hover:bg-gray-100">
             Schedule a Session
           </NavLink>
+ 
+          <NavLink to="certificate" className="px-4 py-2 rounded hover:bg-gray-100">
+            Certificate
+          </NavLink>
         </nav>
       </aside>
-
+ 
       <main className="flex-1 ml-64 p-6">
         <Outlet />
       </main>
     </div>
   );
 }
-
+ 
 export default beforeAuthLayout(CourseLayout);
