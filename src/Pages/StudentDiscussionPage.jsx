@@ -14,36 +14,28 @@ const StudentDiscussionPage = () => {
   const [threads, setThreads] = useState([]);
   const [newThread, setNewThread] = useState({ title: "", message: "" });
   const [replyText, setReplyText] = useState({});
-  const [editingThreadId, setEditingThreadId] = useState(null);
-  const [editingReply, setEditingReply] = useState(null);
 
-  const { fetchCoursePosts, createPost, updatePost, deletePost, replyToPost } =
-    useDiscussionApi();
+  const { fetchCoursePosts, createPost, replyToPost } = useDiscussionApi();
 
-  // ✅ Parse DB timestamps already in local (Sydney) format
+  // Normalize timestamp to Date object
   const normalizeToDate = (ts) => {
     if (!ts) return null;
     if (ts instanceof Date) return ts;
-
     if (typeof ts === "number") {
       const ms = ts > 1e12 ? ts : ts * 1000;
       return new Date(ms);
     }
-
     if (typeof ts === "string") {
       let s = ts.trim();
-      // Convert "YYYY-MM-DD HH:mm:ss" → "YYYY-MM-DDTHH:mm:ss"
       if (s.includes(" ") && !s.includes("T")) s = s.replace(" ", "T");
-      // ⚠️ DO NOT append "Z" — treat as local Sydney time
       const d = new Date(s);
       return isNaN(d) ? null : d;
     }
-
     const d = new Date(ts);
     return isNaN(d) ? null : d;
   };
 
-  // ✅ Format Sydney-local time properly
+  // Format date in Sydney timezone
   const formatDateTime = (ts) => {
     const date = normalizeToDate(ts);
     if (!date) return "";
@@ -58,7 +50,6 @@ const StudentDiscussionPage = () => {
     }).format(date);
   };
 
-  // 🚫 Restrict access if user has no view rights
   if (!canViewCourses) {
     return (
       <div className="p-6 text-center text-red-500 font-semibold">
@@ -67,7 +58,7 @@ const StudentDiscussionPage = () => {
     );
   }
 
-  // ✅ Fetch all threads for this course
+  // Fetch all threads for the course
   const fetchDiscussions = async (cid) => {
     try {
       const res = await fetchCoursePosts(cid || courseId);
@@ -77,24 +68,21 @@ const StudentDiscussionPage = () => {
         id: p.postID,
         title: p.title,
         message: p.postText,
-        author: p.userID || p.author || "User",
-        authorId: p.userID || p.authorId || null,
+        author: p.userID || "User",
+        authorId: p.userID || null,
         createdAt: normalizeToDate(p.created_at || p.createdAt),
         replies: (p.replies || [])
           .map((r) => ({
             id: r.postID,
             text: r.postText,
-            author: r.userID || r.author || "User",
-            authorId: r.userID || r.authorId || null,
+            author: r.userID || "User",
+            authorId: r.userID || null,
             createdAt: normalizeToDate(r.created_at || r.createdAt),
           }))
-          .sort((a, b) => b.createdAt - a.createdAt),
+          .sort((a, b) => a.createdAt - b.createdAt), // oldest first
       }));
 
-      const sortedThreads = mapped.sort(
-        (a, b) => b.createdAt - a.createdAt
-      );
-
+      const sortedThreads = mapped.sort((a, b) => b.createdAt - a.createdAt); // newest thread first
       setThreads(sortedThreads);
     } catch (err) {
       console.error("Failed to fetch discussions", err);
@@ -106,39 +94,31 @@ const StudentDiscussionPage = () => {
     if (courseId) fetchDiscussions(courseId);
   }, [courseId]);
 
-  // ✅ Create or update a discussion thread
+  // Create a new discussion thread
   const handleNewThread = async (e) => {
     e.preventDefault();
     if (!newThread.title.trim() || !newThread.message.trim()) return;
 
     try {
-      if (editingThreadId) {
-        await updatePost(editingThreadId, {
-          title: newThread.title,
-          postText: newThread.message,
-        });
-        alert("Thread updated!");
-      } else {
-        const res = await createPost(courseId, {
-          userID: loggedInUser?.id,
-          title: newThread.title,
-          postText: newThread.message,
-        });
+      const res = await createPost(courseId, {
+        userID: loggedInUser?.id,
+        title: newThread.title,
+        postText: newThread.message,
+      });
 
-        // ✅ Add instantly without refetch (prevents flicker)
-        const newThreadData = {
-          id: res?.data?.postID || Math.random().toString(36),
-          title: newThread.title,
-          message: newThread.message,
-          author: loggedInUser?.email || "User",
-          authorId: loggedInUser?.id,
-          createdAt: new Date(),
-          replies: [],
-        };
-        setThreads((prev) => [newThreadData, ...prev]);
-      }
+      const realId = res?.postID || res?.data?.postID;
 
-      setEditingThreadId(null);
+      const newThreadData = {
+        id: realId || Math.random().toString(36),
+        title: newThread.title,
+        message: newThread.message,
+        author: loggedInUser?.id || "User",
+        authorId: loggedInUser?.id,
+        createdAt: new Date(),
+        replies: [],
+      };
+
+      setThreads((prev) => [newThreadData, ...prev]);
       setNewThread({ title: "", message: "" });
     } catch (err) {
       console.error("Failed to save thread", err);
@@ -146,85 +126,36 @@ const StudentDiscussionPage = () => {
     }
   };
 
-  // ✅ Reply or edit a reply
+  // Reply to a thread
   const handleReply = async (threadId) => {
     const text = replyText[threadId];
     if (!text?.trim()) return;
 
     try {
-      if (editingReply && editingReply.threadId === threadId) {
-        await updatePost(editingReply.replyId, {
-          postText: text,
-        });
-      } else {
-        const res = await replyToPost(threadId, {
-          userID: loggedInUser?.id,
-          postText: text,
-        });
+      const res = await replyToPost(threadId, {
+        userID: loggedInUser?.id,
+        postText: text,
+      });
 
-        // ✅ Append reply locally to avoid re-fetch flicker
-        const newReply = {
-          id: res?.data?.postID || Math.random().toString(36),
-          text,
-          author: loggedInUser?.email || "User",
-          authorId: loggedInUser?.id,
-          createdAt: new Date(),
-        };
+      const newReply = {
+        id: res?.data?.postID || Math.random().toString(36),
+        text,
+        author: loggedInUser?.id || "User",
+        authorId: loggedInUser?.id,
+        createdAt: new Date(),
+      };
 
-        setThreads((prev) =>
-          prev.map((t) =>
-            t.id === threadId
-              ? { ...t, replies: [newReply, ...t.replies] }
-              : t
-          )
-        );
-      }
+      setThreads((prev) =>
+        prev.map((t) =>
+          t.id === threadId ? { ...t, replies: [...t.replies, newReply] } : t
+        )
+      );
 
       setReplyText({ ...replyText, [threadId]: "" });
-      setEditingReply(null);
     } catch (err) {
       console.error("Failed to save reply", err);
       alert("Failed to save reply");
     }
-  };
-
-  const handleDeleteThread = async (threadId) => {
-    if (!window.confirm("Delete this thread?")) return;
-    try {
-      await deletePost(threadId);
-      setThreads((prev) => prev.filter((t) => t.id !== threadId));
-    } catch (err) {
-      console.error("Failed to delete thread", err);
-      alert("Failed to delete thread");
-    }
-  };
-
-  const handleEditThread = (thread) => {
-    setNewThread({ title: thread.title, message: thread.message });
-    setEditingThreadId(thread.id);
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  };
-
-  const handleDeleteReply = async (threadId, replyId) => {
-    if (!window.confirm("Delete this reply?")) return;
-    try {
-      await deletePost(replyId);
-      setThreads((prev) =>
-        prev.map((t) =>
-          t.id === threadId
-            ? { ...t, replies: t.replies.filter((r) => r.id !== replyId) }
-            : t
-        )
-      );
-    } catch (err) {
-      console.error("Failed to delete reply", err);
-      alert("Failed to delete reply");
-    }
-  };
-
-  const handleEditReply = (threadId, reply) => {
-    setReplyText({ ...replyText, [threadId]: reply.text });
-    setEditingReply({ threadId, replyId: reply.id });
   };
 
   return (
@@ -237,15 +168,12 @@ const StudentDiscussionPage = () => {
 
       <h1 className="text-3xl font-bold text-gray-800 mb-6">💬 Discussions</h1>
 
-      {/* ✅ Posting form */}
       {canPostDiscussion ? (
         <form
           onSubmit={handleNewThread}
           className="bg-white shadow-md rounded-lg p-6 mb-8"
         >
-          <h2 className="text-lg font-semibold mb-4">
-            {editingThreadId ? "Edit Thread" : "Start New Discussion"}
-          </h2>
+          <h2 className="text-lg font-semibold mb-4">Start New Discussion</h2>
           <input
             type="text"
             placeholder="Thread Title"
@@ -264,26 +192,12 @@ const StudentDiscussionPage = () => {
             }
             className="w-full border p-3 rounded mb-3"
           />
-          <div className="flex gap-3">
-            <button
-              type="submit"
-              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded"
-            >
-              {editingThreadId ? "Update" : "Post"}
-            </button>
-            {editingThreadId && (
-              <button
-                type="button"
-                onClick={() => {
-                  setEditingThreadId(null);
-                  setNewThread({ title: "", message: "" });
-                }}
-                className="bg-gray-500 hover:bg-gray-600 text-white px-6 py-2 rounded"
-              >
-                Cancel
-              </button>
-            )}
-          </div>
+          <button
+            type="submit"
+            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded"
+          >
+            Post
+          </button>
         </form>
       ) : (
         <div className="bg-gray-100 text-gray-700 p-4 rounded-lg shadow-sm mb-6">
@@ -291,42 +205,19 @@ const StudentDiscussionPage = () => {
         </div>
       )}
 
-      {/* ✅ Threads */}
       {threads.length === 0 ? (
         <p className="text-gray-500">No discussions yet.</p>
       ) : (
         <div className="space-y-6">
           {threads.map((thread) => (
             <div key={thread.id} className="bg-white p-5 rounded-lg shadow">
-              <div className="flex justify-between items-start">
-                <div>
-                  <h3 className="font-bold text-lg">{thread.title}</h3>
-                  <p className="mt-2">{thread.message}</p>
-                  <p className="text-xs text-gray-500 mt-2">
-                    {formatDateTime(thread.createdAt)}
-                  </p>
-                </div>
+              <h3 className="font-bold text-lg">{thread.title}</h3>
+              <p className="mt-2">{thread.message}</p>
+              <p className="text-xs text-gray-500 mt-2">
+                {thread.author} – {formatDateTime(thread.createdAt)}
+              </p>
 
-                {canPostDiscussion &&
-                  thread.authorId === (loggedInUser?.email || "anonymous") && (
-                    <div className="flex gap-2 text-sm">
-                      <button
-                        onClick={() => handleEditThread(thread)}
-                        className="text-blue-600 hover:underline"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => handleDeleteThread(thread.id)}
-                        className="text-red-500 hover:underline"
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  )}
-              </div>
-
-              {/* ✅ Replies */}
+              {/* Replies */}
               <div className="mt-4 ml-4 border-l pl-4 space-y-2">
                 {thread.replies.map((r) => (
                   <div
@@ -339,28 +230,11 @@ const StudentDiscussionPage = () => {
                         {r.author} – {formatDateTime(r.createdAt)}
                       </p>
                     </div>
-                    {canPostDiscussion &&
-                      r.authorId === (loggedInUser?.email || "anonymous") && (
-                        <div className="flex gap-2 text-xs">
-                          <button
-                            onClick={() => handleEditReply(thread.id, r)}
-                            className="text-blue-600 hover:underline"
-                          >
-                            Edit
-                          </button>
-                          <button
-                            onClick={() => handleDeleteReply(thread.id, r.id)}
-                            className="text-red-500 hover:underline"
-                          >
-                            Delete
-                          </button>
-                        </div>
-                      )}
                   </div>
                 ))}
               </div>
 
-              {/* ✅ Reply box */}
+              {/* Reply box */}
               {canPostDiscussion && (
                 <div className="mt-3">
                   <textarea
@@ -372,27 +246,12 @@ const StudentDiscussionPage = () => {
                     }
                     className="w-full border p-2 rounded mb-2"
                   />
-                  <div className="flex gap-3">
-                    <button
-                      onClick={() => handleReply(thread.id)}
-                      className="bg-green-600 hover:bg-green-700 text-white px-4 py-1 rounded text-sm"
-                    >
-                      {editingReply?.threadId === thread.id
-                        ? "Update Reply"
-                        : "Reply"}
-                    </button>
-                    {editingReply?.threadId === thread.id && (
-                      <button
-                        onClick={() => {
-                          setEditingReply(null);
-                          setReplyText({ ...replyText, [thread.id]: "" });
-                        }}
-                        className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-1 rounded text-sm"
-                      >
-                        Cancel
-                      </button>
-                    )}
-                  </div>
+                  <button
+                    onClick={() => handleReply(thread.id)}
+                    className="bg-green-600 hover:bg-green-700 text-white px-4 py-1 rounded text-sm"
+                  >
+                    Reply
+                  </button>
                 </div>
               )}
             </div>
