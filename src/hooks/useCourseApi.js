@@ -52,6 +52,11 @@ export default function useCourseApi() {
     return res.data;
   }, []);
 
+  const getAllCoursesInAPathway = useCallback(async (pathwayID) => {
+    const res = await api.get(`/api/pathway/${pathwayID}/courses`);
+    return res.data;
+  } , []);
+
   return {
     registerCourseOwner,
     updateCourseOwner,
@@ -62,6 +67,7 @@ export default function useCourseApi() {
     fetchAllModules,
     fetchCourseMeta,
     fetchCourseCategories,
-    fetchPopularCoursesAndPathway
+    fetchPopularCoursesAndPathway,
+    getAllCoursesInAPathway
   };
 }

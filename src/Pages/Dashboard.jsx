@@ -1,23 +1,22 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
-import useCourseApi from "../hooks/useCourseApi";
 import beforeAuthLayout from "../components/BeforeAuth";
+import useEnrollment from "../hooks/useEnrollment";
 
 const Dashboard = () => {
   const { loggedInUser } = useAuth();
-  const { fetchAllCourses } = useCourseApi();
   const [enrolledCourses, setEnrolledCourses] = useState([]);
-  const [allCourses, setAllCourses] = useState([]);
+  const { getEnrolledCoursesForUser } = useEnrollment();
 
   // ✅ Fetch all courses (handle both array or { courses: [] } responses)
   useEffect(() => {
     let mounted = true;
     (async () => {
       try {
-        const res = await fetchAllCourses();
-        const list = Array.isArray(res) ? res : res?.courses || [];
-        if (mounted) setAllCourses(list);
+        const res = await getEnrolledCoursesForUser(loggedInUser?.id);
+        const list = Array.isArray(res) ? res : res?.enrolments || [];
+        if (mounted) setEnrolledCourses(list);
       } catch (err) {
         console.error("Failed to fetch courses", err);
       }
@@ -25,59 +24,23 @@ const Dashboard = () => {
     return () => {
       mounted = false;
     };
-  }, [fetchAllCourses]);
-
-  // ✅ Build enrolled course list with progress
-  useEffect(() => {
-    if (!loggedInUser || !allCourses.length) return;
-
-    const enrolledData =
-      loggedInUser.enrolledCourses || loggedInUser.enrollments || {};
-    const enrolledIds = Object.keys(enrolledData);
-
-    const courses = enrolledIds
-      .map((id) => {
-        // Match courseID or id
-        const course = allCourses.find(
-          (c) => String(c.courseID ?? c.id) === String(id)
-        );
-        if (!course) return null;
-
-        const status = enrolledData[id]?.status || "unlocked";
-
-        // Calculate progress from localStorage
-        const completed =
-          JSON.parse(localStorage.getItem(`progress_${id}`)) || [];
-        const totalLessons =
-          course.modules?.reduce(
-            (acc, m) => acc + (m.lessons?.length || 0),
-            0
-          ) || 0;
-        const progress =
-          totalLessons > 0
-            ? Math.round((completed.length / totalLessons) * 100)
-            : 0;
-
-        return { ...course, status, progress };
-      })
-      .filter(Boolean);
-
-    setEnrolledCourses(courses);
-  }, [loggedInUser, allCourses]);
+  }, [getEnrolledCoursesForUser, loggedInUser?.id]);
 
   // ✅ If not logged in
   if (!loggedInUser) {
     return (
       <div className="p-6 text-center">
         <h2 className="text-2xl font-bold text-gray-700">
-          Please log in to view your dashboard.
+          {/* Please log in to view your dashboard. */}
         </h2>
       </div>
     );
   }
 
   const total = enrolledCourses.length;
-  const completed = enrolledCourses.filter((c) => c.progress === 100).length;
+  const completed = enrolledCourses?.filter(
+    (c) => c.completionDate != null
+  )?.length;
   const inProgress = total - completed;
 
   return (
@@ -118,7 +81,7 @@ const Dashboard = () => {
               className="bg-white rounded-lg shadow-md hover:shadow-xl transition p-6 flex flex-col"
             >
               <h3 className="text-lg font-bold text-gray-800 text-center mb-3">
-                {course.title || course.name || "Untitled Course"}
+                {course?.courseDetail?.title || course.name || "Untitled Course"}
               </h3>
 
               {/* ✅ Progress bar */}
@@ -126,11 +89,11 @@ const Dashboard = () => {
                 <div className="w-full bg-gray-200 rounded-full h-3">
                   <div
                     className="bg-green-500 h-3 rounded-full"
-                    style={{ width: `${course.progress}%` }}
+                    style={{ width: `50%` }}
                   ></div>
                 </div>
                 <p className="text-sm text-gray-600 mt-1 text-center">
-                  Progress: {course.progress}%
+                  Progress: 50%
                 </p>
               </div>
 

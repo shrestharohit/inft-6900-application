@@ -5,9 +5,9 @@ const AuthContext = createContext(null);
 
 // ✅ Global map: pathway → courses
 const pathwayCourseMap = {
-  "101": ["1", "2", "3"], // Web Dev Pathway
-  "102": ["4", "5", "6"], // Data Analytics Pathway
-  "103": ["7", "8", "9"], // Business Skills Pathway
+  101: ["1", "2", "3"], // Web Dev Pathway
+  102: ["4", "5", "6"], // Data Analytics Pathway
+  103: ["7", "8", "9"], // Business Skills Pathway
 };
 
 export const AuthProvider = ({ children }) => {
@@ -79,7 +79,7 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem("user");
     localStorage.removeItem("userId");
     setLoggedInUser(null);
-    window.location.href = ROUTES.DEFAULT;
+    window.location.href = "/";
   };
 
   // ✅ Update specific fields of user and persist (no redirect)
