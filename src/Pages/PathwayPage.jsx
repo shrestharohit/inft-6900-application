@@ -162,7 +162,6 @@ const PathwayPage = () => {
 
             {/* ✅ Reviews list with null-safety */}
             <div>
-              <h3 className="text-xl font-semibold mb-3">Student Reviews</h3>
               {!reviews.length ? (
                 <p className="text-gray-500">No reviews yet. Be the first!</p>
               ) : (
@@ -177,11 +176,13 @@ const PathwayPage = () => {
                           <span className="font-semibold">
                             {review.firstName} {review.lastName}
                           </span>
+
                           <span className="text-yellow-500">
                             {"★".repeat(review.rating)}
                             {"☆".repeat(5 - review.rating)}
                           </span>
                         </div>
+                        <p className="font-normal text-sm">{review.title}</p>
                         <p className="text-gray-700">{review.comment}</p>
                       </div>
                     ))
