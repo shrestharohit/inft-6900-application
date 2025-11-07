@@ -18,6 +18,7 @@ const QuizPage = () => {
   const [attemptID, setAttemptID] = useState(null);
   const [feedback, setFeedback] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [triggerKey, setTriggerKey] = useState(0);
 
   const {
     startQuiz,
@@ -53,7 +54,6 @@ const QuizPage = () => {
           activeQuiz?.quizID,
           loggedInUser?.id
         );
-        console.log("Fetched attempts:", resp);
 
         getFeedbackForAttempt(resp[0]?.attemptID, activeQuiz?.quizID);
 
@@ -82,6 +82,7 @@ const QuizPage = () => {
     moduleId,
     getQuizResultForUser,
     loggedInUser,
+    triggerKey,
   ]);
 
   useEffect(() => {
@@ -111,18 +112,11 @@ const QuizPage = () => {
 
   const calculateResult = async () => {
     const payload = mapAnswers();
-    const res = await submitQuiz(quiz.quizID, payload);
-    const fixedAttempt = {
-      ...res.attempt,
-      score: normalizeScore(res.attempt.score),
-    };
-
-    setCurrentAttempt(fixedAttempt);
-    setShowResult(true);
+    await submitQuiz(quiz.quizID, payload);
     setQuiz(null);
+    setAnswers({});
     setQuizStarted(false);
-    setAttemptID(null);
-    setAttempts((prev) => [fixedAttempt, ...prev]);
+    setTriggerKey((prev) => prev + 1);
   };
 
   const handleOptionChange = (questionId, optionId) =>
@@ -138,6 +132,7 @@ const QuizPage = () => {
   };
 
   const getFeedbackForAttempt = async (attemptID, quizID) => {
+    if (!attemptID) return;
     const res = await getQuizFeedbackForUser(quizID || quiz.quizID, attemptID);
     setFeedback(res);
   };
@@ -242,31 +237,38 @@ const QuizPage = () => {
         )}
 
         {/* Results */}
-        {showResult && currentAttempt && (
+        {showResult && attempts && (
           <div className="mt-8">
             <div
               className={`p-10 rounded-2xl shadow-lg border text-center ${
-                currentAttempt.passed
+                attempts?.some((x) => !!x.passed)
                   ? "border-green-500 bg-green-50"
                   : "border-red-500 bg-red-50"
               }`}
             >
               <h2
                 className={`text-3xl font-bold mb-4 ${
-                  currentAttempt.passed ? "text-green-700" : "text-red-700"
+                  attempts?.some((x) => !!x.passed)
+                    ? "text-green-700"
+                    : "text-red-700"
                 }`}
               >
-                {currentAttempt.passed ? "✅ Congratulations!" : "❌ Try Again"}
+                {attempts?.some((x) => !!x.passed)
+                  ? "✅ Congratulations!"
+                  : "❌ Try Again"}
               </h2>
 
               <p className="text-gray-700 text-lg mb-2">
-                You scored <strong>{Math.round(currentAttempt.score)}%</strong>
+                You scored{" "}
+                <strong>
+                  {Math.round(attempts?.find((x) => x.passed == true)?.score)}%
+                </strong>
               </p>
               <p className="text-gray-500 mb-6">
-                Attempt #{currentAttempt.attemptID}
+                Attempt #{attempts?.find((x) => x.passed == true)?.attemptID}
               </p>
 
-              {canAttemptQuiz && !currentAttempt.passed && (
+              {canAttemptQuiz && !attempts?.some((x) => !!x.passed) && (
                 <button
                   onClick={handleStartQuiz}
                   className="px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold shadow-md"
@@ -275,7 +277,7 @@ const QuizPage = () => {
                 </button>
               )}
 
-              {currentAttempt.passed ? (
+              {attempts?.some((x) => !!x.passed) ? (
                 <p className="text-green-700 font-medium mt-4">
                   Great job! Your certificate will appear in your profile soon.
                 </p>
