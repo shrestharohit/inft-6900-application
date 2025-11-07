@@ -27,11 +27,17 @@ export default function useReview() {
     return res.data;
   }, []);
 
+  const getReviewsForAllCoursesUnderPathway = useCallback(async (pathwayId) => {
+    const res = await api.get(`/api/review/pathway/${pathwayId}`);
+    return res.data;
+  }, []);
+
   return {
     createReview,
     updateReview,
     getAllReviewsForCourse,
     deleteReviewById,
     getTop3Reviews,
+    getReviewsForAllCoursesUnderPathway,
   };
 }

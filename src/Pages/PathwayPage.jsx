@@ -2,54 +2,64 @@ import React, { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import beforeAuthLayout from "../components/BeforeAuth";
 import { useAuth } from "../contexts/AuthContext";
-import { dummyPathways } from "../Pages/dummyData";
 import useReview from "../hooks/useReviews";
+import usePathwayApi from "../hooks/usePathwayApi";
+import webdevremovebg from "../assets/Images/webdevremovebg.png";
+import useCourseApi from "../hooks/useCourseApi";
+import useEnrollment from "../hooks/useEnrollment";
 
 const PathwayPage = () => {
   const { pathwayId } = useParams();
   const navigate = useNavigate();
-  const { loggedInUser, isLoggedIn, enrollInPathway, leavePathway } = useAuth();
-  const { createReview, updateReview, deleteReviewById, getAllReviewsForCourse } = useReview();
+  const { loggedInUser, isLoggedIn } = useAuth();
+  const { enrollInPathway, leavePathway, getEnrolledPathwaysById } =
+    useEnrollment();
+  const { getReviewsForAllCoursesUnderPathway } = useReview();
 
   const [pathway, setPathway] = useState(null);
+  const [coursesInPathway, setCoursesInPathway] = useState([]);
   const [loadingPage, setLoadingPage] = useState(true);
-  const [notFound, setNotFound] = useState(false);
   const [loading, setLoading] = useState(false);
   const [isEnrolled, setIsEnrolled] = useState(false);
+  const [reviews, setReviews] = useState([]);
 
-  const [reviews, setReviews] = useState(null);
-  const [rating, setRating] = useState(0);
-  const [comment, setComment] = useState("");
-  const [isEditing, setIsEditing] = useState(false);
-  const [reviewId, setReviewId] = useState(null);
+  const { getPathwayDetails } = usePathwayApi();
+  const { getAllCoursesInAPathway } = useCourseApi();
 
-  // ✅ Load pathway (dummy for now)
   useEffect(() => {
-    setLoadingPage(true);
-    setNotFound(false);
-
-    const selectedPathway = dummyPathways.find(
-      (p) => String(p.id) === String(pathwayId)
-    );
-
-    if (!selectedPathway) {
-      setNotFound(true);
-      setLoadingPage(false);
-      return;
-    }
-
-    setPathway(selectedPathway);
-    setLoadingPage(false);
-
-    if (isLoggedIn && loggedInUser?.enrolledPathways) {
-      setIsEnrolled(loggedInUser.enrolledPathways.includes(pathwayId));
-    }
-  }, [pathwayId, isLoggedIn, loggedInUser]);
+    let mounted = true;
+    const loadData = async () => {
+      try {
+        const [pathwayData, coursesInPathway, enrolledPathwayData] =
+          await Promise.all([
+            getPathwayDetails(pathwayId),
+            getAllCoursesInAPathway(pathwayId),
+            getEnrolledPathwaysById(loggedInUser?.id),
+          ]);
+        if (mounted) {
+          setPathway(pathwayData.pathway);
+          setCoursesInPathway(coursesInPathway.courses);
+          enrolledPathwayData.find(
+            (x) => (x.pathwayID == pathwayId) == pathwayId
+          );
+          setIsEnrolled(
+            !!enrolledPathwayData.find((x) => x.pathwayID == pathwayId)
+          );
+          setLoadingPage(false);
+        }
+      } catch (err) {
+        console.error("Failed to load modules", err);
+        if (mounted) console.log("Failed to load modules.");
+      }
+    };
+    loadData();
+    return () => (mounted = false);
+  }, [getPathwayDetails, getAllCoursesInAPathway]);
 
   // ✅ Fetch reviews (reusing course review hooks)
   useEffect(() => {
     let mounted = true;
-    getAllReviewsForCourse(pathwayId)
+    getReviewsForAllCoursesUnderPathway(pathwayId)
       .then((res) => {
         if (mounted) setReviews(res);
       })
@@ -58,9 +68,8 @@ const PathwayPage = () => {
         if (mounted) setReviews(null);
       });
     return () => (mounted = false);
-  }, [getAllReviewsForCourse, pathwayId]);
+  }, [getReviewsForAllCoursesUnderPathway, pathwayId]);
 
-  // ---------- Loading / Not Found ----------
   if (loadingPage) {
     return (
       <div className="max-w-7xl mx-auto p-6 animate-pulse">
@@ -71,95 +80,22 @@ const PathwayPage = () => {
     );
   }
 
-  if (notFound) {
-    return (
-      <div className="flex items-center justify-center min-h-[50vh] text-red-600 font-semibold">
-        Pathway not found.
-      </div>
-    );
-  }
-
-  // ---------- Enroll / Leave ----------
   const handleEnroll = async () => {
     if (!isLoggedIn) {
       navigate("/login", { state: { from: `/pathway/${pathwayId}` } });
       return;
     }
     setLoading(true);
-    try {
-      await enrollInPathway(pathwayId);
-      setIsEnrolled(true);
-      alert(`Successfully enrolled in ${pathway.name}`);
-    } catch (error) {
-      console.error("Error enrolling:", error);
-      alert("Something went wrong while enrolling.");
-    } finally {
-      setLoading(false);
-    }
+    await enrollInPathway(pathwayId, { userID: loggedInUser.id });
+    alert(`Successfully enrolled in ${pathway.name}`);
+    setLoading(false);
+    setIsEnrolled(true);
   };
 
-  const handleLeave = async () => {
+  const handleDisenroll = async () => {
     if (window.confirm(`Are you sure you want to leave ${pathway.name}?`)) {
-      setLoading(true);
-      try {
-        if (leavePathway) await leavePathway(pathwayId);
-        else await enrollInPathway(pathwayId, { unenroll: true });
-        setIsEnrolled(false);
-        alert(`You have left ${pathway.name}`);
-      } catch (error) {
-        console.error("Error leaving pathway:", error);
-      } finally {
-        setLoading(false);
-      }
-    }
-  };
-
-  // ---------- Reviews ----------
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!isLoggedIn) {
-      alert("You must be logged in to leave a review.");
-      return;
-    }
-    if (!rating || !comment.trim()) return;
-
-    try {
-      if (reviewId) {
-        await updateReview(reviewId, { comment, rating, status: "active" });
-        alert("Review updated!");
-      } else {
-        await createReview({
-          rating,
-          comment,
-          userID: loggedInUser?.id,
-          courseID: pathwayId, // same pattern
-        });
-        alert("Review submitted!");
-      }
-    } catch (err) {
-      console.error("Failed to submit review", err);
-    }
-
-    setRating(0);
-    setComment("");
-    setIsEditing(false);
-    setReviewId(null);
-    const res = await getAllReviewsForCourse(pathwayId);
-    setReviews(res);
-  };
-
-  const handleDelete = async (reviewId) => {
-    if (window.confirm("Delete your review?")) {
-      try {
-        await deleteReviewById(reviewId);
-        alert("Review deleted.");
-      } catch (err) {
-        console.error("Failed to delete review", err);
-      }
-      setRating(0);
-      setComment("");
-      const res = await getAllReviewsForCourse(pathwayId);
-      setReviews(res);
+      await leavePathway(pathwayId, { userID: loggedInUser.id });
+      setIsEnrolled(false);
     }
   };
 
@@ -179,7 +115,7 @@ const PathwayPage = () => {
         {/* Image */}
         <div className="flex-shrink-0 w-full md:w-1/3">
           <img
-            src={pathway.img}
+            src={webdevremovebg}
             alt={pathway.name}
             className="w-full h-auto object-cover rounded-lg shadow-md"
           />
@@ -188,17 +124,17 @@ const PathwayPage = () => {
         {/* Info */}
         <div className="md:w-2/3">
           <h1 className="text-3xl font-bold text-gray-800">{pathway.name}</h1>
-          <p className="text-gray-600 mt-3">{pathway.description}</p>
+          <p className="text-gray-600 mt-3">{pathway.outline}</p>
 
           <div className="text-gray-500 text-sm mt-4 space-y-2">
             <p>
               <span className="font-semibold">Courses Included:</span>{" "}
-              {pathway.courses.length}
+              {coursesInPathway.length}
             </p>
-            <p>
+            {/* <p>
               <span className="font-semibold">Rating:</span>{" "}
               {reviews?.avgRating || 0} ⭐
-            </p>
+            </p> */}
           </div>
 
           {/* Courses in Pathway */}
@@ -207,13 +143,13 @@ const PathwayPage = () => {
               Courses in this Pathway
             </h2>
             <ul className="list-disc ml-5 text-gray-600">
-              {pathway.courses.map((c) => (
-                <li key={c.id}>
+              {coursesInPathway.map((c) => (
+                <li key={c.courseID}>
                   <Link
-                    to={`/courses/${c.id}`}
+                    to={`/courses/${c.courseID}`}
                     className="text-blue-500 hover:underline"
                   >
-                    {c.name}
+                    {c.title}
                   </Link>
                 </li>
               ))}
@@ -224,100 +160,36 @@ const PathwayPage = () => {
           <div className="bg-white p-6 rounded-lg shadow mt-6">
             <h2 className="text-2xl font-bold mb-4">Reviews</h2>
 
-            {isLoggedIn && isEnrolled ? (
-              <form onSubmit={handleSubmit} className="mb-6">
-                <div className="flex gap-2 mb-3">
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <button
-                      key={star}
-                      type="button"
-                      onClick={() => setRating(star)}
-                      className={`text-2xl ${rating >= star ? "text-yellow-500" : "text-gray-300"
-                        }`}
-                    >
-                      ★
-                    </button>
-                  ))}
-                </div>
-
-                <textarea
-                  value={comment}
-                  onChange={(e) => setComment(e.target.value)}
-                  placeholder="Write your feedback..."
-                  className="w-full p-3 border border-gray-300 rounded-md mb-3 focus:ring-2 focus:ring-blue-500"
-                />
-
-                <button
-                  type="submit"
-                  className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md font-semibold"
-                >
-                  {reviewId ? "Update Review" : "Submit Review"}
-                </button>
-              </form>
-            ) : !isLoggedIn ? (
-              <p className="text-gray-500 mb-4">
-                Please{" "}
-                <Link to="/login" className="text-blue-500">
-                  log in
-                </Link>{" "}
-                to leave a review.
-              </p>
-            ) : (
-              <p className="text-gray-500 mb-4">
-                You must be enrolled to leave a review.
-              </p>
-            )}
-
             {/* ✅ Reviews list with null-safety */}
             <div>
               <h3 className="text-xl font-semibold mb-3">Student Reviews</h3>
-              {!(reviews && reviews.reviews && reviews.reviews.length > 0) ? (
+              {!reviews.length ? (
                 <p className="text-gray-500">No reviews yet. Be the first!</p>
               ) : (
-                <div className="space-y-4">
-                  {reviews.reviews.map((r) => (
-                    <div
-                      key={r.reviewID}
-                      className="border rounded-md p-4 bg-gray-50 shadow-sm"
-                    >
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className="font-semibold">
-                          {"User name not sent in api"}
-                        </span>
-                        <span className="text-yellow-500">
-                          {"★".repeat(r.rating)}
-                          {"☆".repeat(5 - r.rating)}
-                        </span>
-                      </div>
-                      <p className="text-gray-700">{r.comment}</p>
-                      {isLoggedIn && r.userID === loggedInUser?.id && (
-                        <div className="mt-2 flex gap-2">
-                          <button
-                            onClick={() => {
-                              setRating(r.rating);
-                              setComment(r.comment);
-                              setIsEditing(true);
-                              setReviewId(r.reviewID);
-                            }}
-                            className="bg-green-600 text-white px-3 py-1 rounded-md text-sm"
-                          >
-                            Update
-                          </button>
-                          <button
-                            onClick={() => handleDelete(r.reviewID)}
-                            className="bg-red-500 text-white px-3 py-1 rounded-md text-sm"
-                          >
-                            Delete
-                          </button>
+                <>
+                  {reviews.map((r, courseIndex) =>
+                    r.reviews.map((review) => (
+                      <div
+                        key={review.reviewID}
+                        className="border rounded-md p-4 mb-4 bg-gray-50 shadow-sm"
+                      >
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="font-semibold">
+                            {review.firstName} {review.lastName}
+                          </span>
+                          <span className="text-yellow-500">
+                            {"★".repeat(review.rating)}
+                            {"☆".repeat(5 - review.rating)}
+                          </span>
                         </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
+                        <p className="text-gray-700">{review.comment}</p>
+                      </div>
+                    ))
+                  )}
+                </>
               )}
             </div>
           </div>
-
 
           {/* Enroll / Leave */}
           <div className="mt-6 flex flex-col gap-3">
@@ -340,7 +212,7 @@ const PathwayPage = () => {
                   Go to Pathway Content
                 </button>
                 <button
-                  onClick={handleLeave}
+                  onClick={handleDisenroll}
                   disabled={loading}
                   className="w-full bg-red-500 hover:bg-red-600 text-white py-3 px-6 rounded-md"
                 >

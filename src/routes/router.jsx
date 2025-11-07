@@ -38,7 +38,7 @@ import PathwayContentPage from "../Pages/PathwayContentPage";
 import CourseQuestionsPage from "../Pages/CourseQuestionsPage";
 import StudentAnnouncementsPage from "../Pages/StudentAnnouncementsPage";
 import StudentDiscussionPage from "../Pages/StudentDiscussionPage";
-import SchedulePage from "../pages/SchedulePage";
+import SchedulePage from "../Pages/SchedulePage";
 import PomodoroSettings from "../Pages/PomodoroSettings.jsx";
 
 import SearchResults from "../Pages/SearchResults";

@@ -580,7 +580,7 @@ export default function ModuleManagement() {
                     <TableHead>
                       <TableRow>
                         <TableCell>Course</TableCell>
-                        <TableCell>Module #</TableCell>
+                        <TableCell>ModuleID</TableCell>
                         <TableCell>Title</TableCell>
                         <TableCell>Description</TableCell>
                           <TableCell>Pages</TableCell>

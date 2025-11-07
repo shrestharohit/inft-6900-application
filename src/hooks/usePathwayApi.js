@@ -12,6 +12,11 @@ export default function usePathwayApi() {
     return res.data;
   }, []);
 
+  const getPathwayDetails = useCallback(async (pathwayID) => {
+    const res = await api.get(`/api/pathway/${pathwayID}`);
+    return res.data;
+  }, []);
+
   const registerPathway = useCallback(async (payload) => {
     const res = await api.post("/api/pathway/register", payload);
     return res.data;
@@ -22,5 +27,11 @@ export default function usePathwayApi() {
     return res.data;
   }, []);
 
-  return { fetchAllPathways, fetchUserPathways, registerPathway, updatePathway };
+  return {
+    fetchAllPathways,
+    fetchUserPathways,
+    registerPathway,
+    updatePathway,
+    getPathwayDetails,
+  };
 }
