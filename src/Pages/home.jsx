@@ -269,6 +269,12 @@ function Home() {
               className="bg-white rounded-xl p-6 flex flex-col justify-between items-center text-center shadow h-56"
             >
               <p className="italic text-gray-700">"{review.comment}"</p>
+              <Link
+                to={`/courses/${review.courseID}`}
+                className="mt-4 text-xs  hover:underline"
+              >
+                {review.title}
+              </Link>
               <div>
                 <span className="block font-bold text-[#1f2a60]">
                   – {review.firstName}
