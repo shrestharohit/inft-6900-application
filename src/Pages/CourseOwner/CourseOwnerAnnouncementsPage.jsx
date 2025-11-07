@@ -74,22 +74,20 @@ const CourseOwnerAnnouncementsPage = () => {
     return () => (mounted = false);
   }, [fetchAllCourses, loggedInUser?.id]);
 
-  // ✅ Fetch announcements per course
   const fetchAnnouncements = async (courseId) => {
     try {
-      const res = await getAllAnnouncementsForCourse(courseId || selectedCourseId);
-      const all = res?.announcements || [];
+      const res = await getAllAnnouncementsForCourse(
+        courseId || selectedCourseId
+      );
+      const updatedRes = res?.announcements
+        .map((a) => ({
+          ...a,
+          created_at: normalizeToDate(a.created_at),
+        }))
+        .sort((a, b) => b.created_at - a.created_at);
 
-      const normalizeList = (list) =>
-        list
-          .map((a) => ({
-            ...a,
-            created_at: normalizeToDate(a.created_at),
-          }))
-          .sort((a, b) => b.created_at - a.created_at);
-
-      const draftList = normalizeList(all.filter((a) => a.status === "draft"));
-      const publishedList = normalizeList(all.filter((a) => a.status === "active"));
+      const draftList = updatedRes.filter((a) => a.status === "draft");
+      const publishedList = updatedRes.filter((a) => a.status === "active");
 
       setDrafts(draftList);
       setPublished(publishedList);
@@ -110,18 +108,10 @@ const CourseOwnerAnnouncementsPage = () => {
     try {
       if (editingDraftId) {
         await updateAnnouncement(editingDraftId, draft);
-        alert("Draft updated!");
       } else {
         const res = await createAnnouncement(selectedCourseId, draft);
-        // ✅ Add locally to avoid flicker
-        const newDraft = {
-          ...(res?.data || draft),
-          announcementID: res?.data?.announcementID || Math.random().toString(36),
-          created_at: new Date(),
-        };
-        setDrafts((prev) => [newDraft, ...prev]);
-        alert("Draft saved!");
       }
+      fetchAnnouncements(selectedCourseId);
       setEditingDraftId(null);
       setForm({ title: "", content: "" });
     } catch (err) {
@@ -139,7 +129,7 @@ const CourseOwnerAnnouncementsPage = () => {
     if (!window.confirm("Delete this draft?")) return;
     try {
       await deleteAnnouncementById(draftId);
-      setDrafts((prev) => prev.filter((d) => d.announcementID !== draftId));
+      fetchAnnouncements(selectedCourseId);
       alert("Draft deleted!");
     } catch (err) {
       console.error("Failed to delete draft", err);
@@ -153,12 +143,7 @@ const CourseOwnerAnnouncementsPage = () => {
         ...draft,
         status: "active",
       });
-      // ✅ Move to published list locally
-      setDrafts((prev) => prev.filter((d) => d.announcementID !== draft.announcementID));
-      setPublished((prev) => [
-        { ...draft, status: "active", created_at: new Date() },
-        ...prev,
-      ]);
+      fetchAnnouncements(selectedCourseId);
       alert("Announcement published!");
     } catch (err) {
       console.error("Failed to publish announcement", err);
