@@ -94,7 +94,7 @@ const PathwayPage = () => {
 
   const handleDisenroll = async () => {
     if (window.confirm(`Are you sure you want to leave ${pathway.name}?`)) {
-      await leavePathway(pathwayId);
+      await leavePathway(pathwayId, { userID: loggedInUser.id });
       setIsEnrolled(false);
     }
   };
@@ -131,10 +131,10 @@ const PathwayPage = () => {
               <span className="font-semibold">Courses Included:</span>{" "}
               {coursesInPathway.length}
             </p>
-            <p>
+            {/* <p>
               <span className="font-semibold">Rating:</span>{" "}
               {reviews?.avgRating || 0} ⭐
-            </p>
+            </p> */}
           </div>
 
           {/* Courses in Pathway */}
