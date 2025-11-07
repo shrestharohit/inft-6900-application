@@ -14,6 +14,8 @@ const StudentDiscussionPage = () => {
   const [threads, setThreads] = useState([]);
   const [newThread, setNewThread] = useState({ title: "", message: "" });
   const [replyText, setReplyText] = useState({});
+  const [editThread, setEditThread] = useState(null);
+  const [editReply, setEditReply] = useState({});
 
   const { fetchCoursePosts, createPost, replyToPost } = useDiscussionApi();
 
@@ -79,10 +81,10 @@ const StudentDiscussionPage = () => {
             authorId: r.userID || null,
             createdAt: normalizeToDate(r.created_at || r.createdAt),
           }))
-          .sort((a, b) => a.createdAt - b.createdAt), // oldest first
+          .sort((a, b) => a.createdAt - b.createdAt),
       }));
 
-      const sortedThreads = mapped.sort((a, b) => b.createdAt - a.createdAt); // newest thread first
+      const sortedThreads = mapped.sort((a, b) => b.createdAt - a.createdAt);
       setThreads(sortedThreads);
     } catch (err) {
       console.error("Failed to fetch discussions", err);
@@ -126,6 +128,27 @@ const StudentDiscussionPage = () => {
     }
   };
 
+  // Edit thread message
+  const handleEditThread = (thread) => {
+    setEditThread(thread);
+  };
+
+  const handleUpdateThread = () => {
+    if (!editThread.message.trim()) return;
+    setThreads((prev) =>
+      prev.map((t) =>
+        t.id === editThread.id ? { ...t, message: editThread.message } : t
+      )
+    );
+    setEditThread(null);
+  };
+
+  const handleDeleteThread = (threadId) => {
+    if (window.confirm("Are you sure you want to delete this discussion?")) {
+      setThreads((prev) => prev.filter((t) => t.id !== threadId));
+    }
+  };
+
   // Reply to a thread
   const handleReply = async (threadId) => {
     const text = replyText[threadId];
@@ -155,6 +178,39 @@ const StudentDiscussionPage = () => {
     } catch (err) {
       console.error("Failed to save reply", err);
       alert("Failed to save reply");
+    }
+  };
+
+  const handleEditReply = (threadId, reply) => {
+    setEditReply({ threadId, ...reply });
+  };
+
+  const handleUpdateReply = () => {
+    if (!editReply.text.trim()) return;
+    setThreads((prev) =>
+      prev.map((t) =>
+        t.id === editReply.threadId
+          ? {
+              ...t,
+              replies: t.replies.map((r) =>
+                r.id === editReply.id ? { ...r, text: editReply.text } : r
+              ),
+            }
+          : t
+      )
+    );
+    setEditReply({});
+  };
+
+  const handleDeleteReply = (threadId, replyId) => {
+    if (window.confirm("Are you sure you want to delete this reply?")) {
+      setThreads((prev) =>
+        prev.map((t) =>
+          t.id === threadId
+            ? { ...t, replies: t.replies.filter((r) => r.id !== replyId) }
+            : t
+        )
+      );
     }
   };
 
@@ -211,25 +267,116 @@ const StudentDiscussionPage = () => {
         <div className="space-y-6">
           {threads.map((thread) => (
             <div key={thread.id} className="bg-white p-5 rounded-lg shadow">
-              <h3 className="font-bold text-lg">{thread.title}</h3>
-              <p className="mt-2">{thread.message}</p>
-              <p className="text-xs text-gray-500 mt-2">
-                {thread.author} – {formatDateTime(thread.createdAt)}
-              </p>
+              {editThread?.id === thread.id ? (
+                <>
+                  <textarea
+                    rows="3"
+                    value={editThread.message}
+                    onChange={(e) =>
+                      setEditThread((prev) => ({
+                        ...prev,
+                        message: e.target.value,
+                      }))
+                    }
+                    className="w-full border p-2 rounded mb-2"
+                  />
+                  <button
+                    onClick={handleUpdateThread}
+                    className="bg-blue-600 text-white px-3 py-1 rounded text-sm mr-2"
+                  >
+                    Save
+                  </button>
+                  <button
+                    onClick={() => setEditThread(null)}
+                    className="bg-gray-400 text-white px-3 py-1 rounded text-sm"
+                  >
+                    Cancel
+                  </button>
+                </>
+              ) : (
+                <>
+                  <h3 className="font-bold text-lg">{thread.title}</h3>
+                  <p className="mt-2">{thread.message}</p>
+                  <p className="text-xs text-gray-500 mt-2">
+                    {thread.author} – {formatDateTime(thread.createdAt)}
+                  </p>
+
+                  {thread.authorId === loggedInUser?.id && (
+                    <div className="flex gap-3 text-sm mt-2">
+                      <button
+                        onClick={() => handleEditThread(thread)}
+                        className="text-blue-600 hover:underline"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => handleDeleteThread(thread.id)}
+                        className="text-red-600 hover:underline"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  )}
+                </>
+              )}
 
               {/* Replies */}
               <div className="mt-4 ml-4 border-l pl-4 space-y-2">
                 {thread.replies.map((r) => (
-                  <div
-                    key={r.id}
-                    className="bg-gray-50 p-2 rounded flex justify-between"
-                  >
-                    <div>
-                      <p>{r.text}</p>
-                      <p className="text-xs text-gray-500">
-                        {r.author} – {formatDateTime(r.createdAt)}
-                      </p>
-                    </div>
+                  <div key={r.id} className="bg-gray-50 p-2 rounded">
+                    {editReply?.id === r.id ? (
+                      <>
+                        <textarea
+                          rows="2"
+                          value={editReply.text}
+                          onChange={(e) =>
+                            setEditReply((prev) => ({
+                              ...prev,
+                              text: e.target.value,
+                            }))
+                          }
+                          className="w-full border p-2 rounded mb-2"
+                        />
+                        <button
+                          onClick={handleUpdateReply}
+                          className="bg-blue-600 text-white px-3 py-1 rounded text-sm mr-2"
+                        >
+                          Save
+                        </button>
+                        <button
+                          onClick={() => setEditReply({})}
+                          className="bg-gray-400 text-white px-3 py-1 rounded text-sm"
+                        >
+                          Cancel
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <p>{r.text}</p>
+                        <p className="text-xs text-gray-500">
+                          {r.author} – {formatDateTime(r.createdAt)}
+                        </p>
+
+                        {r.authorId === loggedInUser?.id && (
+                          <div className="flex gap-3 text-xs mt-1">
+                            <button
+                              onClick={() => handleEditReply(thread.id, r)}
+                              className="text-blue-600 hover:underline"
+                            >
+                              Edit
+                            </button>
+                            <button
+                              onClick={() =>
+                                handleDeleteReply(thread.id, r.id)
+                              }
+                              className="text-red-600 hover:underline"
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        )}
+                      </>
+                    )}
                   </div>
                 ))}
               </div>
