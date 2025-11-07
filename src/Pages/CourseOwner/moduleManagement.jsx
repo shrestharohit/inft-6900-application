@@ -65,7 +65,6 @@ export default function ModuleManagement() {
     courseID: "",
     title: "",
     description: "",
-    moduleNumber: "",
     expectedHours: "",
     contents: [],
   });
@@ -128,25 +127,7 @@ export default function ModuleManagement() {
   const handleModuleFormChange = (e) => {
     const { name, value } = e.target;
 
-    if (name === "moduleNumber") {
-      // Allow empty string (for typing), but always keep positive integers only
-      if (value === "") {
-        setModuleForm((prev) => ({ ...prev, moduleNumber: "" }));
-        return;
-      }
-
-      // Convert to number safely
-      const num = Math.floor(Number(value));
-
-      // Ignore invalid or negative entries
-      if (isNaN(num) || num < 1) return;
-
-      // Set sanitized value
-      setModuleForm((prev) => ({ ...prev, moduleNumber: num }));
-    } else {
-    // Generic handler for all other fields
-      setModuleForm((prev) => ({ ...prev, [name]: value }));
-    }
+    setModuleForm((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleCourseChange = (e) =>
@@ -193,8 +174,8 @@ export default function ModuleManagement() {
     const updated =
       editingPageIndex !== null
         ? moduleForm.contents.map((p, i) =>
-          i === editingPageIndex ? newPage : p
-        )
+            i === editingPageIndex ? newPage : p
+          )
         : [...moduleForm.contents, newPage];
     setModuleForm((prev) => ({ ...prev, contents: updated }));
     setEditingPageIndex(null);
@@ -226,7 +207,6 @@ export default function ModuleManagement() {
       courseID: "",
       title: "",
       description: "",
-      moduleNumber: "",
       expectedHours: "",
       contents: [],
     });
@@ -235,37 +215,19 @@ export default function ModuleManagement() {
     setEditingPageIndex(null);
   };
 
-  // 🧩 Safe submit handler (create or update module)
   const handleSubmitModule = async (e) => {
     e.preventDefault();
-
-    // ✅ Validate course selection
     if (!moduleForm.courseID) {
       alert("Please select a course.");
       return;
     }
 
-    // ✅ Validate module number
-    let moduleNum = Number(moduleForm.moduleNumber);
-    if (!Number.isInteger(moduleNum) || moduleNum <= 0) {
-      alert("⚠️ Please enter a valid positive Module Number.");
-      return;
-    }
-
-    // Snapshot safe local variable to avoid React async lag
-    const safeModuleNumber = moduleNum;
-
-    // ✅ Construct payload
     const payload = {
-      courseID: moduleForm.courseID,
+      ...moduleForm,
       title: moduleForm.title?.trim(),
       description: moduleForm.description?.trim(),
-      moduleNumber: safeModuleNumber,
       expectedHours: toHHMMSS(moduleForm.expectedHours),
-      status:
-        editingModuleIndex !== null
-          ? modules[editingModuleIndex]?.status ?? DEFAULT_STATUS
-          : DEFAULT_STATUS,
+      status: moduleForm?.status || DEFAULT_STATUS,
       contents: moduleForm.contents.map((x, i) => ({
         ...x,
         description: x.content,
@@ -274,75 +236,30 @@ export default function ModuleManagement() {
       })),
     };
 
-    console.log("🚀 Submitting module payload:", payload);
-
     try {
-      let response;
       if (editingModuleIndex !== null) {
-        // --- UPDATE EXISTING MODULE ---
-        const target = modules[editingModuleIndex];
-        response = await updateModule(target.moduleID, payload);
-
-        // Merge backend + local safely (don’t let backend override moduleNumber)
-        const updated = {
-          ...modules[editingModuleIndex],
-          ...payload, // keep our version first
-          ...(response?.module || response || {}),
-        };
-
-        const courseName =
-          courses.find((c) => c.courseID === payload.courseID)?.title || "";
-
-        setModules((prev) =>
-          prev.map((m, i) =>
-            i === editingModuleIndex ? { ...updated, courseName } : m
-          )
-        );
-
+        await updateModule(editingModuleIndex, payload);
         alert("✅ Module updated successfully!");
       } else {
-        // --- CREATE NEW MODULE ---
-        response = await registerModule(payload);
-
-        const created = {
-          ...payload,
-          ...(response?.module || response || {}),
-        };
-
-        const courseName =
-          courses.find((c) => c.courseID === payload.courseID)?.title || "";
-
-        setModules((prev) => [...prev, { ...created, courseName }]);
-
+        payload.moduleNumber = Math.floor(100000 + Math.random() * 900000);
+        await registerModule(payload);
         alert("✅ Module created successfully!");
       }
-
-      resetForm();
     } catch (err) {
       console.error("❌ Failed to save module:", err);
       alert("Failed to save module. Please try again.");
+    } finally {
+      resetForm();
+      const refreshed = await fetchAllModules(loggedInUser?.id);
+      setModules(refreshed);
     }
   };
 
-  const handleEditModule = (index) => {
-    const m = modules[index];
-    const normalizedContents = (m.contents || []).map((p, i) => ({
-      ...p,
-      content: p.content ?? p.description ?? "",
-      pageNumber: p.pageNumber ?? i + 1,
-    }));
-    setModuleForm({
-      courseID: m.courseID,
-      title: m.title,
-      description: m.description,
-      moduleNumber: m.moduleNumber,
-      expectedHours: (m.expectedHours || "").slice(0, 5),
-      contents: normalizedContents,
-    });
-    setEditingModuleIndex(index);
+  const handleEditModule = (mod) => {
+    setModuleForm(mod);
+    setEditingModuleIndex(mod.moduleID);
   };
 
-  // Menu actions
   const handleRequestApproval = async (mod) => {
     await updateModule(mod.moduleID, { ...mod, status: "wait_for_approval" });
     const refreshed = await fetchAllModules(loggedInUser?.id);
@@ -418,16 +335,6 @@ export default function ModuleManagement() {
                 ))}
               </Select>
             </FormControl>
-
-            <TextField
-              label="Module Number"
-              name="moduleNumber"
-              type="number"
-              value={moduleForm.moduleNumber}
-              onChange={handleModuleFormChange}
-              required
-              fullWidth
-            />
 
             <Autocomplete
               freeSolo
@@ -580,41 +487,41 @@ export default function ModuleManagement() {
                     <TableHead>
                       <TableRow>
                         <TableCell>Course</TableCell>
-                        <TableCell>ModuleID</TableCell>
                         <TableCell>Title</TableCell>
                         <TableCell>Description</TableCell>
-                          <TableCell>Pages</TableCell>
-                          <TableCell>Status</TableCell>
-                          <TableCell align="right">Actions</TableCell>
-                        </TableRow>
-                      </TableHead>
-                      <TableBody>
-                        {group.map((m, i) => (
-                          <TableRow key={m.moduleID ?? i}>
-                            <TableCell>
-                              {courses.find((c) => c.courseID === m.courseID)
-                                ?.title || "-"}
-                            </TableCell>
-                            <TableCell>{m.moduleNumber}</TableCell>
-                            <TableCell>{m.title}</TableCell>
-                            <TableCell sx={{ whiteSpace: "pre-line", maxWidth: 300 }}>
-                              {m.description || "-"}
-                            </TableCell>
+                        <TableCell>Pages</TableCell>
+                        <TableCell>Status</TableCell>
+                        <TableCell align="right">Actions</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {group.map((m, i) => (
+                        <TableRow key={m.moduleID ?? i}>
+                          <TableCell>
+                            {courses.find((c) => c.courseID === m.courseID)
+                              ?.title || "-"}
+                          </TableCell>
+                          <TableCell>{m.title}</TableCell>
+                          <TableCell
+                            sx={{ whiteSpace: "pre-line", maxWidth: 300 }}
+                          >
+                            {m.description || "-"}
+                          </TableCell>
 
-                            <TableCell>{m.contents?.length || 0}</TableCell>
-                            <TableCell>{STATUS_LABEL[m.status] || "-"}</TableCell>
-                            <TableCell align="right">
-                              <IconButton
-                                size="small"
-                                onClick={(e) => handleMenuOpen(e, m)}
-                              >
-                                <MoreVert fontSize="small" />
-                              </IconButton>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
+                          <TableCell>{m.contents?.length || 0}</TableCell>
+                          <TableCell>{STATUS_LABEL[m.status] || "-"}</TableCell>
+                          <TableCell align="right">
+                            <IconButton
+                              size="small"
+                              onClick={(e) => handleMenuOpen(e, m)}
+                            >
+                              <MoreVert fontSize="small" />
+                            </IconButton>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
                 )}
               </AccordionDetails>
             </Accordion>
@@ -632,9 +539,7 @@ export default function ModuleManagement() {
             <>
               <MenuItem
                 onClick={() => {
-                  handleEditModule(
-                    modules.findIndex((m) => m.moduleID === menuModule.moduleID)
-                  );
+                  handleEditModule(menuModule);
                   handleMenuClose();
                 }}
               >
@@ -666,7 +571,12 @@ export default function ModuleManagement() {
       </Paper>
 
       {/* --- Page Dialog --- */}
-      <Dialog open={contentDialogOpen} onClose={handleClosePageDialog} maxWidth="md" fullWidth>
+      <Dialog
+        open={contentDialogOpen}
+        onClose={handleClosePageDialog}
+        maxWidth="md"
+        fullWidth
+      >
         <DialogTitle>
           {editingPageIndex !== null ? "Edit Page" : "Add New Page"}
         </DialogTitle>
