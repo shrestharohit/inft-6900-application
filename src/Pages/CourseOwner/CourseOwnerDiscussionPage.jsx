@@ -111,26 +111,15 @@ const CourseOwnerDiscussionPage = () => {
           title: newThread.title,
           postText: newThread.message,
         });
-        alert("Thread updated!");
       } else {
-        const res = await createPost(selectedCourseId, {
+        await createPost(selectedCourseId, {
           userID: loggedInUser?.id,
           title: newThread.title,
           postText: newThread.message,
         });
-
-        // ✅ Add instantly without flicker
-        const newT = {
-          postID: res?.data?.postID || Math.random().toString(36),
-          title: newThread.title,
-          postText: newThread.message,
-          created_at: new Date(),
-          replies: [],
-        };
-        setThreads((prev) => [newT, ...prev]);
-        alert("Thread created!");
       }
 
+      fetchDiscussions(selectedCourseId);
       setEditingThreadId(null);
       setNewThread({ title: "", message: "" });
     } catch (err) {
@@ -148,27 +137,13 @@ const CourseOwnerDiscussionPage = () => {
       if (editingReply && editingReply.threadId === thread.postID) {
         await updatePost(editingReply.replyId, { postText: text });
       } else {
-        const res = await replyToPost(thread.postID, {
+        await replyToPost(thread.postID, {
           userID: loggedInUser?.id,
           postText: text,
         });
-
-        const newReply = {
-          postID: res?.data?.postID || Math.random().toString(36),
-          postText: text,
-          created_at: new Date(),
-        };
-
-        // ✅ Append locally to prevent flicker
-        setThreads((prev) =>
-          prev.map((t) =>
-            t.postID === thread.postID
-              ? { ...t, replies: [newReply, ...t.replies] }
-              : t
-          )
-        );
       }
 
+      fetchDiscussions(selectedCourseId);
       setReplyText({ ...replyText, [thread.postID]: "" });
       setEditingReply(null);
     } catch (err) {
@@ -181,7 +156,7 @@ const CourseOwnerDiscussionPage = () => {
     if (!window.confirm("Delete this thread?")) return;
     try {
       await deletePost(threadId);
-      setThreads((prev) => prev.filter((t) => t.postID !== threadId));
+      fetchDiscussions(selectedCourseId);
     } catch (err) {
       console.error("Failed to delete thread", err);
       alert("Failed to delete thread");
@@ -198,13 +173,7 @@ const CourseOwnerDiscussionPage = () => {
     if (!window.confirm("Delete this reply?")) return;
     try {
       await deletePost(replyId);
-      setThreads((prev) =>
-        prev.map((t) =>
-          t.postID === threadId
-            ? { ...t, replies: t.replies.filter((r) => r.postID !== replyId) }
-            : t
-        )
-      );
+      fetchDiscussions(selectedCourseId);
     } catch (err) {
       console.error("Failed to delete reply", err);
       alert("Failed to delete reply");
@@ -316,6 +285,7 @@ const CourseOwnerDiscussionPage = () => {
                       <h3 className="font-bold text-lg">{thread.title}</h3>
                       <p className="mt-2">{thread.postText}</p>
                       <p className="text-xs text-gray-500 mt-2">
+                        {thread.user.firstName} {thread.user.lastName} -{" "}
                         {formatDateTime(thread.created_at)}
                       </p>
                     </div>
@@ -345,24 +315,25 @@ const CourseOwnerDiscussionPage = () => {
                         <div>
                           <p>{r.postText}</p>
                           <p className="text-xs text-gray-500">
+                            {r.user.firstName} {r.user.lastName} -{" "}
                             {formatDateTime(r.created_at)}
                           </p>
                         </div>
                         <div className="flex gap-2 text-xs">
-                          <button
+                          {/* <button
                             onClick={() => handleEditReply(thread.postID, r)}
                             className="text-blue-600 hover:underline"
                           >
                             Edit
-                          </button>
-                          <button
+                          </button> */}
+                          {/* <button
                             onClick={() =>
                               handleDeleteReply(thread.postID, r.postID)
                             }
                             className="text-red-500 hover:underline"
                           >
                             Delete
-                          </button>
+                          </button> */}
                         </div>
                       </div>
                     ))}
