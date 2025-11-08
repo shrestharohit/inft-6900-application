@@ -22,15 +22,14 @@ const SchedulePage = () => {
   const [modules, setModules] = useState([]);
   const [selectedModule, setSelectedModule] = useState(null);
   const [schedules, setSchedules] = useState([]);
+  const [fetchTrigger, setFetchTrigger] = useState(0);
+
   const [newSession, setNewSession] = useState({
     date: "",
     startTime: "",
     endTime: "",
   });
-  const [editingSession, setEditingSession] = useState({
-    moduleId: null,
-    sessionIdx: null,
-  });
+  const [editID, setEditID] = useState(null);
 
   if (!canViewCourses) {
     return (
@@ -54,19 +53,24 @@ const SchedulePage = () => {
         }
       } catch (err) {
         console.error("Failed to load modules", err);
-        if (mounted) setError("Failed to load modules.");
+        if (mounted) console.log("Failed to load modules.");
       }
     };
     loadData();
     return () => (mounted = false);
-  }, [fetchAllModulesInACourse, fetchUserSchedule, loggedInUser?.id]);
+  }, [
+    fetchAllModulesInACourse,
+    fetchUserSchedule,
+    loggedInUser?.id,
+    fetchTrigger,
+  ]);
 
   const formatTime = (timeStr) =>
     timeStr ? moment(timeStr, "HH:mm").format("hh:mm A") : "";
 
   const calculateHours = (start, end) => {
     const diff =
-      (new Date(`2020-01-01T${end}:00`) - new Date(`2020-01-01T${start}:00`)) /
+      (new Date(`2020-01-01T${end}`) - new Date(`2020-01-01T${start}`)) /
       (1000 * 60 * 60);
     return diff > 0 ? parseFloat(diff.toFixed(2)) : 0;
   };
@@ -102,23 +106,25 @@ const SchedulePage = () => {
     const duration = calculateHours(newSession.startTime, newSession.endTime);
     if (duration <= 0) return alert("End time must be after start time.");
 
-    await createSchedule({
-      userID: loggedInUser.id,
-      moduleID: selectedModule,
-      date: newSession.date,
-      startTime: newSession.startTime,
-      endTime: newSession.endTime,
-    });
+    if (editID) {
+      await updateSchedule(editID, {
+        date: newSession.date,
+        startTime: newSession.startTime,
+        endTime: newSession.endTime,
+      });
+      setEditID(null);
+    } else {
+      await createSchedule({
+        userID: loggedInUser.id,
+        moduleID: selectedModule,
+        date: newSession.date,
+        startTime: newSession.startTime,
+        endTime: newSession.endTime,
+      });
+    }
     setNewSession({ date: "", startTime: "", endTime: "" });
-  };
-
-  const handleEditSession = async (scheduleID) => {
-    if (!canSchedule) return;
-    await updateSchedule(scheduleID, {
-      date: newSession.date,
-      startTime: newSession.startTime,
-      endTime: newSession.endTime,
-    });
+    setSelectedModule(null);
+    setFetchTrigger((prev) => prev + 1);
   };
 
   const handleDeleteSession = async (scheduleId) => {
@@ -126,11 +132,11 @@ const SchedulePage = () => {
     if (!window.confirm("Are you sure?")) return;
 
     await deleteSchedule(scheduleId);
+    setFetchTrigger((prev) => prev + 1);
   };
 
   const formatDateTime = (ts) => {
-    console.log(ts);
-    return ts?.split("T")[0];
+    return new Date(ts).toLocaleDateString('en-AU', { year: 'numeric', month: 'long', day: '2-digit' });
   };
 
   const exportModuleToGoogleCalendar = (s) => {
@@ -158,17 +164,27 @@ const SchedulePage = () => {
     }, 300);
   };
 
-  const events = modules?.flatMap((mod) =>
-    mod?.sessions?.map((s, i) => ({
-      title: mod.name,
-      start: new Date(`${s.date}T${s.startTime}:00`),
-      end: new Date(`${s.date}T${s.endTime}:00`),
-      details: `Module: ${mod.name}\n${s.date} ${formatTime(
+  const events = 
+    schedules?.map((s, i) => ({
+      title: s.moduleTitle,
+      start: new Date(`${s.date.split("T")[0]}T${s.startTime}`),
+      end: new Date(`${s.date.split("T")[0]}T${s.endTime}`),
+      details: `Module: ${s.moduleTitle}\n${s.date.split("T")[0]} ${formatTime(
         s.startTime
       )} - ${formatTime(s.endTime)}`,
-      id: `${mod.id}-${i}`,
-    }))
-  );
+      id: `${s.scheduleID}`,
+    }));
+
+  const handleEditSchedule = (schedule) => () => {
+    console.log({ schedule });
+    setSelectedModule(schedule.moduleID);
+    setNewSession({
+      date: schedule?.date?.split("T")[0],
+      startTime: schedule?.startTime,
+      endTime: schedule?.endTime,
+    });
+    setEditID(schedule.scheduleID);
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -241,7 +257,7 @@ const SchedulePage = () => {
                         startTime: e.target.value,
                       })
                     }
-                    className="border border-gray-300 rounded-lg px-3 py-2 w-full focus:ring-2 focus:ring-blue-400"
+                    className="without_ampm border border-gray-300 rounded-lg px-3 py-2 w-full focus:ring-2 focus:ring-blue-400"
                   />
                 </div>
                 <div>
@@ -264,9 +280,7 @@ const SchedulePage = () => {
                   onClick={handleAddOrEditSession}
                   className="bg-blue-600 text-white font-medium px-6 py-2 rounded-lg hover:bg-blue-700 transition"
                 >
-                  {editingSession.sessionIdx !== null
-                    ? "Save Changes"
-                    : "+ Add Session"}
+                  {!!editID ? "Save Changes" : "+ Add Session"}
                 </button>
               </div>
             </div>
@@ -302,7 +316,7 @@ const SchedulePage = () => {
                     <span className="flex items-center gap-3">
                       <button
                         className="text-blue-600 hover:underline"
-                        onClick={() => handleEditSession(sch.scheduleID)}
+                        onClick={handleEditSchedule(sch)}
                       >
                         Edit
                       </button>

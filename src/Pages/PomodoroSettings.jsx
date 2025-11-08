@@ -33,17 +33,9 @@ function PomodoroSettings() {
         }
     }, []);
 
-    const totalFocusMinutes = focusHours * 60 + focusMinutes;
-    const totalBreakMinutes = breakHours * 60 + breakMinutes;
 
     const handleSave = () => {
         if (!canPomodoro) return; // ✅ prevent saving if not allowed
-        const settings = {
-            enabled,
-            focusMinutes: Math.max(1, totalFocusMinutes),
-            shortBreakMinutes: Math.max(1, totalBreakMinutes),
-        };
-        localStorage.setItem("pomodoroSettings", JSON.stringify(settings));
         setSavedMsg("Settings saved successfully!");
         setTimeout(() => setSavedMsg(""), 1800);
     };
