@@ -1,5 +1,7 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { ROUTES } from "../utils/common";
+import api from "../api/config";
+import moment from "moment";
 
 const AuthContext = createContext(null);
 
@@ -37,6 +39,27 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // Whenever the first login state is FetchableDevEnvironment, get the pomodoro settings and set it in local storage
+  const getPomodoroSettingsAndSetInLocalStorage = async (userId) => {
+    if (!userId) return;
+
+    try {
+      const response = await api.get(`/api/pomodoro/user/${userId}`);
+      const data = {
+        enabled: response.data.isEnabled,
+        focusMinutes: moment.duration(response.data.focusPeriod).asMinutes(),
+        shortBreakMinutes: moment.duration(response.data.breakPeriod).asMinutes(),
+      };
+      if (data) {
+        localStorage.setItem("pomodoroSettings", JSON.stringify(data));
+      } else {
+        console.error("Failed to fetch pomodoro settings:", data);
+      }
+    } catch (error) {
+      console.error("Error fetching pomodoro settings:", error);
+    }
+  };
+
   // ✅ Ensure correct redirect after refresh or direct visit
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
@@ -44,6 +67,7 @@ export const AuthProvider = ({ children }) => {
 
     if (parsedUser) {
       setLoggedInUser(parsedUser);
+      getPomodoroSettingsAndSetInLocalStorage(parsedUser.id);
 
       const path = window.location.pathname;
       const isPublicPath = ["/", "/login", "/registration"].includes(path);
