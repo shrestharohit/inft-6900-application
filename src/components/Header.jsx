@@ -174,7 +174,7 @@ const Header = () => {
                   height: 40,
                 }}
               >
-                Categories
+                Explore
               </Button>
 
               <Menu

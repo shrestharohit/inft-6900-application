@@ -143,16 +143,21 @@ const CourseContentPage = () => {
                   </li>
                 ))}
 
-                <li>
-                  <Link
-                    to={`/courses/${courseId}/modules/${module.moduleID}/quizzes/${quizzes.find(
-                      (x) => x.moduleID === module.moduleID
-                    )?.quizID || ""}`}
-                    className="text-gray-700 hover:text-blue-600 hover:underline"
-                  >
-                    Quiz
-                  </Link>
-                </li>
+                {quizzes?.find((x) => x.moduleID === module.moduleID) && (
+                  <li>
+                    <Link
+                      to={`/courses/${courseId}/modules/${
+                        module.moduleID
+                      }/quizzes/${
+                        quizzes.find((x) => x.moduleID === module.moduleID)
+                          ?.quizID || ""
+                      }`}
+                      className="text-gray-700 hover:text-blue-600 hover:underline"
+                    >
+                      Quiz
+                    </Link>
+                  </li>
+                )}
               </ul>
             </div>
           ))

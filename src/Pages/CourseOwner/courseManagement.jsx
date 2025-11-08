@@ -50,7 +50,7 @@ const LEVEL_LABEL = {
 export default function CourseManagement() {
   const { loggedInUser } = useAuth();
   const { fetchAllCourses, registerCourse, updateCourse } = useCourseApi();
-  const { fetchAllPathways } = usePathwayApi();
+  const { fetchUserPathways } = usePathwayApi();
 
   const [courses, setCourses] = useState([]);
   const [pathways, setPathways] = useState([]);
@@ -118,17 +118,14 @@ export default function CourseManagement() {
 
       try {
         // --- Load PATHWAYS ---
-        const resPathways = await fetchAllPathways();
+        const resPathways = await fetchUserPathways(loggedInUser?.id);
         const listPathways = Array.isArray(resPathways)
           ? resPathways
           : resPathways?.pathways || [];
 
         if (mounted) {
           setPathways(
-            listPathways.map((p, idx) => ({
-              ...p,
-              pathwayID: p.pathwayID?.toString() || String(idx + 1),
-            }))
+            listPathways.filter((pathway) => pathway.status === "active")
           );
         }
       } catch (err) {
@@ -140,7 +137,7 @@ export default function CourseManagement() {
     return () => {
       mounted = false;
     };
-  }, [fetchAllCourses, fetchAllPathways]);
+  }, [fetchAllCourses, fetchUserPathways, loggedInUser]);
 
   // ---- Helpers ----
   const handleChange = (e) => {
@@ -276,10 +273,11 @@ export default function CourseManagement() {
     if (!courseId) return alert("Missing course id");
     try {
       const res = await updateCourse(courseId, { status: "wait_for_approval" });
-      const updated = res?.course || res || {
-        ...target,
-        status: "wait_for_approval",
-      };
+      const updated = res?.course ||
+        res || {
+          ...target,
+          status: "wait_for_approval",
+        };
       const normalized = {
         ...updated,
         level: (updated.level || "").toLowerCase(),
@@ -339,7 +337,13 @@ export default function CourseManagement() {
       >
         <form onSubmit={handleSubmit}>
           <Stack spacing={2}>
-            <TextField label="Course Name" name="name" value={form.name} onChange={handleChange} required />
+            <TextField
+              label="Course Name"
+              name="name"
+              value={form.name}
+              onChange={handleChange}
+              required
+            />
 
             <Autocomplete
               freeSolo
@@ -488,8 +492,12 @@ export default function CourseManagement() {
                             >
                               {course.outline}
                             </TableCell>
-                            <TableCell>{LEVEL_LABEL[levelKey] || "-"}</TableCell>
-                            <TableCell>{STATUS_LABEL[statusKey] || "-"}</TableCell>
+                            <TableCell>
+                              {LEVEL_LABEL[levelKey] || "-"}
+                            </TableCell>
+                            <TableCell>
+                              {STATUS_LABEL[statusKey] || "-"}
+                            </TableCell>
                             <TableCell align="right">
                               <IconButton
                                 size="small"
@@ -558,7 +566,13 @@ export default function CourseManagement() {
       </Paper>
 
       {/* Outline Dialog */}
-      <Dialog open={outlineDialogOpen} onClose={handleOutlineCancel} maxWidth="md" fullWidth scroll="paper">
+      <Dialog
+        open={outlineDialogOpen}
+        onClose={handleOutlineCancel}
+        maxWidth="md"
+        fullWidth
+        scroll="paper"
+      >
         <DialogTitle>Edit Course Outline</DialogTitle>
         <DialogContent dividers>
           <TextField
@@ -573,7 +587,9 @@ export default function CourseManagement() {
         </DialogContent>
         <DialogActions>
           <Button onClick={handleOutlineCancel}>Cancel</Button>
-          <Button onClick={handleOutlineSave} variant="contained">Save</Button>
+          <Button onClick={handleOutlineSave} variant="contained">
+            Save
+          </Button>
         </DialogActions>
       </Dialog>
     </Box>

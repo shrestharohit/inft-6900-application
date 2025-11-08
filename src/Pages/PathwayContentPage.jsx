@@ -137,7 +137,7 @@ const PathwayContentPage = () => {
             >
               <div>
                 <h2 className="text-xl font-semibold text-blue-600 mb-1">
-                  {course.title}
+                  <Link to={`/courses/${course.courseID}/content`}>{course.title}</Link>
                 </h2>
                 <p className="text-gray-600">
                   {isCompleted

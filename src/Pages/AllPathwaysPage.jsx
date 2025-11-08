@@ -7,8 +7,7 @@ import webdevremovebg from "../assets/Images/webdevremovebg.png";
 const AllPathwaysPage = () => {
   const [pathways, setPathways] = useState([]);
   const [filters, setFilters] = useState({
-    knowledgeArea: "all",
-    sortBy: "popularity", // popularity, rating, coursesCount
+    sortBy: "created_desc", // created_desc, created_asc
   });
 
   const { fetchAllPathways } = usePathwayApi();
@@ -33,25 +32,21 @@ const AllPathwaysPage = () => {
 
   const resetFilters = () => {
     setFilters({
-      knowledgeArea: "all",
-      sortBy: "popularity",
+      sortBy: "created_desc",
     });
   };
 
   useEffect(() => {
     let filteredPathways = [...pathways];
 
-    // // ✅ Knowledge Area filter
-    // if (filters.knowledgeArea !== "all") {
-    //   filteredPathways = filteredPathways.filter(
-    //     (p) => p.knowledgeArea === filters.knowledgeArea
-    //   );
-    // }
-
     // ✅ Sorting
-    if (filters.sortBy === "created_date") {
+    if (filters.sortBy === "created_desc") {
       filteredPathways.sort(
         (a, b) => new Date(b.created_at) - new Date(a.created_at)
+      );
+    } else if (filters.sortBy === "created_asc") {
+      filteredPathways.sort(
+        (a, b) => new Date(a.created_at) - new Date(b.created_at)
       );
     }
 
@@ -64,29 +59,14 @@ const AllPathwaysPage = () => {
 
       {/* ✅ Filters */}
       <div className="filters mb-8 flex flex-wrap gap-4 justify-start">
-        {/* Knowledge Area */}
-        {/* <select
-          value={filters.knowledgeArea}
-          onChange={(e) =>
-            setFilters({ ...filters, knowledgeArea: e.target.value })
-          }
-          className="px-3 py-2 border rounded-md shadow-sm"
-        >
-          <option value="all">All Knowledge Areas</option>
-          <option value="Tech Skills">Tech Skills</option>
-          <option value="Analytical Skills">Analytical Skills</option>
-          <option value="Business Skills">Business Skills</option>
-        </select> */}
-
         {/* Sort By */}
         <select
           value={filters.sortBy}
           onChange={(e) => setFilters({ ...filters, sortBy: e.target.value })}
           className="px-3 py-2 border rounded-md shadow-sm"
         >
-          <option value="created_date">Sort by Date</option>
-          {/* <option value="rating">Sort by Rating</option> */}
-          {/* <option value="coursesCount">Sort by Number of Courses</option> */}
+          <option value="created_desc">Created Date ↓ (Newest)</option>
+          <option value="created_asc">Created Date ↑ (Oldest)</option>
         </select>
 
         <button

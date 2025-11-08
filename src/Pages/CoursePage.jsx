@@ -191,8 +191,13 @@ const CoursePage = () => {
       return;
     }
     setLoading(true);
-    await enrollCourse(courseId, { userID: loggedInUser.id });
-    alert("Successfully enrolled in this course");
+    try {
+      await enrollCourse(courseId, { userID: loggedInUser.id });
+      alert("Successfully enrolled in this course");
+    } catch (err) {
+      console.error("Failed to enroll in course", err);
+      alert(err);
+    }
     setLoading(false);
     setHasEnrolled(true);
   };
