@@ -265,7 +265,7 @@ const QuizPage = () => {
                 </strong>
               </p>
               <p className="text-gray-500 mb-6">
-                Attempt #{attempts?.find((x) => x.passed == true)?.attemptID}
+                No of attempts: {attempts?.length || 0}
               </p>
 
               {canAttemptQuiz && !attempts?.some((x) => !!x.passed) && (
@@ -325,13 +325,13 @@ const QuizPage = () => {
               Previous Attempts
             </h2>
             <div className="space-y-3">
-              {attempts?.map((a) => (
+              {attempts?.map((a, index) => (
                 <div
                   key={a.attemptID}
                   className="flex justify-between items-center p-4 bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition"
                 >
                   <p className="text-gray-700 font-medium">
-                    Attempt #{a.attemptID} — Score: {Math.round(a.score || 0)}%
+                    Attempt #{index + 1} — Score: {Math.round(a.score || 0)}%
                     —{" "}
                     {a.passed ? (
                       <span className="text-green-600 font-semibold">
