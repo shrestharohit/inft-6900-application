@@ -81,7 +81,9 @@ const Dashboard = () => {
               className="bg-white rounded-lg shadow-md hover:shadow-xl transition p-6 flex flex-col"
             >
               <h3 className="text-lg font-bold text-gray-800 text-center mb-3">
-                {course?.courseDetail?.title || course.name || "Untitled Course"}
+                {course?.courseDetail?.title ||
+                  course.name ||
+                  "Untitled Course"}
               </h3>
 
               {/* ✅ Progress bar */}
@@ -89,11 +91,11 @@ const Dashboard = () => {
                 <div className="w-full bg-gray-200 rounded-full h-3">
                   <div
                     className="bg-green-500 h-3 rounded-full"
-                    style={{ width: `50%` }}
+                    style={{ width: `${course?.progress || 0}%` }}
                   ></div>
                 </div>
                 <p className="text-sm text-gray-600 mt-1 text-center">
-                  Progress: 50%
+                  Progress: {course?.progress || 0}%
                 </p>
               </div>
 
