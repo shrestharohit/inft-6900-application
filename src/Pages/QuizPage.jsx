@@ -304,7 +304,7 @@ const QuizPage = () => {
                     </p>
                     <p className="text-gray-600">
                       <strong>Your answer:</strong>{" "}
-                      {f.answerText || "No answer"}
+                      {f.selectedText || "No answer"}
                     </p>
                     <p className="italic text-gray-700">{f.feedbackText}</p>
                   </div>
