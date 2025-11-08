@@ -98,6 +98,14 @@ export default function useUserApi() {
     return res.data;
   }, []);
 
+  const updatePomodoroSettings = useCallback(async (userId, payload) => {
+    const res = await api.put(
+      `/api/pomodoro/user/${userId}`,
+      payload
+    );
+    return res.data;
+  }, []);
+
   return {
     registerUser,
     registerPriviledgedUser,
@@ -112,5 +120,6 @@ export default function useUserApi() {
     resendOTP,
     sendResetOTP,
     verifyResetOTP,
+    updatePomodoroSettings
   };
 }
