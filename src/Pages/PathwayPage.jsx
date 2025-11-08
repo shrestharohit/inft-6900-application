@@ -30,12 +30,22 @@ const PathwayPage = () => {
     let mounted = true;
     const loadData = async () => {
       try {
-        const [pathwayData, coursesInPathway, enrolledPathwayData] =
-          await Promise.all([
-            getPathwayDetails(pathwayId),
-            getAllCoursesInAPathway(pathwayId),
-            getEnrolledPathwaysById(loggedInUser?.id),
-          ]);
+        const promises = [
+          getPathwayDetails(pathwayId),
+          getAllCoursesInAPathway(pathwayId),
+        ];
+
+        if (loggedInUser?.id) {
+          promises.push(getEnrolledPathwaysById(loggedInUser.id));
+        }
+
+        const results = await Promise.all(promises);
+
+        if (!mounted) return;
+
+        const [pathwayData, coursesInPathway, enrolledPathwayData = []] =
+          results;
+
         if (mounted) {
           setPathway(pathwayData.pathway);
           setCoursesInPathway(coursesInPathway.courses);
