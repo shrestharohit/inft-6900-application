@@ -227,13 +227,14 @@ const CoursePage = () => {
         const newReview = {
           rating,
           comment,
-          userID: loggedInUser?.id,
-          courseID: courseId,
+          enrolmentID,
         };
         await createReview(newReview);
         alert("✅ Review submitted!");
       }
-
+      //clear form
+      setRating(0);
+      setComment("");
       const res = await getAllReviewsForCourse(courseId);
       setReviews(res);
       const userReview = res?.reviews?.find(
@@ -260,11 +261,15 @@ const CoursePage = () => {
   const handleDelete = async (reviewId) => {
     if (window.confirm("Are you sure you want to delete your review?")) {
       try {
-        await deleteReviewById(reviewId);
+        await updateReview(reviewId, { status: "inactive" });
         alert("Your review has been deleted.");
+        setReviewId(null);
       } catch (err) {
         console.error("Failed to delete review", err);
       }
+      //clear form
+      setRating(0);
+      setComment("");
       const res = await getAllReviewsForCourse(courseId);
       setReviews(res);
     }
@@ -430,8 +435,7 @@ const CoursePage = () => {
                 <div className="space-y-4">
                   {reviews?.reviews
                     ?.sort(
-                      (a, b) =>
-                        new Date(b.updated_at) - new Date(a.updated_at)
+                      (a, b) => new Date(b.updated_at) - new Date(a.updated_at)
                     )
                     .map((r) => {
                       const isUserReview = r.userID === loggedInUser?.id;
