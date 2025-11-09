@@ -86,7 +86,10 @@ export default function AdminProfile() {
       const updateData = {
         firstName: formData.firstName,
         lastName: formData.lastName,
-        ...(formData.newPassword ? { password: formData.newPassword } : {}),
+        ...(formData.newPassword ? { newPassword: formData.newPassword } : {}),
+        ...(formData.currentPassword
+          ? { currentPassword: formData.currentPassword }
+          : {}),
       };
 
       const response = await updateUserById({
@@ -94,6 +97,8 @@ export default function AdminProfile() {
         userID: loggedInUser.id,
         role: loggedInUser.role,
       });
+
+      debugger;
 
       setUserDataInState(response.user);
       setSuccessMsg("Profile updated successfully!");
@@ -119,9 +124,8 @@ export default function AdminProfile() {
   const togglePasswordVisibility = () => setShowPassword(!showPassword);
 
   const inputClass = (field) =>
-    `w-full px-4 py-3 border rounded-md focus:ring-2 focus:ring-blue-500 ${errors[field]
-      ? "border-red-500 focus:ring-red-500"
-      : "border-gray-300"
+    `w-full px-4 py-3 border rounded-md focus:ring-2 focus:ring-blue-500 ${
+      errors[field] ? "border-red-500 focus:ring-red-500" : "border-gray-300"
     }`;
 
   // ✅ Password rules checklist
@@ -297,10 +301,11 @@ export default function AdminProfile() {
             type="button"
             onClick={handleSave}
             disabled={loading}
-            className={`w-full py-3 text-white font-semibold rounded-md transition flex justify-center items-center gap-2 ${loading
+            className={`w-full py-3 text-white font-semibold rounded-md transition flex justify-center items-center gap-2 ${
+              loading
                 ? "bg-green-300 cursor-not-allowed"
                 : "bg-green-500 hover:bg-green-600"
-              }`}
+            }`}
           >
             {loading && (
               <svg
