@@ -93,9 +93,9 @@ export const AuthProvider = ({ children }) => {
   };
 
   // ✅ Set full user data and redirect (used at login)
-  const setUserDataInState = (user) => {
+  const setUserDataInState = (user, shouldRedirect = true) => {
     if (!user) return;
-    persistUser(user, true); // redirect after login only
+    persistUser(user, shouldRedirect); // redirect after login only
   };
 
   // ✅ Clear user data safely

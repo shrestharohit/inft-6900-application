@@ -81,6 +81,7 @@ const StudentDiscussionPage = () => {
         name: p.user.firstName + " " + p.user.lastName,
         authorId: p.userID || p.authorId || null,
         createdAt: normalizeToDate(p.created_at || p.createdAt),
+        updatedAt: normalizeToDate(p.updated_at || p.created_at),
         replies: (p.replies || [])
           .map((r) => ({
             id: r.postID,
@@ -89,11 +90,12 @@ const StudentDiscussionPage = () => {
             author: r.userID || r.author || "User",
             authorId: r.userID || r.authorId || null,
             createdAt: normalizeToDate(r.created_at || r.createdAt),
+            updatedAt: normalizeToDate(r.updated_at || r.created_at),
           }))
-          .sort((a, b) => b.createdAt - a.createdAt),
+          .sort((a, b) => b.updatedAt - a.updatedAt),
       }));
 
-      const sortedThreads = mapped.sort((a, b) => b.createdAt - a.createdAt);
+      const sortedThreads = mapped.sort((a, b) => b.updatedAt - a.updatedAt);
 
       setThreads(sortedThreads);
     } catch (err) {
@@ -149,9 +151,9 @@ const StudentDiscussionPage = () => {
           userID: loggedInUser?.id,
           postText: text,
         });
-        fetchDiscussions(courseId);
       }
 
+      fetchDiscussions(courseId);
       setReplyText({ ...replyText, [threadId]: "" });
       setEditingReply(null);
     } catch (err) {
@@ -188,7 +190,7 @@ const StudentDiscussionPage = () => {
     }
   };
 
-  const handleEditReply = (threadId, reply) => {
+  const handleEditReply = async (threadId, reply) => {
     setReplyText({ ...replyText, [threadId]: reply.text });
     setEditingReply({ threadId, replyId: reply.id });
   };
@@ -302,11 +304,11 @@ const StudentDiscussionPage = () => {
                     <div>
                       <p>{r.text}</p>
                       <p className="text-xs text-gray-500">
-                        {r.name} – {formatDateTime(r.createdAt)}
+                        {r.name} – {formatDateTime(r.updatedAt)}
                       </p>
                     </div>
                     {canPostDiscussion &&
-                      r.authorId === (loggedInUser?.email || "anonymous") && (
+                      r.authorId === (loggedInUser?.id || "anonymous") && (
                         <div className="flex gap-2 text-xs">
                           <button
                             onClick={() => handleEditReply(thread.id, r)}

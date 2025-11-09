@@ -42,7 +42,7 @@ const profileSchema = Yup.object().shape({
 
 function ProfileManagement() {
   const { loggedInUser, setUserDataInState } = useAuth();
-  const { updateUser } = useUserApi();
+  const { updateUserById } = useUserApi();
 
   const [formData, setFormData] = useState({
     firstName: "",
@@ -87,11 +87,17 @@ function ProfileManagement() {
       const updateData = {
         firstName: formData.firstName,
         lastName: formData.lastName,
-        ...(formData.newPassword ? { password: formData.newPassword } : {}),
+        ...(formData.newPassword ? { newPassword: formData.newPassword } : {}),
+        ...(formData.currentPassword
+          ? { currentPassword: formData.currentPassword }
+          : {}),
       };
 
-      const response = await updateUser(loggedInUser.id, updateData);
-      setUserDataInState(response);
+      const response = await updateUserById({
+        ...updateData,
+        userID: loggedInUser.id,
+      });
+      setUserDataInState(response.user);
       setSuccessMsg("Profile updated successfully!");
 
       setFormData((prev) => ({
@@ -116,9 +122,8 @@ function ProfileManagement() {
   const togglePasswordVisibility = () => setShowPassword(!showPassword);
 
   const inputClass = (field) =>
-    `w-full px-4 py-3 border rounded-md focus:ring-2 focus:ring-blue-500 ${errors[field]
-      ? "border-red-500 focus:ring-red-500"
-      : "border-gray-300"
+    `w-full px-4 py-3 border rounded-md focus:ring-2 focus:ring-blue-500 ${
+      errors[field] ? "border-red-500 focus:ring-red-500" : "border-gray-300"
     }`;
 
   // ✅ Password rule checks
@@ -266,7 +271,9 @@ function ProfileManagement() {
             />
             {formData.confirmPassword &&
               formData.confirmPassword === formData.newPassword && (
-                <p className="text-green-600 text-xs mt-1">✅ Passwords match</p>
+                <p className="text-green-600 text-xs mt-1">
+                  ✅ Passwords match
+                </p>
               )}
             {errors.confirmPassword && (
               <p className="text-red-600 text-sm mt-1">
@@ -293,10 +300,11 @@ function ProfileManagement() {
               type="button"
               onClick={handleSave}
               disabled={loading}
-              className={`w-full py-3 text-white font-semibold rounded-md transition flex justify-center items-center gap-2 ${loading
+              className={`w-full py-3 text-white font-semibold rounded-md transition flex justify-center items-center gap-2 ${
+                loading
                   ? "bg-green-300 cursor-not-allowed"
                   : "bg-green-500 hover:bg-green-600"
-                }`}
+              }`}
             >
               {loading && (
                 <svg
