@@ -108,16 +108,6 @@ const StudentAnnouncementsPageContent = () => {
 
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold text-gray-800">📢 Announcements</h1>
-
-        {/* ✅ Only admins & course owners can post */}
-        {canCreateAnnouncement && (
-          <button
-            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md shadow"
-            onClick={() => alert("Coming soon: Create Announcement Modal")}
-          >
-            + New Announcement
-          </button>
-        )}
       </div>
 
       {published.length === 0 ? (

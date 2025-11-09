@@ -6,11 +6,14 @@ import useQuizApi from "../hooks/useQuizApi";
 import useModuleApi from "../hooks/useModuleApi";
 import { useAuth } from "../contexts/AuthContext";
 import useCourseApi from "../hooks/useCourseApi";
+import useRoleAccess from "../hooks/useRoleAccess";
 
 function CertificatePage() {
   const { courseId } = useParams();
   const navigate = useNavigate();
   const certRef = useRef();
+  const { isAdmin, isCourseOwner}= useRoleAccess();
+  const previewMode = isAdmin || isCourseOwner;
 
   const { fetchQuizForCourse, getQuizResultForUser } = useQuizApi();
   const { fetchAllModulesInACourse } = useModuleApi();
@@ -147,9 +150,14 @@ function CertificatePage() {
     );
 
   // ✅ Eligible for Certificate
-  if (eligible) {
+  if (eligible || previewMode) {
     return (
       <div className="min-h-screen bg-gray-50 flex flex-col">
+        {previewMode && !eligible && (
+          <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-800 p-4 text-center">
+            <strong>Preview Mode:</strong> You are viewing this certificate as an admin
+          </div>
+        )}
         <main className="flex-1 flex justify-center items-center p-6">
           <div
             ref={certRef}
@@ -179,6 +187,8 @@ function CertificatePage() {
           </div>
         </main>
 
+        {!previewMode && (
+
         <div className="flex justify-center my-6">
           <button
             onClick={downloadPDF}
@@ -187,6 +197,7 @@ function CertificatePage() {
             📥 Download as PDF
           </button>
         </div>
+        )}
       </div>
     );
   }
