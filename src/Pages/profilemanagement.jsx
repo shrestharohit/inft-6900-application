@@ -7,10 +7,12 @@ import useUserApi from "../hooks/useUserApi";
 // ✅ Validation schema with all rules
 const profileSchema = Yup.object().shape({
   firstName: Yup.string()
+    .matches(/^[A-Za-z\s'-]+$/, "First name can only contain letters")
     .min(2, "First name must be at least 2 characters")
     .max(30, "First name too long")
     .required("First name is required"),
   lastName: Yup.string()
+    .matches(/^[A-Za-z\s'-]+$/, "Last name can only contain letters")
     .min(2, "Last name must be at least 2 characters")
     .max(30, "Last name too long")
     .required("Last name is required"),
