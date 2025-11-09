@@ -11,7 +11,7 @@ function RegistrationForm() {
     const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
-    const [showTerms, setShowTerms] = useState(false);
+  
     const [error, setError] = useState("");
     const [success, setSuccess] = useState("");
 
@@ -94,10 +94,6 @@ function RegistrationForm() {
             : "border-gray-300"
         }`;
 
-    const handleAgreeTerms = () => {
-        formik.setFieldValue("termsAgreed", true);
-        setShowTerms(false);
-    };
 
     // ✅ Password strength helper
     const passwordValidations = [
@@ -299,12 +295,14 @@ function RegistrationForm() {
                         />
                         <label className="text-gray-700">
                             I agree to the{" "}
-                            <span
-                                onClick={() => setShowTerms(true)}
-                                className="text-blue-600 cursor-pointer underline"
+                            <Link
+                                to="/terms"
+                                className="text-blue-600 underline"
+                                target="_blank"
                             >
-                                terms and conditions
-                            </span>
+                                Terms and Conditions
+                            </Link>
+
                         </label>
                     </div>
                     {formik.touched.termsAgreed && formik.errors.termsAgreed && (
@@ -344,44 +342,6 @@ function RegistrationForm() {
             </div>
 
             {/* 🧾 Terms Modal */}
-            {showTerms && (
-                <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-                    <div className="bg-white rounded-lg shadow-lg w-11/12 md:w-2/3 lg:w-1/2 max-h-[80vh] overflow-y-auto p-6">
-                        <h2 className="text-2xl font-bold mb-4 text-[#1f2a60]">
-                            Terms and Conditions
-                        </h2>
-                        <p className="text-gray-700 leading-relaxed mb-3">
-                            Welcome to our platform! These Terms and Conditions outline the
-                            rules and regulations for using this website. By registering, you
-                            agree to comply with all applicable laws and respect the privacy
-                            of others.
-                        </p>
-                        <p className="text-gray-700 leading-relaxed mb-3">
-                            Your data will be used solely for improving user experience. We do
-                            not sell or share personal information without consent. You may
-                            close your account at any time by contacting support.
-                        </p>
-                        <p className="text-gray-700 leading-relaxed mb-6">
-                            By clicking “Agree,” you accept that any violation of these terms
-                            may result in suspension or termination of your account.
-                        </p>
-                        <div className="flex justify-end gap-3">
-                            <button
-                                onClick={() => setShowTerms(false)}
-                                className="bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded-md"
-                            >
-                                Close
-                            </button>
-                            <button
-                                onClick={handleAgreeTerms}
-                                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md"
-                            >
-                                Agree
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
         </div>
     );
 }
