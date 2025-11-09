@@ -321,22 +321,13 @@ const CoursePage = () => {
           <div className="text-gray-500 text-sm mt-4 space-y-2">
             <p>
               <span className="font-semibold">Level:</span>{" "}
-              <Link
-                to={`/search?category=all&query=${courseFromApi?.level}`}
-                className="text-blue-500 hover:underline"
-              >
                 {capitalizeFirst(courseFromApi?.level)}
-              </Link>
+
             </p>
 
             <p>
               <span className="font-semibold">Category:</span>{" "}
-              <Link
-                to={`/search?category=all&query=${courseFromApi?.category}`}
-                className="text-blue-500 hover:underline"
-              >
                 {capitalizeFirst(courseFromApi?.category)}
-              </Link>
             </p>
 
             <p>
@@ -349,13 +340,8 @@ const CoursePage = () => {
             </p>
             <p>
               <span className="font-semibold">Course Owner:</span>{" "}
-              <Link
-                to={`/search?category=all&query=${courseFromApi?.userDetail?.userID}`}
-                className="text-blue-500 hover:underline"
-              >
                 {courseFromApi?.userDetail?.firstName}{" "}
-                {courseFromApi?.userDetail?.lastName}
-              </Link>
+                {courseFromApi?.userDetail?.lastName}  
             </p>
           </div>
 
