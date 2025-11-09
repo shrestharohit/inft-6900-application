@@ -97,9 +97,6 @@ export default function AdminProfile() {
         userID: loggedInUser.id,
         role: loggedInUser.role,
       });
-
-      debugger;
-
       setUserDataInState(response.user);
       setSuccessMsg("Profile updated successfully!");
       setFormData((prev) => ({

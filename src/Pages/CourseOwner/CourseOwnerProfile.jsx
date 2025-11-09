@@ -41,7 +41,7 @@ const profileSchema = Yup.object().shape({
 
 export default function CourseOwnerProfile() {
   const { loggedInUser, setUserDataInState } = useAuth();
-  const { updateUser } = useUserApi();
+  const { updateUserById } = useUserApi();
 
   const [formData, setFormData] = useState({
     firstName: "",
@@ -92,7 +92,10 @@ export default function CourseOwnerProfile() {
           : {}),
       };
 
-      const response = await updateUser(loggedInUser.id, updateData);
+      const response = await updateUserById({
+        ...updateData,
+        userID: loggedInUser.id,
+      });
       setUserDataInState(response.user);
       setSuccessMsg("Profile updated successfully!");
       setFormData((prev) => ({

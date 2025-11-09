@@ -42,7 +42,7 @@ const profileSchema = Yup.object().shape({
 
 function ProfileManagement() {
   const { loggedInUser, setUserDataInState } = useAuth();
-  const { updateUser } = useUserApi();
+  const { updateUserById } = useUserApi();
 
   const [formData, setFormData] = useState({
     firstName: "",
@@ -93,8 +93,11 @@ function ProfileManagement() {
           : {}),
       };
 
-      const response = await updateUser(loggedInUser.id, updateData);
-      setUserDataInState(response);
+      const response = await updateUserById({
+        ...updateData,
+        userID: loggedInUser.id,
+      });
+      setUserDataInState(response.user);
       setSuccessMsg("Profile updated successfully!");
 
       setFormData((prev) => ({
