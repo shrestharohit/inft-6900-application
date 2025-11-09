@@ -10,6 +10,7 @@ import {
 } from "@mui/material";
 import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
 import SearchIcon from "@mui/icons-material/Search";
+import PersonIcon from "@mui/icons-material/Person";
 import { Link, useNavigate } from "react-router-dom";
 import logo from "../assets/Images/logo.png";
 import { useState, useEffect } from "react";
@@ -273,15 +274,13 @@ const Header = () => {
                   className="flex items-center gap-2 cursor-pointer"
                   onClick={handleMenuOpen}
                 >
-                  <Avatar
-                    src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png"
-                    alt="User Avatar"
-                    sx={{
-                      width: 40,
-                      height: 40,
-                      bgcolor: "white",
-                    }}
-                  />
+                <Avatar
+                alt="User Avatar"
+                sx={{ bgcolor: "white", color: "black" }}
+                >
+                <PersonIcon />  
+                </Avatar>
+
                   <Typography
                     variant="body1"
                     sx={{ color: "white", fontWeight: 600 }}
