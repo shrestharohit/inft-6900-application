@@ -50,7 +50,7 @@ const Dashboard = () => {
       </h1>
 
       {/* ✅ Stats Section */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-10">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
         <div className="bg-white rounded-lg shadow p-6 text-center">
           <p className="text-sm text-gray-500">Enrolled</p>
           <p className="text-2xl font-bold text-blue-600">{total}</p>
@@ -78,7 +78,7 @@ const Dashboard = () => {
           {enrolledCourses.map((course) => (
             <div
               key={course.courseID ?? course.id}
-              className="bg-white rounded-lg shadow-md hover:shadow-xl transition p-6 flex flex-col"
+              className="bg-white rounded-lg shadow-md hover:shadow-xl transition p-6 flex flex-col justify-between h-ful"
             >
               <h3 className="text-lg font-bold text-gray-800 text-center mb-3">
                 {course?.courseDetail?.title ||
@@ -87,7 +87,7 @@ const Dashboard = () => {
               </h3>
 
               {/* ✅ Progress bar */}
-              <div className="mb-3">
+              <div className="mt-auto mb-4">
                 <div className="w-full bg-gray-200 rounded-full h-3">
                   <div
                     className="bg-green-500 h-3 rounded-full"
@@ -100,7 +100,7 @@ const Dashboard = () => {
               </div>
 
               {/* ✅ CTA button */}
-              <div className="mt-auto flex justify-center">
+              <div className="flex justify-center">
                 <Link
                   to={`/courses/${course.courseID ?? course.id}/content`}
                   className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-5 py-2 rounded-md text-sm font-semibold shadow"
