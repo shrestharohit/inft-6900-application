@@ -182,6 +182,7 @@ const Header = () => {
                 anchorEl={categoryAnchor}
                 open={Boolean(categoryAnchor)}
                 onClose={handleCategoryClose}
+                disableScrollLock={true}
                 MenuListProps={{
                   sx: { display: "flex", gap: "40px", px: 2, py: 2 },
                 }}
