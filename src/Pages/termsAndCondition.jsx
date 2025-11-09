@@ -1,7 +1,10 @@
-import React from "react";
+import React, { useEffect } from "react";
 import beforeAuthLayout from "../components/BeforeAuth";
 
-function Terms() {
+  function Terms() {
+    useEffect(() => {
+      window.scrollTo(0, 0);
+    }, []);
   const termlyPolicy = `
       <style>
       [data-custom-class='body'], [data-custom-class='body'] * { 
