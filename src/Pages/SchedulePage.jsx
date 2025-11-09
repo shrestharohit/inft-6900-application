@@ -136,8 +136,16 @@ const SchedulePage = () => {
   };
 
   const formatDateTime = (ts) => {
-    return new Date(ts).toLocaleDateString('en-AU', { year: 'numeric', month: 'long', day: '2-digit' });
+    return new Date(ts).toLocaleDateString("en-AU", {
+      year: "numeric",
+      month: "long",
+      day: "2-digit",
+    });
   };
+
+  const dateFormatter = (ts) => {
+    return ts?.split("T")[0];
+  }
 
   const exportModuleToGoogleCalendar = (s) => {
     console.log(s);
@@ -148,10 +156,10 @@ const SchedulePage = () => {
     // TODO@Rohit: Fix Google Calendar export
     setTimeout(() => {
       console.log(formatDateTime(s.date), s.startTime, s.endTime);
-      const start = new Date(`${formatDateTime(s.date)}T${s.startTime}`)
+      const start = new Date(`${dateFormatter(s.date)}T${s.startTime}`)
         .toISOString()
         .replace(/[-:]|\.\d{3}/g, "");
-      const end = new Date(`${formatDateTime(s.date)}T${s.endTime}`)
+      const end = new Date(`${dateFormatter(s.date)}T${s.endTime}`)
         .toISOString()
         .replace(/[-:]|\.\d{3}/g, "");
       console.log(start, end);
@@ -164,16 +172,15 @@ const SchedulePage = () => {
     }, 300);
   };
 
-  const events = 
-    schedules?.map((s, i) => ({
-      title: s.moduleTitle,
-      start: new Date(`${s.date.split("T")[0]}T${s.startTime}`),
-      end: new Date(`${s.date.split("T")[0]}T${s.endTime}`),
-      details: `Module: ${s.moduleTitle}\n${s.date.split("T")[0]} ${formatTime(
-        s.startTime
-      )} - ${formatTime(s.endTime)}`,
-      id: `${s.scheduleID}`,
-    }));
+  const events = schedules?.map((s, i) => ({
+    title: s.moduleTitle,
+    start: new Date(`${s.date.split("T")[0]}T${s.startTime}`),
+    end: new Date(`${s.date.split("T")[0]}T${s.endTime}`),
+    details: `Module: ${s.moduleTitle}\n${s.date.split("T")[0]} ${formatTime(
+      s.startTime
+    )} - ${formatTime(s.endTime)}`,
+    id: `${s.scheduleID}`,
+  }));
 
   const handleEditSchedule = (schedule) => () => {
     console.log({ schedule });
@@ -241,6 +248,7 @@ const SchedulePage = () => {
                     onChange={(e) =>
                       setNewSession({ ...newSession, date: e.target.value })
                     }
+                    min={new Date().toISOString().split("T")[0]} // ⬅️ Blocks past dates
                     className="border border-gray-300 rounded-lg px-3 py-2 w-full focus:ring-2 focus:ring-blue-400"
                   />
                 </div>

@@ -42,11 +42,11 @@ const AllPathwaysPage = () => {
     // ✅ Sorting
     if (filters.sortBy === "created_desc") {
       filteredPathways.sort(
-        (a, b) => new Date(b.created_at) - new Date(a.created_at)
+        (a, b) => new Date(b.createdDate) - new Date(a.createdDate)
       );
     } else if (filters.sortBy === "created_asc") {
       filteredPathways.sort(
-        (a, b) => new Date(a.created_at) - new Date(b.created_at)
+        (a, b) => new Date(a.createdDate) - new Date(b.createdDate)
       );
     }
 

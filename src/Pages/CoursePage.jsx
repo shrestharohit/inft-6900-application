@@ -227,13 +227,14 @@ const CoursePage = () => {
         const newReview = {
           rating,
           comment,
-          userID: loggedInUser?.id,
-          courseID: courseId,
+          enrolmentID,
         };
         await createReview(newReview);
         alert("✅ Review submitted!");
       }
-
+      //clear form
+      setRating(0);
+      setComment("");
       const res = await getAllReviewsForCourse(courseId);
       setReviews(res);
       const userReview = res?.reviews?.find(
@@ -260,11 +261,15 @@ const CoursePage = () => {
   const handleDelete = async (reviewId) => {
     if (window.confirm("Are you sure you want to delete your review?")) {
       try {
-        await deleteReviewById(reviewId);
+        await updateReview(reviewId, { status: "inactive" });
         alert("Your review has been deleted.");
+        setReviewId(null);
       } catch (err) {
         console.error("Failed to delete review", err);
       }
+      //clear form
+      setRating(0);
+      setComment("");
       const res = await getAllReviewsForCourse(courseId);
       setReviews(res);
     }
@@ -428,109 +433,113 @@ const CoursePage = () => {
                 <p className="text-gray-500">No reviews yet. Be the first!</p>
               ) : (
                 <div className="space-y-4">
-                  {reviews?.reviews?.map((r) => {
-                    const isUserReview = r.userID === loggedInUser?.id;
-                    return (
-                      <div
-                        key={r.reviewID}
-                        className={`border rounded-md p-4 shadow-sm ${
-                          isUserReview
-                            ? "bg-yellow-50 border-yellow-200"
-                            : "bg-gray-50"
-                        }`}
-                      >
-                        <div className="flex items-center gap-2 mb-2">
-                          <span className="font-semibold">
-                            {r.firstName} {r.lastName}
-                            {isUserReview && (
-                              <span className="ml-2 text-xs bg-yellow-200 text-gray-800 px-2 py-0.5 rounded-full">
-                                Your Review
-                              </span>
-                            )}
-                          </span>
-                          <span className="text-yellow-500">
-                            {"★".repeat(r.rating)}
-                            {"☆".repeat(5 - r.rating)}
-                          </span>
-                        </div>
+                  {reviews?.reviews
+                    ?.sort(
+                      (a, b) => new Date(b.updated_at) - new Date(a.updated_at)
+                    )
+                    .map((r) => {
+                      const isUserReview = r.userID === loggedInUser?.id;
+                      return (
+                        <div
+                          key={r.reviewID}
+                          className={`border rounded-md p-4 shadow-sm ${
+                            isUserReview
+                              ? "bg-yellow-50 border-yellow-200"
+                              : "bg-gray-50"
+                          }`}
+                        >
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className="font-semibold">
+                              {r.firstName} {r.lastName}
+                              {isUserReview && (
+                                <span className="ml-2 text-xs bg-yellow-200 text-gray-800 px-2 py-0.5 rounded-full">
+                                  Your Review
+                                </span>
+                              )}
+                            </span>
+                            <span className="text-yellow-500">
+                              {"★".repeat(r.rating)}
+                              {"☆".repeat(5 - r.rating)}
+                            </span>
+                          </div>
 
-                        {/* ✅ Edit mode for the user's review */}
-                        {isUserReview && isEditing ? (
-                          <>
-                            <div className="flex gap-2 mb-2">
-                              {[1, 2, 3, 4, 5].map((star) => (
+                          {/* ✅ Edit mode for the user's review */}
+                          {isUserReview && isEditing ? (
+                            <>
+                              <div className="flex gap-2 mb-2">
+                                {[1, 2, 3, 4, 5].map((star) => (
+                                  <button
+                                    key={star}
+                                    type="button"
+                                    onClick={() => setRating(star)}
+                                    className={`text-2xl ${
+                                      rating >= star
+                                        ? "text-yellow-500"
+                                        : "text-gray-300"
+                                    }`}
+                                  >
+                                    ★
+                                  </button>
+                                ))}
+                              </div>
+                              <textarea
+                                value={comment}
+                                onChange={(e) => setComment(e.target.value)}
+                                className="w-full p-3 border border-gray-300 rounded-md mb-3 focus:ring-2 focus:ring-blue-500"
+                              />
+                              <div className="flex gap-2">
                                 <button
-                                  key={star}
-                                  type="button"
-                                  onClick={() => setRating(star)}
-                                  className={`text-2xl ${
-                                    rating >= star
-                                      ? "text-yellow-500"
-                                      : "text-gray-300"
-                                  }`}
+                                  onClick={handleSubmit}
+                                  className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded-md text-sm"
                                 >
-                                  ★
+                                  Save
                                 </button>
-                              ))}
-                            </div>
-                            <textarea
-                              value={comment}
-                              onChange={(e) => setComment(e.target.value)}
-                              className="w-full p-3 border border-gray-300 rounded-md mb-3 focus:ring-2 focus:ring-blue-500"
-                            />
-                            <div className="flex gap-2">
-                              <button
-                                onClick={handleSubmit}
-                                className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded-md text-sm"
-                              >
-                                Save
-                              </button>
-                              <button
-                                onClick={() => {
-                                  setIsEditing(false);
-                                  setRating(r.rating);
-                                  setComment(r.comment);
-                                }}
-                                className="bg-gray-400 hover:bg-gray-500 text-white px-3 py-1 rounded-md text-sm"
-                              >
-                                Cancel
-                              </button>
-                            </div>
-                          </>
-                        ) : (
-                          <>
-                            {/* Normal (read-only) display */}
-                            <p className="text-gray-700 mb-1">{r.comment}</p>
-                            <p className="text-xs text-gray-400">
-                              {formatDateTime(r.created_at)}
-                            </p>
-
-                            {isUserReview && (
-                              <div className="mt-2 flex gap-2">
                                 <button
                                   onClick={() => {
+                                    setIsEditing(false);
                                     setRating(r.rating);
                                     setComment(r.comment);
-                                    setIsEditing(true);
-                                    setReviewId(r.reviewID);
                                   }}
-                                  className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-md text-sm"
+                                  className="bg-gray-400 hover:bg-gray-500 text-white px-3 py-1 rounded-md text-sm"
                                 >
-                                  Edit
-                                </button>
-                                <button
-                                  onClick={() => handleDelete(r.reviewID)}
-                                  className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded-md text-sm"
-                                >
-                                  Delete
+                                  Cancel
                                 </button>
                               </div>
-                            )}
-                          </>
-                        )}
-                      </div>
-                    );
-                  })}
+                            </>
+                          ) : (
+                            <>
+                              {/* Normal (read-only) display */}
+                              <p className="text-gray-700 mb-1">{r.comment}</p>
+                              <p className="text-xs text-gray-400">
+                                {formatDateTime(r.updated_at || r.created_at)}
+                              </p>
+
+                              {isUserReview && (
+                                <div className="mt-2 flex gap-2">
+                                  <button
+                                    onClick={() => {
+                                      setRating(r.rating);
+                                      setComment(r.comment);
+                                      setIsEditing(true);
+                                      setReviewId(r.reviewID);
+                                    }}
+                                    className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-md text-sm"
+                                  >
+                                    Edit
+                                  </button>
+                                  <button
+                                    onClick={() => handleDelete(r.reviewID)}
+                                    className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded-md text-sm"
+                                  >
+                                    Delete
+                                  </button>
+                                </div>
+                              )}
+                            </>
+                          )}
+                        </div>
+                      );
+                    })}
                 </div>
               )}
             </div>

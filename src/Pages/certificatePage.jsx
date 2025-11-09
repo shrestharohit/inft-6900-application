@@ -174,7 +174,7 @@ function CertificatePage() {
               .
             </p>
             <p className="mt-8 text-gray-500">
-              Date: {new Date().toLocaleDateString("en-AU")}
+              Generated Date: {new Date().toLocaleDateString("en-AU")}
             </p>
           </div>
         </main>
