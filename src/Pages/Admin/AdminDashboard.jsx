@@ -9,6 +9,7 @@ import {
   CartesianGrid,
   XAxis,
   YAxis,
+  Legend,
   Bar,
 } from "recharts";
 import { useNavigate } from "react-router-dom";
@@ -30,7 +31,8 @@ export default function AdminDashboard() {
     courseOwnerCount = 0,
     adminCount = 0,
     pendingCourseCount = 0,
-    pendingQuizCount = 0,
+    activeCourseCount = 0,
+    enrolments = [],
     newUsers = [],
   } = data || {};
 
@@ -47,9 +49,9 @@ export default function AdminDashboard() {
   const pendingData = useMemo(
     () => [
       { name: "Courses", value: pendingCourseCount },
-      { name: "Quizzes", value: pendingQuizCount },
+      { name: "ActiveCourses", value: activeCourseCount },
     ],
-    [pendingCourseCount, pendingQuizCount]
+    [pendingCourseCount, activeCourseCount]
   );
 
   useEffect(() => {
@@ -103,8 +105,9 @@ export default function AdminDashboard() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <KpiCard title="Total Users" value={totalUserCount} color="#1f2a60" />
         <KpiCard title="New Users" value={newUserCount} color="#22c55e" />
-        <KpiCard title="Pending Courses" value={pendingCourseCount} color="#f97316" />
-        <KpiCard title="Pending Quizzes" value={pendingQuizCount} color="#e11d48" />
+        <KpiCard title="Active Courses" value={activeCourseCount} color="#f97316" />
+        <KpiCard title="Pending Courses" value={pendingCourseCount} color="#e11d48"/>
+
       </div>
 
       {/* Charts */}
@@ -152,18 +155,89 @@ export default function AdminDashboard() {
 
 
 
-        {/* Pending Items */}
-        <Card title="Pending Approvals Overview">
-          <ResponsiveContainer width="100%" height={260}>
-            <BarChart data={pendingData}>
+        {/* Course Engagement Overview */}
+        <Card title="Course Engagement Overview">
+          <ResponsiveContainer width="100%" height={320}>
+            {/* <BarChart
+              data={enrolments || []}
+              margin={{ top: 10, right: 30, left: 0, bottom: 50 }}
+            >
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" />
+              <XAxis
+                dataKey="courseName"
+                tick={{ fontSize: 11 }}
+                interval={0}
+                angle={-40}
+                textAnchor="end"
+                height={90}
+              />
               <YAxis allowDecimals={false} />
-              <Tooltip />
-              <Bar dataKey="value" fill="#f97316" />
+              <Tooltip
+                formatter={(value, name) => [`${value}`, name.replace("Count", "")]}
+                contentStyle={{ borderRadius: 8 }}
+              />
+              <Legend
+                verticalAlign="top"
+                height={36}
+                wrapperStyle={{ fontSize: "12px" }}
+              />
+              <Bar dataKey="enrolledCount" stackId="a" fill="#3b82f6" name="Enrolled" />
+              <Bar
+                dataKey="inProgressCount"
+                stackId="a"
+                fill="#f97316"
+                name="In Progress"
+              />
+              <Bar
+                dataKey="completedCount"
+                stackId="a"
+                fill="#22c55e"
+                name="Completed"
+              />
+              <Bar
+                dataKey="disenrolledCount"
+                stackId="a"
+                fill="#e11d48"
+                name="Disenrolled"
+              />
+            </BarChart> */}
+
+            <BarChart
+              layout="vertical"
+              data={enrolments || []}
+              margin={{ top: 10, right: 30, left: 10, bottom: 20 }}
+            >
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis type="number" allowDecimals={false} />
+              <YAxis
+                dataKey="courseName"
+                type="category"
+                tick={{ fontSize: 11 }}
+                tickMargin={4}
+                width={160} // adjust if needed
+              />
+
+
+              <Tooltip
+                formatter={(value, name) => [`${value}`, name.replace("Count", "")]}
+                contentStyle={{ borderRadius: 8 }}
+              />
+              <Legend
+                verticalAlign="top"
+                height={36}
+                wrapperStyle={{ fontSize: "12px" }}
+              />
+
+              {/* Stacked bars for status counts */}
+              <Bar dataKey="enrolledCount" stackId="a" fill="#1f2a60" name="Enrolled" />
+              <Bar dataKey="inProgressCount" stackId="a" fill="#f97316" name="In Progress" />
+              <Bar dataKey="completedCount" stackId="a" fill="#22c55e" name="Completed" />
+              <Bar dataKey="disenrolledCount" stackId="a" fill="#e11d48" name="Disenrolled" />
             </BarChart>
+
           </ResponsiveContainer>
         </Card>
+
       </div>
 
       {/* Recent Users */}
