@@ -31,6 +31,7 @@ const LessonPage = () => {
   const [showPomodoro, setShowPomodoro] = useState(false);
   const [timeLeft, setTimeLeft] = useState(null);
   const [onBreak, setOnBreak] = useState(false);
+  const [isFocusing, setIsFocusing] = useState(false);
 
   // 🧩 Fetch lesson content
   useEffect(() => {
@@ -55,6 +56,7 @@ const LessonPage = () => {
     localStorage.removeItem("pomodoroOnBreak");
 
     setOnBreak(false);
+    setIsFocusing(true);
     setTimeLeft(Math.ceil(focusMs / 1000));
 
     timerRef.current = setTimeout(() => {
@@ -78,6 +80,8 @@ const LessonPage = () => {
     timerRef.current = setTimeout(() => {
       localStorage.removeItem("pomodoroOnBreak");
       localStorage.removeItem("pomodoroBreakEnd");
+      setIsFocusing(false);
+      setOnBreak(false);
       toast("✅ Break finished! Ready for your next focus session?", {
         icon: "⌛",
         style: {
@@ -137,6 +141,7 @@ const LessonPage = () => {
       }
 
       setOnBreak(isBreak);
+      setIsFocusing(!isBreak);
       const diff = Math.max(0, endTime - Date.now());
       setTimeLeft(Math.ceil(diff / 1000));
     };
@@ -286,7 +291,7 @@ const LessonPage = () => {
                 <b>{pomodoroSettings.shortBreakMinutes}</b> min
               </p>
 
-              <div className="flex gap-2">
+              {/* <div className="flex gap-2">
                 <button
                   onClick={startNewSession}
                   className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
@@ -299,7 +304,42 @@ const LessonPage = () => {
                 >
                   ☕ Start Break
                 </button>
+              </div> */}
+
+              <div className="flex flex-col items-center gap-2">
+                {/* When a focus session is active */}
+                {isFocusing && !onBreak && (
+                  <p className="text-green-600 font-semibold">
+                    ⏳ Focus session in progress
+                  </p>
+                )}
+
+                {/* When on break */}
+                {onBreak && (
+                  <p className="text-blue-600 font-semibold">
+                    ☕ Break in progress
+                  </p>
+                )}
+
+                {/* When idle — show both buttons */}
+                {!isFocusing && !onBreak && (
+                  <div className="flex gap-2">
+                    <button
+                      onClick={startNewSession}
+                      className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
+                    >
+                      ▶️ Start Focus
+                    </button>
+                    <button
+                      onClick={startBreakTimer}
+                      className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                    >
+                      ☕ Start Break
+                    </button>
+                  </div>
+                )}
               </div>
+
             </div>
           </div>
         </div>
