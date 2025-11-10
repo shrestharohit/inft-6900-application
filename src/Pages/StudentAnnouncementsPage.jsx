@@ -133,7 +133,7 @@ const StudentAnnouncementsPageContent = () => {
                   </span>
                 )}
               </div>
-              <p className="text-gray-700 mt-2 whitespace-pre-line">{a.message}</p>
+              <p className="text-gray-700 mt-2 whitespace-pre-line">{a.content || "No content available."}</p>
               <p className="text-xs text-gray-500 mt-3">
                 Published on: {formatDateTime(a.created_at)}
               </p>
