@@ -261,9 +261,10 @@ const QuizPage = () => {
               <p className="text-gray-700 text-lg mb-2">
                 You scored{" "}
                 <strong>
-                  {Math.round(attempts?.find((x) => x.passed == true)?.score)}%
+                  {Math.round(attempts?.[attempts.length - 1]?.score ?? 0)}%
                 </strong>
               </p>
+
               <p className="text-gray-500 mb-6">
                 No of attempts: {attempts?.length || 0}
               </p>
@@ -331,7 +332,7 @@ const QuizPage = () => {
                   className="flex justify-between items-center p-4 bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition"
                 >
                   <p className="text-gray-700 font-medium">
-                    Attempt #{index + 1} — Score: {Math.round(a.score || 0)}%
+                    Attempt # {a.count} — Score: {Math.round(a.score || 0)}%
                     —{" "}
                     {a.passed ? (
                       <span className="text-green-600 font-semibold">
