@@ -30,13 +30,14 @@ import useUserApi from "../../hooks/useUserApi";
 const NAV_ITEMS = [
   { label: "Dashboard", to: "/admin", icon: <Dashboard /> },
   { label: "Users", to: "/admin/users", icon: <People /> },
-  { label: "Profile", to: "/admin/profile", icon: <Settings /> },
+  
   {
     label: "Course Approvals",
     to: "/admin/course-approvals",
     icon: <LibraryBooks />,
   },
-  { label: "Quiz Approvals", to: "/admin/quiz-approvals", icon: <Quiz /> },
+  { label: "Profile", to: "/admin/profile", icon: <Settings /> },
+  // { label: "Quiz Approvals", to: "/admin/quiz-approvals", icon: <Quiz /> },
 ];
 
 export default function AdminLayout() {
