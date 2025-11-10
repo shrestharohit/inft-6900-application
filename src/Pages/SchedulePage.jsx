@@ -144,18 +144,16 @@ const SchedulePage = () => {
   };
 
   const dateFormatter = (ts) => {
-    return ts?.split("T")[0];
-  }
+    return moment(ts).format("YYYY-MM-DD");
+  };
 
   const exportModuleToGoogleCalendar = (s) => {
-    console.log(s);
     if (!canSchedule)
       return alert("You do not have permission to export sessions.");
     if (!s) return alert("No sessions to export!");
 
     // TODO@Rohit: Fix Google Calendar export
     setTimeout(() => {
-      console.log(formatDateTime(s.date), s.startTime, s.endTime);
       const start = new Date(`${dateFormatter(s.date)}T${s.startTime}`)
         .toISOString()
         .replace(/[-:]|\.\d{3}/g, "");
@@ -174,19 +172,18 @@ const SchedulePage = () => {
 
   const events = schedules?.map((s, i) => ({
     title: s.moduleTitle,
-    start: new Date(`${s.date.split("T")[0]}T${s.startTime}`),
-    end: new Date(`${s.date.split("T")[0]}T${s.endTime}`),
-    details: `Module: ${s.moduleTitle}\n${s.date.split("T")[0]} ${formatTime(
+    start: new Date(`${dateFormatter(s.date)}T${s.startTime}`),
+    end: new Date(`${dateFormatter(s.date)}T${s.endTime}`),
+    details: `Module: ${s.moduleTitle}\n${dateFormatter(s.date)} ${formatTime(
       s.startTime
     )} - ${formatTime(s.endTime)}`,
     id: `${s.scheduleID}`,
   }));
 
   const handleEditSchedule = (schedule) => () => {
-    console.log({ schedule });
     setSelectedModule(schedule.moduleID);
     setNewSession({
-      date: schedule?.date?.split("T")[0],
+      date: dateFormatter(schedule?.date),
       startTime: schedule?.startTime,
       endTime: schedule?.endTime,
     });
