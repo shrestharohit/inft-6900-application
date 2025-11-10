@@ -232,7 +232,7 @@ export default function ModuleManagement() {
         ...x,
         description: x.content,
         pageNumber: i + 1,
-        status: "inactive",
+        status: moduleForm?.status || DEFAULT_STATUS
       })),
     };
 
