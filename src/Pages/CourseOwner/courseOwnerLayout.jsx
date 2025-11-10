@@ -1,6 +1,6 @@
 import React, { useEffect } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
-import { Avatar, Menu, MenuItem, Tooltip, Badge, Switch } from "@mui/material";
+import { Avatar, Menu, MenuItem, Tooltip, Badge, Switch, ListItemIcon } from "@mui/material";
 import {
   LibraryBooks,
   ViewModule,
@@ -9,6 +9,7 @@ import {
   ExitToApp,
   Dashboard,
   BarChart,
+  NotificationsActive,
   QuestionAnswer,
 } from "@mui/icons-material";
 import { useAuth } from "../../contexts/AuthContext";
@@ -32,6 +33,7 @@ const NAV_ITEMS = [
     icon: <QuestionAnswer />,
   }, // ✅ badge target
   { label: "Profile", to: "/courseowner/profile", icon: <Settings /> },
+  
 ];
 
 export default function CourseOwnerLayout() {
@@ -147,8 +149,16 @@ export default function CourseOwnerLayout() {
           </Tooltip>
 
           <Menu anchorEl={anchorEl} open={open} onClose={handleMenuClose}>
+            <MenuItem onClick={handleEditProfile}>
+              <Settings fontSize="small" className="mr-2" />
+              Edit Profile
+            </MenuItem>
+
             {/* Notification Toggle */}
             <MenuItem>
+             <ListItemIcon>
+              <NotificationsActive fontSize="small" />
+             </ListItemIcon>
               <div className="flex justify-between items-center w-full">
                 <span>Notifications</span>
                 <Switch
@@ -159,10 +169,6 @@ export default function CourseOwnerLayout() {
               </div>
             </MenuItem>
 
-            <MenuItem onClick={handleEditProfile}>
-              <Settings fontSize="small" className="mr-2" />
-              Profile
-            </MenuItem>
 
             <MenuItem onClick={handleLogout}>
               <ExitToApp fontSize="small" className="mr-2" />

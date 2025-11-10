@@ -150,7 +150,7 @@ export default function AdminLayout() {
             {/* Profile quick link */}
             <MenuItem onClick={handleEditProfile}>
               <ListItemIcon>
-                <AccountCircle fontSize="small" />
+                <Settings fontSize="small" />
               </ListItemIcon>
               <ListItemText primary="Edit Profile" />
             </MenuItem>
