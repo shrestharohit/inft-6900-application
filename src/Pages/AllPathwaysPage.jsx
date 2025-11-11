@@ -103,7 +103,10 @@ const AllPathwaysPage = () => {
           ))}
         </div>
       ) : (
-        <p>No pathways found.</p>
+        <p>
+          {/* No pathways found. */}
+          Loading Pathways...
+        </p>
       )}
     </div>
   );

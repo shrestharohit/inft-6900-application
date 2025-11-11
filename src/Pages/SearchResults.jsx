@@ -64,7 +64,6 @@ function SearchResults() {
   }, [fetchAllPathways, fetchAllCourses]);
 
   useEffect(() => {
-    console.log(courses, pathways, query);
     let filteredCourses = courses.filter((course) =>
       course.title.toLowerCase().includes(query.toLowerCase())
     );
@@ -151,7 +150,8 @@ function SearchResults() {
             </div>
           ) : (
             <p className="text-gray-500">
-              No courses found {query && `for "${query}"`}
+              {/* No courses found {query && `for "${query}"`} */}
+              Loading Courses...
             </p>
           )}
         </div>
@@ -182,7 +182,7 @@ function SearchResults() {
                     {pathway.description}
                   </p>
                   <Link
-                    to={`/pathway/${pathway.id}`}
+                    to={`/pathway/${pathway.pathwayID}`}
                     className="text-green-600 hover:text-green-700 font-semibold"
                   >
                     View Pathway
@@ -192,7 +192,8 @@ function SearchResults() {
             </div>
           ) : (
             <p className="text-gray-500">
-              No pathways found {query && `for "${query}"`}
+              {/* No pathways found {query && `for "${query}"`} */}
+              Loading Pathways...
             </p>
           )}
         </div>
