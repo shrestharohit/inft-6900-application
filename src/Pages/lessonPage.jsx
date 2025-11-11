@@ -204,8 +204,10 @@ const LessonPage = () => {
 
   if (!lessonContent)
     return (
-      <div className="p-6 text-center text-red-500 font-semibold text-lg">
-        Lesson content not found!
+      <div className="p-6 text-center font-semibold text-lg">
+      {/* // <div className="p-6 text-center text-red-500 font-semibold text-lg"> */}
+        {/* Lesson content not found! */}
+        Loading lesson...
       </div>
     );
 
