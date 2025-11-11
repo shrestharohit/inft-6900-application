@@ -102,7 +102,10 @@ export default function ModuleManagement() {
           : modulesResponse?.modules || [];
 
         if (!mounted) return;
-        setCourses(courseList);
+        const filteredCourses = courseList.filter(
+          (c) => c.userID === loggedInUser?.id
+        );
+        setCourses(filteredCourses);
         setModules(moduleList);
       } catch (err) {
         console.error("Failed to load modules/courses", err);
@@ -232,7 +235,7 @@ export default function ModuleManagement() {
         ...x,
         description: x.content,
         pageNumber: i + 1,
-        status: moduleForm?.status || DEFAULT_STATUS
+        status: moduleForm?.status || DEFAULT_STATUS,
       })),
     };
 
