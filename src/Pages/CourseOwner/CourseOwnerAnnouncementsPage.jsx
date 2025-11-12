@@ -1,4 +1,3 @@
-// src/Pages/CourseOwner/CourseOwnerAnnouncementsPage.jsx
 import React, { useState, useEffect } from "react";
 import { useAuth } from "../../contexts/AuthContext";
 import useCourseApi from "../../hooks/useCourseApi";
@@ -21,7 +20,7 @@ const CourseOwnerAnnouncementsPage = () => {
     deleteAnnouncementById,
   } = useAnnouncement();
 
-  // ✅ Normalize DB timestamps safely (Sydney-local)
+  // Normalize DB timestamps safely 
   const normalizeToDate = (ts) => {
     if (!ts) return null;
     if (ts instanceof Date) return ts;
@@ -34,7 +33,6 @@ const CourseOwnerAnnouncementsPage = () => {
     if (typeof ts === "string") {
       let s = ts.trim();
       if (s.includes(" ") && !s.includes("T")) s = s.replace(" ", "T");
-      // ⚠️ Do not append Z — treat as local time
       const d = new Date(s);
       return isNaN(d) ? null : d;
     }
@@ -43,7 +41,7 @@ const CourseOwnerAnnouncementsPage = () => {
     return isNaN(d) ? null : d;
   };
 
-  // ✅ Format as Australia/Sydney
+  //Format as Australia/Sydney
   const formatDateTime = (ts) => {
     const date = normalizeToDate(ts);
     if (!date) return "";
@@ -58,7 +56,7 @@ const CourseOwnerAnnouncementsPage = () => {
     }).format(date);
   };
 
-  // ✅ Fetch owner courses
+  // Fetch owner courses
   useEffect(() => {
     let mounted = true;
     fetchAllCourses()

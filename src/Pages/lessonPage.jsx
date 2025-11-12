@@ -15,7 +15,7 @@ const LessonPage = () => {
   const { getContentDetails } = useContent();
   const { canPomodoro, isAdmin, isCourseOwner } = useRoleAccess();
 
-  // 🧠 Pomodoro user settings
+  // Pomodoro user settings
   const [pomodoroSettings] = useState(() => {
     const saved = JSON.parse(localStorage.getItem("pomodoroSettings"));
     return (
@@ -27,13 +27,13 @@ const LessonPage = () => {
     );
   });
 
-  // 🧩 Timer state
+  // Timer state
   const [showPomodoro, setShowPomodoro] = useState(false);
   const [timeLeft, setTimeLeft] = useState(null);
   const [onBreak, setOnBreak] = useState(false);
   const [isFocusing, setIsFocusing] = useState(false);
 
-  // 🧩 Fetch lesson content
+  // Fetch lesson content
   useEffect(() => {
     let mounted = true;
     getContentDetails(lessonId)
@@ -44,7 +44,7 @@ const LessonPage = () => {
     return () => (mounted = false);
   }, [getContentDetails, lessonId]);
 
-  // 🕒 Start Focus Session
+  // Start Focus Session
   const startNewSession = () => {
     if (!canPomodoro || !pomodoroSettings.enabled) return;
     if (timerRef.current) clearTimeout(timerRef.current);
@@ -64,7 +64,7 @@ const LessonPage = () => {
     }, focusMs);
   };
 
-  // ☕ Start Break Timer
+  // Start Break Timer
   const startBreakTimer = () => {
     if (!canPomodoro) return;
     const breakMs = pomodoroSettings.shortBreakMinutes * 60 * 1000;
@@ -93,7 +93,7 @@ const LessonPage = () => {
     }, breakMs);
   };
 
-  // 🎯 Toast after focus end
+  // Toast after focus end
   const showPomodoroToast = () => {
     if (!canPomodoro) return;
     toast.custom((t) => (
@@ -125,7 +125,7 @@ const LessonPage = () => {
     ));
   };
 
-  // 🔁 Sync Countdown — stays live and persists across reloads
+  // Sync Countdown — stays live and persists across reloads
   useEffect(() => {
     if (!canPomodoro || !pomodoroSettings.enabled) return;
 
@@ -151,7 +151,7 @@ const LessonPage = () => {
     return () => clearInterval(interval);
   }, [pomodoroSettings, canPomodoro]);
 
-  // 🗣 Text-to-Speech controls
+  //  Text-to-Speech controls
   const handleStartPause = () => {
     if (!window.speechSynthesis) {
       toast.error("Text-to-Speech not supported.");
@@ -205,8 +205,6 @@ const LessonPage = () => {
   if (!lessonContent)
     return (
       <div className="p-6 text-center font-semibold text-lg">
-      {/* // <div className="p-6 text-center text-red-500 font-semibold text-lg"> */}
-        {/* Lesson content not found! */}
         Loading lesson...
       </div>
     );
@@ -293,20 +291,7 @@ const LessonPage = () => {
                 <b>{pomodoroSettings.shortBreakMinutes}</b> min
               </p>
 
-              {/* <div className="flex gap-2">
-                <button
-                  onClick={startNewSession}
-                  className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
-                >
-                  ▶️ Start New Session
-                </button>
-                <button
-                  onClick={startBreakTimer}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-                >
-                  ☕ Start Break
-                </button>
-              </div> */}
+              
 
               <div className="flex flex-col items-center gap-2">
                 {/* When a focus session is active */}

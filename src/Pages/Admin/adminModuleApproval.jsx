@@ -1,4 +1,3 @@
-// src/Pages/Admin/adminModuleApproval.jsx
 import React, { useEffect, useState } from "react";
 import {
     Box,
@@ -11,7 +10,7 @@ import {
     Alert
 } from "@mui/material";
 
-const STORAGE_KEY = "course_owner_modules"; // modules storage key
+const STORAGE_KEY = "course_owner_modules"; 
 
 const AdminModuleApproval = () => {
     const [modules, setModules] = useState([]);

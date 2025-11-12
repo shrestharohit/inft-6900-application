@@ -20,7 +20,7 @@ const StudentDiscussionPage = () => {
   const { fetchCoursePosts, createPost, updatePost, deletePost, replyToPost } =
     useDiscussionApi();
 
-  // ✅ Parse DB timestamps already in local (Sydney) format
+  // Parse DB timestamps already in local (Sydney) format
   const normalizeToDate = (ts) => {
     if (!ts) return null;
     if (ts instanceof Date) return ts;
@@ -32,9 +32,7 @@ const StudentDiscussionPage = () => {
 
     if (typeof ts === "string") {
       let s = ts.trim();
-      // Convert "YYYY-MM-DD HH:mm:ss" → "YYYY-MM-DDTHH:mm:ss"
       if (s.includes(" ") && !s.includes("T")) s = s.replace(" ", "T");
-      // ⚠️ DO NOT append "Z" — treat as local Sydney time
       const d = new Date(s);
       return isNaN(d) ? null : d;
     }
@@ -43,7 +41,7 @@ const StudentDiscussionPage = () => {
     return isNaN(d) ? null : d;
   };
 
-  // ✅ Format Sydney-local time properly
+  // Format Sydney-local time properly
   const formatDateTime = (ts) => {
     const date = normalizeToDate(ts);
     if (!date) return "";
@@ -58,7 +56,7 @@ const StudentDiscussionPage = () => {
     }).format(date);
   };
 
-  // 🚫 Restrict access if user has no view rights
+  // Restrict access if user has no view rights
   if (!canViewCourses) {
     return (
       <div className="p-6 text-center text-red-500 font-semibold">
@@ -67,7 +65,7 @@ const StudentDiscussionPage = () => {
     );
   }
 
-  // ✅ Fetch all threads for this course
+  // Fetch all threads for this course
   const fetchDiscussions = async (cid) => {
     try {
       const res = await fetchCoursePosts(cid || courseId);
@@ -108,7 +106,7 @@ const StudentDiscussionPage = () => {
     if (courseId) fetchDiscussions(courseId);
   }, [courseId]);
 
-  // ✅ Create or update a discussion thread
+  // Create or update a discussion thread
   const handleNewThread = async (e) => {
     e.preventDefault();
     if (!newThread.title.trim() || !newThread.message.trim()) return;
@@ -136,7 +134,7 @@ const StudentDiscussionPage = () => {
     }
   };
 
-  // ✅ Reply or edit a reply
+  // Reply or edit a reply
   const handleReply = async (threadId) => {
     const text = replyText[threadId];
     if (!text?.trim()) return;
@@ -205,7 +203,7 @@ const StudentDiscussionPage = () => {
 
       <h1 className="text-3xl font-bold text-gray-800 mb-6">💬 Discussions</h1>
 
-      {/* ✅ Posting form */}
+      {/* Posting form */}
       {canPostDiscussion ? (
         <form
           onSubmit={handleNewThread}
@@ -260,7 +258,7 @@ const StudentDiscussionPage = () => {
         </div>
       )}
 
-      {/* ✅ Threads */}
+      {/* Threads */}
       {threads.length === 0 ? (
         <p className="text-gray-500">No discussions yet.</p>
       ) : (
@@ -294,7 +292,7 @@ const StudentDiscussionPage = () => {
                   )}
               </div>
 
-              {/* ✅ Replies */}
+              {/* Replies */}
               <div className="mt-4 ml-4 border-l pl-4 space-y-2">
                 {thread.replies.map((r) => (
                   <div
@@ -328,7 +326,7 @@ const StudentDiscussionPage = () => {
                 ))}
               </div>
 
-              {/* ✅ Reply box */}
+              {/* Reply box */}
               {canPostDiscussion && (
                 <div className="mt-3">
                   <textarea

@@ -147,7 +147,7 @@ const QuizPage = () => {
   return (
     <div className="p-6 min-h-screen bg-gray-50">
       <div className="max-w-5xl mx-auto">
-        {/* 🔹 Banner for admin/owner */}
+        {/* Banner for admin/owner */}
         {(isAdmin || isCourseOwner) && (
           <div className="mb-4 bg-yellow-100 border-l-4 border-yellow-500 text-yellow-800 p-3 rounded">
             {isAdmin ? "Admin" : "Course Owner"} Preview Mode — quizzes are

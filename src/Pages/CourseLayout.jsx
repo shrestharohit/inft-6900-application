@@ -13,7 +13,7 @@ function CourseLayout() {
   const { fetchAllModulesInACourse } = useModuleApi();
   const { fetchQuizForCourse } = useQuizApi();
  
-  // ✅ Load modules
+  // Load modules
   useEffect(() => {
     let mounted = true;
     fetchAllModulesInACourse(courseId)
@@ -24,7 +24,7 @@ function CourseLayout() {
     return () => (mounted = false);
   }, [fetchAllModulesInACourse, courseId]);
  
-  // ✅ Load quizzes
+  // Load quizzes
   useEffect(() => {
     let mounted = true;
     fetchQuizForCourse(courseId)

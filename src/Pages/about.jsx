@@ -10,5 +10,4 @@ function About() {
   );
 }
 
-// ✅ Wrap with layout HOC — this injects Header & Footer
 export default beforeAuthLayout(About);

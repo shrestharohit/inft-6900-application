@@ -10,7 +10,6 @@ function Contact() {
   );
 }
 
-// ✅ Wrap with layout HOC — this injects Header & Footer
 export default beforeAuthLayout(Contact);
 
 

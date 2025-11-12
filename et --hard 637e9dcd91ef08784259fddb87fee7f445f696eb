@@ -1,0 +1,485 @@
+[33mcommit 54cde0576c93b2b9ffdeb64b7128fbb1c8658d85[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mdev_jb[m[33m, [m[1;31morigin/dev_jb[m[33m)[m
+Author: Gargi <gargidarwhatkar5699@gmail.com>
+Date:   Wed Nov 12 17:21:21 2025 +1100
+
+    removed unncessary comments
+
+[33mcommit 637e9dcd91ef08784259fddb87fee7f445f696eb[m[33m ([m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m
+Merge: 6e96222 4b69288
+Author: Rohit Shrestha <rohitshr98@gmail.com>
+Date:   Wed Nov 12 13:37:42 2025 +1100
+
+    Merge pull request #58 from shrestharohit/shrestharohit-patch-1
+    
+    Add running instructions and package references to README
+
+[33mcommit 4b692887e7a6c9764c5a31f5b0a396fb05562531[m
+Author: Rohit Shrestha <rohitshr98@gmail.com>
+Date:   Wed Nov 12 13:37:31 2025 +1100
+
+    Add running instructions and package references to README
+    
+    Added a guide on how to run the project and references for packages used.
+
+[33mcommit 6e96222c4aa12ccf7a958c46bdf8e8678ad020c2[m
+Merge: 7847fc0 40f51b7
+Author: Rohit Shrestha <rohitshr98@gmail.com>
+Date:   Tue Nov 11 14:15:06 2025 +1100
+
+    Merge pull request #57 from shrestharohit/nov11
+    
+    fix: loading in lesson
+
+[33mcommit 40f51b712728ec53e696b235b6788abc5ef89ddf[m
+Author: Rohit Shrestha <rohitshr98@gmail.com>
+Date:   Tue Nov 11 14:14:05 2025 +1100
+
+    fix: loading in lesson
+
+[33mcommit 7847fc048410ee2bfeba05da8b2f08c8b7a2aa8c[m
+Merge: ac66a9e 983adea
+Author: Rohit Shrestha <rohitshr98@gmail.com>
+Date:   Tue Nov 11 13:48:12 2025 +1100
+
+    Merge pull request #56 from shrestharohit/nov11
+    
+    fix: add loading states
+
+[33mcommit 983adea9bb7bb08c8b2a20595b88e9c72c93f717[m
+Author: Rohit Shrestha <rohitshr98@gmail.com>
+Date:   Tue Nov 11 13:47:06 2025 +1100
+
+    fix: add loading states
+
+[33mcommit ac66a9ec9ea9fb7b50259b274f6f7b393322ec77[m
+Merge: 5f1fbfe be079e0
+Author: Rohit Shrestha <rohitshr98@gmail.com>
+Date:   Tue Nov 11 11:05:35 2025 +1100
+
+    Merge pull request #55 from shrestharohit/nov11
+    
+    Course owner - in module page all courses can be seen. those are not …
+
+[33mcommit be079e031237f9085753980593d82b15fc93e371[m
+Author: Rohit Shrestha <rohitshr98@gmail.com>
+Date:   Tue Nov 11 11:04:28 2025 +1100
+
+    Course owner - in module page all courses can be seen. those are not specific to particular owner
+
+[33mcommit 5f1fbfea9b94a11bfd4710c0af06fbd9c1272ec6[m
+Merge: d30c88b 94b7ef2
+Author: Rohit Shrestha <rohitshr98@gmail.com>
+Date:   Tue Nov 11 10:48:57 2025 +1100
+
+    Merge pull request #54 from shrestharohit/nov11
+    
+    fix: Student- Schedule- Export showing wrong time in google calendar …
+
+[33mcommit 94b7ef21cbfb68198d64019aac2cd205b2911114[m
+Author: Rohit Shrestha <rohitshr98@gmail.com>
+Date:   Tue Nov 11 10:44:21 2025 +1100
+
+    fix: Student- Schedule- Export showing wrong time in google calendar (one day behind). Also, the calendar in schedule page still shows previous day
+
+[33mcommit d30c88b93cf847a5b432dc1664f541fbb63d0578[m
+Merge: 56893e8 42b8a3d
+Author: Jaskaran Bedi <44224271+jaskaranbedi@users.noreply.github.com>
+Date:   Tue Nov 11 01:00:18 2025 +1100
+
+    Merge pull request #53 from shrestharohit/dev_jaskaran
+    
+    Fix: Admin dashboard updated to remove quiz parts
+
+[33mcommit 42b8a3d52603370869e1235c47cd878fabb6b37d[m
+Author: Jaskaran <jaskaran.deep2@gmail.com>
+Date:   Tue Nov 11 00:59:22 2025 +1100
+
+    Fix: Admin dashboard updated to remove quiz parts
+
+[33mcommit 56893e87d963cd7f465a05fb232f221c10ff321e[m
+Merge: d99605f 442b150
+Author: Jaskaran Bedi <44224271+jaskaranbedi@users.noreply.github.com>
+Date:   Tue Nov 11 00:06:31 2025 +1100
+
+    Merge pull request #52 from shrestharohit/dev_jaskaran
+    
+    Fix: Quiz shows correct score
+
+[33mcommit 442b1503d6f169a03b04b0db9ab0f0dc199f333d[m
+Author: Jaskaran <jaskaran.deep2@gmail.com>
+Date:   Tue Nov 11 00:06:04 2025 +1100
+
+    Fix: Quiz shows correct score
+
+[33mcommit d99605fdad528d662611511352f93fc976dd16a8[m
+Merge: d04b9ab 28049b9
+Author: Jaskaran Bedi <44224271+jaskaranbedi@users.noreply.github.com>
+Date:   Mon Nov 10 22:57:40 2025 +1100
+
+    Merge pull request #51 from shrestharohit/dev_jaskaran
+    
+    Fix: Syncing the module and content status
+
+[33mcommit 28049b92302647facef03f2275a55b8694b0b0fb[m
+Author: Jaskaran <jaskaran.deep2@gmail.com>
+Date:   Mon Nov 10 22:57:17 2025 +1100
+
+    Fix: Syncing the module and content status
+
+[33mcommit d04b9ab7c91c612c60eeefc938f8009a27b091f7[m[33m ([m[1;32mmain[m[33m)[m
+Merge: 7fc1bfa 4d7cfa0
+Author: Jaskaran Bedi <44224271+jaskaranbedi@users.noreply.github.com>
+Date:   Mon Nov 10 12:50:16 2025 +1100
+
+    Merge pull request #50 from shrestharohit/dev_jaskaran
+    
+    Fix: Student- Lesson Page- Pomodoro- When currently on break, still s…
+
+[33mcommit 4d7cfa03850fb7d07dc0cca81a0b7124aeb570f2[m[33m ([m[1;31morigin/dev_jaskaran[m[33m)[m
+Author: Jaskaran <jaskaran.deep2@gmail.com>
+Date:   Mon Nov 10 12:49:00 2025 +1100
+
+    Fix: Student- Lesson Page- Pomodoro- When currently on break, still shows start break
+
+[33mcommit 7fc1bfa06b3de539d4c4083cd07f837b3f14e644[m
+Merge: 2e1cccd 5450cd3
+Author: Jaskaran Bedi <44224271+jaskaranbedi@users.noreply.github.com>
+Date:   Mon Nov 10 11:52:49 2025 +1100
+
+    Merge pull request #49 from shrestharohit/dev_jaskaran
+    
+    Fix: Student can see the announcement text now
+
+[33mcommit 5450cd34601334bd4320f72f0a0f134d3d1ab863[m
+Author: Jaskaran <jaskaran.deep2@gmail.com>
+Date:   Mon Nov 10 11:51:56 2025 +1100
+
+    Fix: Student can see the announcement text now
+
+[33mcommit 2e1cccd339f5157ad47bfcad72868090a97ceb3a[m
+Merge: 5e2ae39 256c3c3
+Author: Jaskaran Bedi <44224271+jaskaranbedi@users.noreply.github.com>
+Date:   Mon Nov 10 01:21:49 2025 +1100
+
+    Merge pull request #48 from shrestharohit/dev_jaskaran
+    
+    Fix: Admin access control for certificate and announcment fixed
+
+[33mcommit 256c3c3590f43f0f505e6656aaabcfca10c191d3[m
+Author: Jaskaran <jaskaran.deep2@gmail.com>
+Date:   Mon Nov 10 01:19:43 2025 +1100
+
+    Fix: Admin access control for certificate and announcment fixed
+
+[33mcommit 5e2ae391dc3e377909ac5fe7645d182a301fc60c[m
+Merge: f7f7473 cff702b
+Author: Jaskaran Bedi <44224271+jaskaranbedi@users.noreply.github.com>
+Date:   Mon Nov 10 00:40:03 2025 +1100
+
+    Merge pull request #47 from shrestharohit/dev_jaskaran
+    
+    Fix: Header moves when explore is clicked
+
+[33mcommit cff702b3e5fe4b52802fe294f7583729b6d7729c[m
+Author: Jaskaran <jaskaran.deep2@gmail.com>
+Date:   Mon Nov 10 00:39:36 2025 +1100
+
+    Fix: Header moves when explore is clicked
+
+[33mcommit f7f747379d80fac6259874420b152b826c06ac5c[m
+Merge: 563ec91 b713b34
+Author: Jaskaran Bedi <44224271+jaskaranbedi@users.noreply.github.com>
+Date:   Mon Nov 10 00:35:34 2025 +1100
+
+    Merge pull request #46 from shrestharohit/dev_jaskaran
+    
+    Fix: Student- Dashboard- Can progress bar be in the same alignment fo…
+
+[33mcommit b713b3452d2012f60ca62f2f252635a63612e999[m
+Author: Jaskaran <jaskaran.deep2@gmail.com>
+Date:   Mon Nov 10 00:35:05 2025 +1100
+
+    Fix: Student- Dashboard- Can progress bar be in the same alignment for all courses
+
+[33mcommit 563ec916d2e42b690b4cc72d4d381e76a63719c6[m
+Merge: b6efb60 c5c5007
+Author: Jaskaran Bedi <44224271+jaskaranbedi@users.noreply.github.com>
+Date:   Mon Nov 10 00:22:22 2025 +1100
+
+    Merge pull request #45 from shrestharohit/dev_jaskaran
+    
+    Fix: Profile picture removed
+
+[33mcommit c5c5007433f5c9b13f08174304f00112393387a2[m
+Author: Jaskaran <jaskaran.deep2@gmail.com>
+Date:   Mon Nov 10 00:21:32 2025 +1100
+
+    Fix: Profile picture removed
+
+[33mcommit b6efb60388cac7341f11523293c04f1eb743095c[m
+Merge: f7e998b 6c1929a
+Author: Jaskaran Bedi <44224271+jaskaranbedi@users.noreply.github.com>
+Date:   Mon Nov 10 00:06:25 2025 +1100
+
+    Merge pull request #44 from shrestharohit/dev_jaskaran
+    
+    Fix: Hyperlinks on course page removed
+
+[33mcommit 6c1929a93e37022bd9aa140fc196cbdaa90f038c[m
+Author: Jaskaran <jaskaran.deep2@gmail.com>
+Date:   Mon Nov 10 00:05:50 2025 +1100
+
+    Fix: Hyperlinks on course page removed
+
+[33mcommit f7e998b00d17330ef32ffc2184e1a0709873d72f[m
+Merge: 414a73e 42d1e69
+Author: Jaskaran Bedi <44224271+jaskaranbedi@users.noreply.github.com>
+Date:   Mon Nov 10 00:01:48 2025 +1100
+
+    Merge pull request #43 from shrestharohit/dev_jaskaran
+    
+    Fix: First name, last name is also accepting numeric as only inputs
+
+[33mcommit 42d1e69bebd918f503adda0265395a6e94dd6926[m
+Author: Jaskaran <jaskaran.deep2@gmail.com>
+Date:   Mon Nov 10 00:01:02 2025 +1100
+
+    Fix: First name, last name is also accepting numeric as only inputs
+
+[33mcommit 414a73ec88a349edb6bee49c648011850a55b021[m
+Merge: 34442dc 10b6843
+Author: Jaskaran Bedi <44224271+jaskaranbedi@users.noreply.github.com>
+Date:   Sun Nov 9 23:52:05 2025 +1100
+
+    Merge pull request #42 from shrestharohit/dev_jaskaran
+    
+    Fix: Terms page shown in registration page
+
+[33mcommit 10b684352526aab6ab0ea0de4cb2f2149bf989d8[m
+Author: Jaskaran <jaskaran.deep2@gmail.com>
+Date:   Sun Nov 9 23:50:01 2025 +1100
+
+    Fix: Terms page shown in registration page
+
+[33mcommit 34442dc841fc32daf34d98f13d9adeeaf0e69e25[m
+Merge: d6be461 a15f735
+Author: Jaskaran Bedi <44224271+jaskaranbedi@users.noreply.github.com>
+Date:   Sun Nov 9 23:43:25 2025 +1100
+
+    Merge pull request #41 from shrestharohit/dev_jaskaran
+    
+    Dev jaskaran
+
+[33mcommit a15f73543368425c67753b53117707238bfa3603[m
+Author: Jaskaran <jaskaran.deep2@gmail.com>
+Date:   Sun Nov 9 23:40:58 2025 +1100
+
+    Fix: Updated terms and conditions page
+
+[33mcommit fd8a37e51fa76ae1e20cc06bdd25ee580dafbc59[m
+Merge: 2181a1c d6be461
+Author: Jaskaran <jaskaran.deep2@gmail.com>
+Date:   Sun Nov 9 23:28:17 2025 +1100
+
+    Merge branch 'main' of https://github.com/shrestharohit/inft-6900-application
+
+[33mcommit d6be461a8472717b5001d8e71eec5b58b3130454[m
+Merge: 70876e3 b0f12c1
+Author: Rohit Shrestha <rohitshr98@gmail.com>
+Date:   Sun Nov 9 23:25:21 2025 +1100
+
+    Merge pull request #40 from shrestharohit/nov9
+    
+    fix: Student- Course enrollment page- Delete review doesn't work- Rou…
+
+[33mcommit b0f12c1871fe4290957c4f54a8d2f543e0ceac83[m[33m ([m[1;31morigin/nov9[m[33m)[m
+Author: Rohit Shrestha <rohitshr98@gmail.com>
+Date:   Sun Nov 9 23:24:39 2025 +1100
+
+    fix: Student- Course enrollment page- Delete review doesn't work- Route not found error
+
+[33mcommit 70876e3201b0e08354a9a68163e4a29af0041755[m
+Merge: 3c2faea f56924a
+Author: Rohit Shrestha <rohitshr98@gmail.com>
+Date:   Sun Nov 9 23:12:19 2025 +1100
+
+    Merge pull request #39 from shrestharohit/nov9
+    
+    Nov9
+
+[33mcommit f56924acc4d8711d210180bbc520e6fe3c57f3b9[m
+Author: Rohit Shrestha <rohitshr98@gmail.com>
+Date:   Sun Nov 9 23:11:29 2025 +1100
+
+    fix: handle profile update
+
+[33mcommit 59d83df9f0f7dafa7c0a223171e96ed88e4c7928[m
+Author: Rohit Shrestha <rohitshr98@gmail.com>
+Date:   Sun Nov 9 23:05:09 2025 +1100
+
+    fix: handle profile update
+
+[33mcommit 90e911d3adf3d4300ada3e58f3649ca6c61667e9[m
+Author: Rohit Shrestha <rohitshr98@gmail.com>
+Date:   Sun Nov 9 22:55:32 2025 +1100
+
+    fix: Admin- Turning on notification redirects to dashboard page
+
+[33mcommit 3ae67822220bdec3c1ccbc0e290ddf551738ab5c[m
+Author: Rohit Shrestha <rohitshr98@gmail.com>
+Date:   Sun Nov 9 22:34:52 2025 +1100
+
+    fix: handle calendar export
+
+[33mcommit c0a2b9ecd4b840a98993096fc529394d5f1cdc1b[m
+Author: Rohit Shrestha <rohitshr98@gmail.com>
+Date:   Sun Nov 9 22:26:20 2025 +1100
+
+    fix: Student- Discussion Board- Shows edit-delete on new threads, but old one doesn't have. Also, no edit delete on replies
+
+[33mcommit 906a2d704ff1f4f0e29b4f1f495aceee9b8ad106[m
+Author: Rohit Shrestha <rohitshr98@gmail.com>
+Date:   Sun Nov 9 22:17:46 2025 +1100
+
+    fix: Student- Certificate shows today's date instead of when it was generated
+
+[33mcommit cbe307d2dc2fa73ed3c73c4837ee21a1c28e49e0[m
+Author: Rohit Shrestha <rohitshr98@gmail.com>
+Date:   Sun Nov 9 22:03:03 2025 +1100
+
+    fix: Student- Course enrollment page- When review is edited, the date is not updated, is there any sorting logic applied?
+
+[33mcommit 9d14d947624aaae69815a57dc2573b8199ff15c3[m
+Author: Rohit Shrestha <rohitshr98@gmail.com>
+Date:   Sun Nov 9 21:59:01 2025 +1100
+
+    fix: Student- All Pathways page- Filter is not working
+
+[33mcommit 2181a1cd304a0fd4a9d6ccbe0cf8b756d4390e2b[m
+Author: Jaskaran <jaskaran.deep2@gmail.com>
+Date:   Sun Nov 9 19:13:12 2025 +1100
+
+    Terms and conditions updated
+
+[33mcommit 3c2faeafa32bd92f8cd28f838b663fac6c56fe6e[m
+Merge: 9e2cfe8 ebd08e9
+Author: Rohit Shrestha <rohitshr98@gmail.com>
+Date:   Sat Nov 8 23:57:40 2025 +1100
+
+    Merge pull request #38 from shrestharohit/nov8
+    
+    fix: add progress bar percentage dynamically
+
+[33mcommit ebd08e9b66cd09df14502b6acae704e9da2e12b5[m[33m ([m[1;31morigin/nov8[m[33m)[m
+Author: Rohit Shrestha <rohitshr98@gmail.com>
+Date:   Sat Nov 8 23:56:46 2025 +1100
+
+    fix: add progress bar percentage dynamically
+
+[33mcommit 9e2cfe8d6f0f49b212095354141b43a9bb639e62[m
+Merge: 238bab5 95cf1a2
+Author: Rohit Shrestha <rohitshr98@gmail.com>
+Date:   Sat Nov 8 23:52:48 2025 +1100
+
+    Merge pull request #37 from shrestharohit/nov8
+    
+    fix: handle update pomodoro settings
+
+[33mcommit 95cf1a24c6eb06aa9cf3090d2102aca976cc35c3[m
+Author: Rohit Shrestha <rohitshr98@gmail.com>
+Date:   Sat Nov 8 23:51:44 2025 +1100
+
+    fix: handle update pomodoro settings
+
+[33mcommit 238bab51a6ea38f9a494259c30b1d0a152e1274c[m
+Merge: df45775 c4ef360
+Author: Rohit Shrestha <rohitshr98@gmail.com>
+Date:   Sat Nov 8 23:38:49 2025 +1100
+
+    Merge pull request #36 from shrestharohit/nov8
+    
+    Nov8
+
+[33mcommit c4ef3602773a1d2e2469eaa8351c83719e14f0b7[m
+Author: Rohit Shrestha <rohitshr98@gmail.com>
+Date:   Sat Nov 8 23:35:38 2025 +1100
+
+    fix: handle pomodoro implementation
+
+[33mcommit be2b8be4fd2a878e013da56576c00c4afd98c289[m
+Author: Rohit Shrestha <rohitshr98@gmail.com>
+Date:   Sat Nov 8 22:56:20 2025 +1100
+
+    fix: handle schedule
+
+[33mcommit df457754a65505366043a024fc17b822d2ef911c[m
+Merge: 6a16260 409ca77
+Author: Rohit Shrestha <rohitshr98@gmail.com>
+Date:   Sat Nov 8 22:07:44 2025 +1100
+
+    Merge pull request #35 from shrestharohit/nov8
+    
+    Nov8
+
+[33mcommit 409ca77e0aabe110d8e3ff1ea1d693c2886bc9cc[m
+Author: Rohit Shrestha <rohitshr98@gmail.com>
+Date:   Sat Nov 8 22:05:35 2025 +1100
+
+    fix: Course Owner - Course Mgmt - Can we only show active pathways for an option?
+
+[33mcommit c268b87e468dd3cb69d1218cf483ab8c30cef225[m
+Author: Rohit Shrestha <rohitshr98@gmail.com>
+Date:   Sat Nov 8 21:57:25 2025 +1100
+
+    fix: Guest - Pathway - Guest cannot access to pathway detail page
+
+[33mcommit 47c29f86d9d3387b4d5fb93f9ab3897d8d7d6a6e[m
+Author: Rohit Shrestha <rohitshr98@gmail.com>
+Date:   Sat Nov 8 21:37:49 2025 +1100
+
+    fix: Student - All Pathways - Sort by Date -> Sort by Created date, and both ascending and descending order
+
+[33mcommit 433ede4161628a0cc1d6c419285c658222591eb6[m
+Author: Rohit Shrestha <rohitshr98@gmail.com>
+Date:   Sat Nov 8 21:30:31 2025 +1100
+
+    fix: Student - Certificate - Certificate not shown after quiz passed
+
+[33mcommit 2a3f546a42325a4143a678feacb38003efa444e1[m
+Author: Rohit Shrestha <rohitshr98@gmail.com>
+Date:   Sat Nov 8 21:06:24 2025 +1100
+
+    fix: Student - Header - Category dropdown showing course title
+
+[33mcommit 8cbcd983e7d82d35a497a2e455b6804053e15511[m
+Author: Rohit Shrestha <rohitshr98@gmail.com>
+Date:   Sat Nov 8 21:05:14 2025 +1100
+
+    fix: Student - Quiz - Attempt # should be count field, instead of attemptID
+
+[33mcommit c456cf3400b3ccb97f409eb402e22aad9f516941[m
+Author: Rohit Shrestha <rohitshr98@gmail.com>
+Date:   Sat Nov 8 21:00:40 2025 +1100
+
+    fix: Student - Quiz - Modules which does not have quiz still shows quiz in course top page
+
+[33mcommit 6a1626031c06223690ef923aa25359bcf77c440b[m
+Merge: 02038d9 3a5bb12
+Author: Rohit Shrestha <rohitshr98@gmail.com>
+Date:   Sat Nov 8 02:34:46 2025 +1100
+
+    Merge pull request #34 from shrestharohit/bug-fixes
+    
+    Bug fixes
+
+[33mcommit 3a5bb12205fe6d1ff306630e0258e4e83beae302[m[33m ([m[1;31morigin/bug-fixes[m[33m)[m
+Author: Rohit Shrestha <rohitshr98@gmail.com>
+Date:   Sat Nov 8 02:32:59 2025 +1100
+
+    fix: handle refresh issue in quiz
+
+[33mcommit 92923b7789639a207ed012a9ed5b55434181deb7[m
+Author: Rohit Shrestha <rohitshr98@gmail.com>
+Date:   Sat Nov 8 02:05:45 2025 +1100
+
+    fix: handle quiz feedback issue

@@ -3,7 +3,7 @@ import * as Yup from "yup";
 import { useAuth } from "../../contexts/AuthContext";
 import useUserApi from "../../hooks/useUserApi";
 
-// ✅ Validation schema
+// Validation schema
 const profileSchema = Yup.object().shape({
   firstName: Yup.string()
     .matches(/^[A-Za-z\s'-]+$/, "First name can only contain letters")
@@ -127,7 +127,7 @@ export default function AdminProfile() {
       errors[field] ? "border-red-500 focus:ring-red-500" : "border-gray-300"
     }`;
 
-  // ✅ Password rules checklist
+  // Password rules checklist
   const passwordRules = [
     { label: "At least 8 characters", test: (v) => v.length >= 8 },
     { label: "Contains an uppercase letter", test: (v) => /[A-Z]/.test(v) },
@@ -236,7 +236,7 @@ export default function AdminProfile() {
             {showPassword ? "Hide" : "Show"}
           </button>
 
-          {/* ✅ Always show password rules */}
+          {/* Always show password rules */}
           <div className="bg-gray-50 p-2 rounded-md mt-2 text-xs space-y-1">
             {passwordRules.map((rule, i) => (
               <p
@@ -270,7 +270,7 @@ export default function AdminProfile() {
             className={inputClass("confirmPassword")}
           />
 
-          {/* ✅ Match indicator */}
+          {/* Match indicator */}
           {formData.confirmPassword &&
             formData.confirmPassword === formData.newPassword && (
               <p className="text-green-600 text-xs mt-1">✅ Passwords match</p>

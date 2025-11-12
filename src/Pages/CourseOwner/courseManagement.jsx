@@ -34,7 +34,7 @@ import useCourseApi from "../../hooks/useCourseApi";
 import usePathwayApi from "../../hooks/usePathwayApi";
 import { useAuth } from "../../contexts/AuthContext";
 
-// UI labels
+
 const STATUS_LABEL = {
   wait_for_approval: "Wait For Approval",
   draft: "Draft",
@@ -65,7 +65,7 @@ export default function CourseManagement() {
 
   // Dropdown menu state
   const [menuAnchor, setMenuAnchor] = useState(null);
-  const [menuCourse, setMenuCourse] = useState(null); // { ...course, __idx: number }
+  const [menuCourse, setMenuCourse] = useState(null); 
 
   const handleMenuOpen = (event, courseWithIndex) => {
     setMenuAnchor(event.currentTarget);
@@ -84,13 +84,13 @@ export default function CourseManagement() {
   const outlineFieldRef = useRef(null);
   const focusGuardRef = useRef(false);
 
-  // ---- Load courses + pathways ----
+  //  Load courses + pathways 
   useEffect(() => {
     let mounted = true;
 
     const loadData = async () => {
       try {
-        // --- Load COURSES ---
+        //  Load COURSES
         const resCourses = await fetchAllCourses();
         const listCourses = Array.isArray(resCourses)
           ? resCourses
@@ -106,7 +106,6 @@ export default function CourseManagement() {
 
         if (mounted) {
           setCourses(normalized);
-          // auto-extract unique categories
           const uniqueCategories = [
             ...new Set(normalized.map((c) => c.category).filter(Boolean)),
           ];
@@ -117,7 +116,7 @@ export default function CourseManagement() {
       }
 
       try {
-        // --- Load PATHWAYS ---
+        // Load PATHWAYS 
         const resPathways = await fetchUserPathways(loggedInUser?.id);
         const listPathways = Array.isArray(resPathways)
           ? resPathways
@@ -139,7 +138,7 @@ export default function CourseManagement() {
     };
   }, [fetchAllCourses, fetchUserPathways, loggedInUser]);
 
-  // ---- Helpers ----
+  //  Helpers 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
@@ -156,7 +155,7 @@ export default function CourseManagement() {
     setEditingIndex(null);
   };
 
-  // ---- Submit (create/update) ----
+  // Submit (create/update) 
   const handleSubmit = async (e) => {
     e.preventDefault();
     const { name, category, outline, level, pathwayId } = form;
@@ -181,7 +180,7 @@ export default function CourseManagement() {
       category,
       level,
       outline,
-      userID: loggedInUser?.id || 1, // fallback
+      userID: loggedInUser?.id || 1, 
       pathwayID: pathwayId || null,
       status: "draft",
     };
@@ -189,7 +188,7 @@ export default function CourseManagement() {
     try {
       let savedCourse;
       if (editingIndex !== null) {
-        // --- UPDATE ---
+        // UPDATE
         const courseId = courses[editingIndex]?.courseID;
         if (!courseId) return alert("Missing course ID");
 
@@ -294,7 +293,7 @@ export default function CourseManagement() {
     }
   };
 
-  // ---- Outline Dialog ----
+  // Outline Dialog 
   const openOutlineDialog = () => {
     setOutlinedraft(form.outline || "");
     setOutlineDialogOpen(true);
@@ -326,7 +325,7 @@ export default function CourseManagement() {
         Course Management
       </Typography>
 
-      {/* --- Form --- */}
+      {/*Form */}
       <Paper
         sx={{
           padding: "1.5rem",
@@ -420,7 +419,7 @@ export default function CourseManagement() {
         </form>
       </Paper>
 
-      {/* --- Grouped (collapsible) table with dropdown actions --- */}
+      {/*  Grouped (collapsible) table with dropdown actions */}
       <Paper
         sx={{
           borderRadius: 3,
@@ -433,12 +432,12 @@ export default function CourseManagement() {
         </Typography>
 
         {(() => {
-          // ✅ Only the logged-in owner's courses, and keep their original index
+          // Only the logged-in owner's courses, and keep their original index
           const ownerCoursesWithIndex = courses
             .map((c, __idx) => ({ ...c, __idx }))
             .filter((c) => c.userID === loggedInUser?.id);
 
-          // ✅ Group by status, ensure all statuses appear even if empty
+          // Group by status, ensure all statuses appear even if empty
           const grouped = Object.keys(STATUS_LABEL).reduce((acc, statusKey) => {
             acc[statusKey] = ownerCoursesWithIndex.filter(
               (c) => (c.status || "draft").toLowerCase() === statusKey
@@ -476,7 +475,6 @@ export default function CourseManagement() {
                     <TableBody>
                       {groupCourses.map((course) => {
                         const levelKey = (course.level || "").toLowerCase();
-                        // IMPORTANT: use course.__idx (global index in courses)
                         return (
                           <TableRow key={course.courseID ?? course.__idx} hover>
                             <TableCell>{course.title}</TableCell>
@@ -502,7 +500,7 @@ export default function CourseManagement() {
                               <IconButton
                                 size="small"
                                 onClick={(e) =>
-                                  handleMenuOpen(e, course /* has __idx */)
+                                  handleMenuOpen(e, course)
                                 }
                                 aria-label="Actions"
                               >
@@ -520,7 +518,7 @@ export default function CourseManagement() {
           ));
         })()}
 
-        {/* Shared actions menu (uses global index via menuCourse.__idx) */}
+        {/* Shared actions menu  */}
         <Menu
           anchorEl={menuAnchor}
           open={Boolean(menuAnchor)}

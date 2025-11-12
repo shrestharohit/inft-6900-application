@@ -6,7 +6,7 @@ import beforeAuthLayout from "../components/BeforeAuth";
 import { useAuth } from "../contexts/AuthContext";
 import useUserApi from "../hooks/useUserApi";
 
-// ✅ Simplified Yup schema (only ensures fields are filled and valid email)
+// Simplified Yup schema 
 const loginSchema = Yup.object().shape({
   email: Yup.string()
     .email("Please enter a valid email address")
@@ -35,7 +35,7 @@ function LoginForm() {
     setGeneralError("");
 
     try {
-      // ✅ Validate only required fields
+      // Validate only required fields
       await loginSchema.validate(formData, { abortEarly: false });
 
       setLoading(true);

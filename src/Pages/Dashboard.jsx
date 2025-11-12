@@ -9,7 +9,7 @@ const Dashboard = () => {
   const [enrolledCourses, setEnrolledCourses] = useState([]);
   const { getEnrolledCoursesForUser } = useEnrollment();
 
-  // ✅ Fetch all courses (handle both array or { courses: [] } responses)
+  // Fetch all courses 
   useEffect(() => {
     let mounted = true;
     (async () => {
@@ -26,7 +26,7 @@ const Dashboard = () => {
     };
   }, [getEnrolledCoursesForUser, loggedInUser?.id]);
 
-  // ✅ If not logged in
+  //If not logged in
   if (!loggedInUser) {
     return (
       <div className="p-6 text-center">
@@ -49,7 +49,7 @@ const Dashboard = () => {
         Welcome back, {loggedInUser.firstName || "Student"} 👋
       </h1>
 
-      {/* ✅ Stats Section */}
+      {/* Stats Section */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
         <div className="bg-white rounded-lg shadow p-6 text-center">
           <p className="text-sm text-gray-500">Enrolled</p>
@@ -65,7 +65,7 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* ✅ Courses Section */}
+      {/* Courses Section */}
       {enrolledCourses.length === 0 ? (
         <p className="text-gray-600">
           You are not enrolled in any courses yet.{" "}
@@ -86,7 +86,7 @@ const Dashboard = () => {
                   "Untitled Course"}
               </h3>
 
-              {/* ✅ Progress bar */}
+              {/*  Progress bar */}
               <div className="mt-auto mb-4">
                 <div className="w-full bg-gray-200 rounded-full h-3">
                   <div
@@ -99,7 +99,7 @@ const Dashboard = () => {
                 </p>
               </div>
 
-              {/* ✅ CTA button */}
+              {/* CTA button */}
               <div className="flex justify-center">
                 <Link
                   to={`/courses/${course.courseID ?? course.id}/content`}

@@ -4,7 +4,7 @@ import beforeAuthLayout from "../components/BeforeAuth";
 import { useAuth } from "../contexts/AuthContext";
 import useUserApi from "../hooks/useUserApi";
 
-// ✅ Validation schema with all rules
+//Validation schema with all rules
 const profileSchema = Yup.object().shape({
   firstName: Yup.string()
     .matches(/^[A-Za-z\s'-]+$/, "First name can only contain letters")
@@ -128,7 +128,7 @@ function ProfileManagement() {
       errors[field] ? "border-red-500 focus:ring-red-500" : "border-gray-300"
     }`;
 
-  // ✅ Password rule checks
+  // Password rule checks
   const passwordRules = [
     { label: "At least 8 characters", test: (v) => v.length >= 8 },
     { label: "Contains an uppercase letter", test: (v) => /[A-Z]/.test(v) },
@@ -238,7 +238,7 @@ function ProfileManagement() {
               {showPassword ? "Hide" : "Show"}
             </button>
 
-            {/* ✅ Always show password rules */}
+            {/* Always show password rules */}
             <div className="bg-gray-50 p-2 rounded-md mt-2 text-xs space-y-1">
               {passwordRules.map((rule, i) => (
                 <p

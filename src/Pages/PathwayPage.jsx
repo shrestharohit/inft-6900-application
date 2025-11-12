@@ -66,7 +66,7 @@ const PathwayPage = () => {
     return () => (mounted = false);
   }, [getPathwayDetails, getAllCoursesInAPathway]);
 
-  // ✅ Fetch reviews (reusing course review hooks)
+  //Fetch reviews 
   useEffect(() => {
     let mounted = true;
     getReviewsForAllCoursesUnderPathway(pathwayId)
@@ -141,10 +141,6 @@ const PathwayPage = () => {
               <span className="font-semibold">Courses Included:</span>{" "}
               {coursesInPathway.length}
             </p>
-            {/* <p>
-              <span className="font-semibold">Rating:</span>{" "}
-              {reviews?.avgRating || 0} ⭐
-            </p> */}
           </div>
 
           {/* Courses in Pathway */}
@@ -170,7 +166,7 @@ const PathwayPage = () => {
           <div className="bg-white p-6 rounded-lg shadow mt-6">
             <h2 className="text-2xl font-bold mb-4">Reviews</h2>
 
-            {/* ✅ Reviews list with null-safety */}
+            {/* Reviews list with null-safety */}
             <div>
               {!reviews.length ? (
                 <p className="text-gray-500">No reviews yet. Be the first!</p>

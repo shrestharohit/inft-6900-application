@@ -51,7 +51,7 @@ const PathwayContentPage = () => {
   }, [getPathwayDetails, getAllCoursesInAPathway, getEnrolledCoursesForUser]);
 
   console.log({ enrolledCoursesForThisPathway });
-  // ---------- Progress calculation ----------
+  // Progress calculation
   const totalCourses = coursesInPathway?.length || 0;
   const completedCount = enrolledCoursesForThisPathway.filter(
     (x) => !!x.completionDate
@@ -79,7 +79,7 @@ const PathwayContentPage = () => {
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
-      {/* Back Button (same as CoursePage) */}
+      {/* Back Button  */}
       <div className="mb-4">
         <button
           onClick={() => {
@@ -104,7 +104,7 @@ const PathwayContentPage = () => {
         <strong>80% or higher</strong> to unlock the next one.
       </p>
 
-      {/* ✅ Progress Bar */}
+      {/* Progress Bar */}
       <div className="mb-8">
         <div className="flex justify-between mb-1 text-sm text-gray-700">
           <span>Progress</span>
@@ -120,7 +120,7 @@ const PathwayContentPage = () => {
         </div>
       </div>
 
-      {/* ✅ Course List */}
+      {/* Course List */}
       <div className="space-y-4">
         {coursesInPathway.map((course, index) => {
           const isCompleted = enrolledCoursesForThisPathway.some(

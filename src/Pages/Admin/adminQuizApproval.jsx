@@ -1,4 +1,3 @@
-// src/Pages/Admin/adminQuizApproval.jsx
 import React, { useEffect, useState } from "react";
 import {
   Box,

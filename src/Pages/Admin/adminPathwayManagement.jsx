@@ -1,4 +1,3 @@
-// src/Pages/Admin/adminPathwayManagement.jsx
 import React, { useState, useEffect } from "react";
 import {
   Box,

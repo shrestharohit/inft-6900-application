@@ -1,27 +1,19 @@
 import { useCallback } from "react";
 import api from "../api/config";
 
-/**
- * Analytics API hook
- * - Owner dashboard:  GET /api/dashboard/owner/:userID
- * - Admin dashboard:  GET /api/dashboard/admin
- *
- * Both endpoints are expected to return the shapes used by the dashboards.
- */
 export default function useAnalyticsApi() {
-  // ------- Course Owner -------
+  //Course Owner 
   const getCourseOwnerDashboard = useCallback(async (userID) => {
     const res = await api.get(`/api/dashboard/owner/${userID}`);
     return res.data;
   }, []);
 
-  // ------- Admin -------
+  // Admin
   const getAdminDashboard = useCallback(async () => {
     try {
       const res = await api.get(`/api/dashboard/admin`);
       return res.data;
     } catch (err) {
-      // Optional dev fallback so you can see the UI without a backend
       if (process.env.NODE_ENV === "development") {
         console.warn("[useAnalyticsApi] /api/dashboard/admin not ready — using mock.");
         return mockAdminDashboard();
@@ -36,7 +28,6 @@ export default function useAnalyticsApi() {
   };
 }
 
-/* ---------- Optional mock to unblock UI (DEV only) ---------- */
 function mockAdminDashboard() {
   const today = new Date();
   const days = Array.from({ length: 30 }).map((_, i) => {

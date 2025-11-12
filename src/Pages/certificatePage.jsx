@@ -149,7 +149,7 @@ function CertificatePage() {
       </div>
     );
 
-  // ✅ Eligible for Certificate
+  // Eligible for Certificate
   if (eligible || previewMode) {
     return (
       <div className="min-h-screen bg-gray-50 flex flex-col">
@@ -202,7 +202,7 @@ function CertificatePage() {
     );
   }
 
-  // 🚧 Not Yet Eligible
+  // Not Yet Eligible
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col items-center p-8 text-center">
       <h1 className="text-3xl font-bold text-gray-800 mb-4">

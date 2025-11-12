@@ -1,4 +1,3 @@
-// src/hooks/useTextToSpeech.js
 import { useCallback } from "react";
 
 export default function useTextToSpeech() {
@@ -8,7 +7,7 @@ export default function useTextToSpeech() {
     utterance.rate = 1;
     utterance.pitch = 1;
     utterance.volume = 1;
-    window.speechSynthesis.cancel(); // stop old speech
+    window.speechSynthesis.cancel(); 
     window.speechSynthesis.speak(utterance);
   }, []);
 

@@ -31,7 +31,7 @@ const NAV_ITEMS = [
     label: "Questions",
     to: "/courseowner/questions",
     icon: <QuestionAnswer />,
-  }, // ✅ badge target
+  },
   { label: "Profile", to: "/courseowner/profile", icon: <Settings /> },
   
 ];

@@ -3,7 +3,6 @@ import { useLocation, Link } from "react-router-dom";
 import beforeAuthLayout from "../components/BeforeAuth";
 import webdevremovebg from "../assets/Images/webdevremovebg.png";
 
-// ✅ import shared dummy data
 import { dummyCourses, dummyPathways } from "../Pages/dummyData";
 import usePathwayApi from "../hooks/usePathwayApi";
 import useCourseApi from "../hooks/useCourseApi";
@@ -150,7 +149,6 @@ function SearchResults() {
             </div>
           ) : (
             <p className="text-gray-500">
-              {/* No courses found {query && `for "${query}"`} */}
               Loading Courses...
             </p>
           )}
@@ -192,7 +190,6 @@ function SearchResults() {
             </div>
           ) : (
             <p className="text-gray-500">
-              {/* No pathways found {query && `for "${query}"`} */}
               Loading Pathways...
             </p>
           )}

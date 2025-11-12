@@ -42,7 +42,7 @@ const AdminCourseApproval = () => {
         ]);
         if (!mounted) return;
 
-        // ✅ Hide all draft courses from admin view
+        // Hide all draft courses from admin view
         const filteredCourses = (courseRes || []).filter(
           (course) => course.status?.toLowerCase() !== "draft"
         );
@@ -75,7 +75,7 @@ const AdminCourseApproval = () => {
         msg: "✅ Course status updated.",
       });
 
-      // ✅ Re-fetch and re-filter so drafts remain hidden
+      // Re-fetch and re-filter so drafts remain hidden
       const res = await fetchAllCourses();
       const filteredCourses = (res || []).filter(
         (course) => course.status?.toLowerCase() !== "draft"

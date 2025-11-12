@@ -7,7 +7,7 @@ import webdevremovebg from "../assets/Images/webdevremovebg.png";
 const AllPathwaysPage = () => {
   const [pathways, setPathways] = useState([]);
   const [filters, setFilters] = useState({
-    sortBy: "created_desc", // created_desc, created_asc
+    sortBy: "created_desc",
   });
 
   const { fetchAllPathways } = usePathwayApi();
@@ -39,7 +39,7 @@ const AllPathwaysPage = () => {
   useEffect(() => {
     let filteredPathways = [...pathways];
 
-    // ✅ Sorting
+    // Sorting
     if (filters.sortBy === "created_desc") {
       filteredPathways.sort(
         (a, b) => new Date(b.createdDate) - new Date(a.createdDate)
@@ -57,7 +57,7 @@ const AllPathwaysPage = () => {
     <div className="search-results-container bg-gray-50 px-6 py-12">
       <h1 className="text-3xl font-bold text-gray-900 mb-6">All Pathways</h1>
 
-      {/* ✅ Filters */}
+      {/* Filters */}
       <div className="filters mb-8 flex flex-wrap gap-4 justify-start">
         {/* Sort By */}
         <select
