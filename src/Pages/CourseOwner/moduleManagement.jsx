@@ -126,7 +126,7 @@ export default function ModuleManagement() {
   };
 
   // Form handlers
-  // 🧩 Safe form change handler
+  // Safe form change handler
   const handleModuleFormChange = (e) => {
     const { name, value } = e.target;
 
@@ -301,7 +301,7 @@ export default function ModuleManagement() {
         </Alert>
       )}
 
-      {/* --- Module Form --- */}
+      {/*Module Form */}
       <Paper
         sx={{
           padding: "1.5rem",
@@ -452,7 +452,7 @@ export default function ModuleManagement() {
         </form>
       </Paper>
 
-      {/* --- Grouped Modules --- */}
+      {/* Grouped Modules */}
       <Paper
         sx={{
           borderRadius: 3,
@@ -573,7 +573,7 @@ export default function ModuleManagement() {
         </Menu>
       </Paper>
 
-      {/* --- Page Dialog --- */}
+      {/*Page Dialog  */}
       <Dialog
         open={contentDialogOpen}
         onClose={handleClosePageDialog}

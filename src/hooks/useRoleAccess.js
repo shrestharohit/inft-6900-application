@@ -14,37 +14,37 @@ export default function useRoleAccess() {
         isStudent,
         isCourseOwner,
 
-        // 🔹 General visibility
+        // General visibility
         canViewCourses: isStudent || isAdmin || isCourseOwner,
         canViewModules: isStudent || isAdmin || isCourseOwner,
         canViewLessons: isStudent || isAdmin || isCourseOwner,
         canViewAnnouncements: isStudent || isAdmin || isCourseOwner,
         canViewPathways: isStudent || isAdmin || isCourseOwner,
 
-        // 🔹 Student learning actions
+        // Student learning actions
         canEnroll: isStudent,
-        canPomodoro: isStudent,        // Only students use focus timer
-        canSchedule: isStudent,        // Students manage learning schedule
-        canAttemptQuiz: isStudent,     // Admin/course_owner = read-only
+        canPomodoro: isStudent,        
+        canSchedule: isStudent,        
+        canAttemptQuiz: isStudent,     
         canPostDiscussion: isStudent || isCourseOwner,
         canSubmitQuestions: isStudent,
-        canLeaveReview: isStudent,     // Only students review courses
+        canLeaveReview: isStudent,     
 
-        // 🔹 Content management
+        // Content management
         canCreateCourse: isCourseOwner || isAdmin,
         canCreateModule: isCourseOwner || isAdmin,
         canCreateLesson: isCourseOwner || isAdmin,
         canCreateQuiz: isCourseOwner || isAdmin,
         canCreateAnnouncement: isCourseOwner || isAdmin,
 
-        // 🔹 Administrative control
+        // Administrative control
         canApproveCourses: isAdmin,
         canApproveModules: isAdmin,
         canApproveQuizzes: isAdmin,
         canApprovePathways: isAdmin,
         canManageUsers: isAdmin,
 
-        // 🔹 Default fallbacks
+        // Default fallbacks
         canViewDashboard: isStudent || isAdmin || isCourseOwner,
     };
 }

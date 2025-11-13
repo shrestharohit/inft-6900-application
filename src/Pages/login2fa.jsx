@@ -15,7 +15,7 @@ import beforeAuthLayout from "../components/BeforeAuth";
 
 const Login2FA = () => {
   const location = useLocation();
-  const email = location.state?.email || ""; // passed from Registration
+  const email = location.state?.email || ""; 
 
   const [otp, setOtp] = useState("");
   const [timer, setTimer] = useState(60);

@@ -1,4 +1,3 @@
-// src/Pages/CourseContentPage.jsx
 import React, { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import useCourseApi from "../hooks/useCourseApi";
@@ -8,7 +7,7 @@ import useModuleApi from "../hooks/useModuleApi";
 const CourseContentPage = () => {
   const { courseId } = useParams();
 
-  const [status, setStatus] = useState("loading"); // "idle" | "loading" | "success" | "not_found" | "error"
+  const [status, setStatus] = useState("loading"); 
   const [course, setCourse] = useState(null);
   const [modules, setModules] = useState([]);
   const [quizzes, setQuizzes] = useState([]);
@@ -17,7 +16,7 @@ const CourseContentPage = () => {
   const { fetchQuizForCourse } = useQuizApi();
   const { fetchAllModulesInACourse } = useModuleApi();
 
-  // --------- Scroll to top on page load ---------
+  //Scroll to top on page load 
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [courseId]);
@@ -69,7 +68,7 @@ const CourseContentPage = () => {
     };
   }, [courseId, fetchCourse, fetchAllModulesInACourse, fetchQuizForCourse]);
 
-  // ---------- Render gates ----------
+  // Render gates 
   if (status === "loading") {
     return (
       <div className="max-w-7xl mx-auto p-6 min-h-screen animate-pulse">
@@ -104,7 +103,7 @@ const CourseContentPage = () => {
     );
   }
 
-  // ---------- Normal content ----------
+  //Normal content
   return (
     <div className="max-w-7xl mx-auto p-6 min-h-screen">
       <h1 className="text-3xl font-bold text-gray-800 mb-4">

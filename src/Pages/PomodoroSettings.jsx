@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import beforeAuthLayout from "../components/BeforeAuth";
-import useRoleAccess from "../hooks/useRoleAccess"; // ✅ added
+import useRoleAccess from "../hooks/useRoleAccess"; 
 import useUserApi from "../hooks/useUserApi";
 import { useAuth } from "../contexts/AuthContext";
 
@@ -17,12 +17,12 @@ function PomodoroSettings() {
   const [breakHours, setBreakHours] = useState(0);
   const [breakMinutes, setBreakMinutes] = useState(DEFAULTS.shortBreakMinutes);
   const [savedMsg, setSavedMsg] = useState("");
-  const { loggedInUser } = useAuth(); // ✅ get current user
+  const { loggedInUser } = useAuth(); 
 
-  const { canPomodoro, isAdmin, isCourseOwner } = useRoleAccess(); // ✅ access control
+  const { canPomodoro, isAdmin, isCourseOwner } = useRoleAccess(); 
   const { updatePomodoroSettings } = useUserApi();
 
-  // 🧠 Load saved settings
+  // Load saved settings
   useEffect(() => {
     const saved = JSON.parse(localStorage.getItem("pomodoroSettings"));
     if (saved) {
@@ -41,9 +41,8 @@ function PomodoroSettings() {
   const totalBreakMinutes = breakHours * 60 + breakMinutes;
 
   const handleSave = async () => {
-    if (!canPomodoro) return; // ✅ prevent saving if not allowed
+    if (!canPomodoro) return; 
 
-    // configure the save api integration here
     await updatePomodoroSettings(loggedInUser.id, {
       isEnabled: enabled,
       focusPeriod: `${focusHours}:${focusMinutes}:00`,
@@ -79,7 +78,7 @@ function PomodoroSettings() {
         </span>
         <button
           type="button"
-          onClick={() => canPomodoro && setEnabled((v) => !v)} // ✅ restricted toggle
+          onClick={() => canPomodoro && setEnabled((v) => !v)} 
           className={`w-16 h-8 flex items-center rounded-full p-1 transition-all duration-300 ${
             enabled ? "bg-green-500" : "bg-gray-300"
           } ${!canPomodoro ? "opacity-50 pointer-events-none" : ""}`}
@@ -199,6 +198,4 @@ function PomodoroSettings() {
     </div>
   );
 }
-
-// ✅ Wrap with layout for consistent header & footer
 export default beforeAuthLayout(PomodoroSettings);

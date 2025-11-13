@@ -2,16 +2,16 @@ import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import beforeAuthLayout from "../components/BeforeAuth";
 import { dummyCourses, dummyPathways } from "../Pages/dummyData";
-import { useAuth } from "../contexts/AuthContext"; // ✅
+import { useAuth } from "../contexts/AuthContext"; 
 import useCourseApi from "../hooks/useCourseApi";
-import webdevremovebg from "../assets/Images/webdevremovebg.png"; // Placeholder image
+import webdevremovebg from "../assets/Images/webdevremovebg.png"; 
 import useReview from "../hooks/useReviews";
 
 function Home() {
   const [hoveredCourse, setHoveredCourse] = useState(null);
   const [hoveredPathway, setHoveredPathway] = useState(null);
   const navigate = useNavigate();
-  const { isLoggedIn } = useAuth(); // ✅ check login state
+  const { isLoggedIn } = useAuth(); 
 
   const { fetchPopularCoursesAndPathway } = useCourseApi();
   const { getTop3Reviews } = useReview();
@@ -83,7 +83,7 @@ function Home() {
     return () => (mounted = false);
   }, [fetchPopularCoursesAndPathway]);
 
-  // UI-ready data: map API objects to the shape the page expects (id, name, img)
+ 
   const popularCourses =
     apiPopularCourses
       ?.map((c, i) => {
@@ -116,7 +116,7 @@ function Home() {
 
   const handleGetStarted = () => {
     if (isLoggedIn) {
-      navigate("/dashboard"); // ✅ go to new dashboard page
+      navigate("/dashboard"); 
     } else {
       navigate("/login");
     }
@@ -231,7 +231,7 @@ function Home() {
                         <button
                           key={cid}
                           onClick={(e) => {
-                            e.stopPropagation(); // don't trigger the card click
+                            e.stopPropagation();
                             navigate(`/courses/${cid}`);
                           }}
                           className="px-4 py-1 rounded-full bg-green-500 text-[#0b142b] text-sm font-bold shadow hover:bg-green-600"

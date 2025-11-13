@@ -1,4 +1,3 @@
-// src/Pages/registration.jsx
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { registerUser } from "../api/user";
@@ -15,7 +14,7 @@ function RegistrationForm() {
     const [error, setError] = useState("");
     const [success, setSuccess] = useState("");
 
-    // ✅ Yup Validation Schema
+    //Yup Validation Schema
     const validationSchema = Yup.object({
         firstName: Yup.string()
             .matches(/^[A-Za-z\s'-]+$/, "First name can only contain letters")
@@ -97,7 +96,7 @@ function RegistrationForm() {
         }`;
 
 
-    // ✅ Password strength helper
+    // Password strength helper
     const passwordValidations = [
         {
             label: "At least 8 characters",
@@ -218,7 +217,7 @@ function RegistrationForm() {
                             </button>
                         </div>
 
-                        {/* ✅ Password strength guide */}
+                        {/* Password strength guide */}
                         <div className="bg-gray-50 p-2 rounded-md mt-2 text-xs space-y-1">
                             {passwordValidations.map((rule, i) => (
                                 <p
@@ -266,7 +265,7 @@ function RegistrationForm() {
                             </button>
                         </div>
 
-                        {/* ✅ Live match indicator */}
+                        {/* Live match indicator */}
                         {formik.values.confirmPassword &&
                             formik.values.confirmPassword === formik.values.password && (
                                 <p className="text-green-600 text-xs mt-1">
@@ -343,7 +342,6 @@ function RegistrationForm() {
                 </form>
             </div>
 
-            {/* 🧾 Terms Modal */}
         </div>
     );
 }

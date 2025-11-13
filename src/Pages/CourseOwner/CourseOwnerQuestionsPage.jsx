@@ -1,4 +1,3 @@
-// src/Pages/CourseOwner/CourseOwnerQuestionsPage.jsx
 import React, { useState, useEffect } from "react";
 import { useAuth } from "../../contexts/AuthContext";
 import useCourseApi from "../../hooks/useCourseApi";
@@ -13,7 +12,7 @@ const CourseOwnerQuestionsPage = () => {
   const { fetchAllCourses } = useCourseApi();
   const { getAllDmsForCourse, replyDms } = useDms();
 
-  // ✅ Normalize timestamp from DB safely
+  // Normalize timestamp from DB safely
   const normalizeToDate = (ts) => {
     if (!ts) return null;
     if (ts instanceof Date) return ts;
@@ -26,7 +25,6 @@ const CourseOwnerQuestionsPage = () => {
     if (typeof ts === "string") {
       let s = ts.trim();
       if (s.includes(" ") && !s.includes("T")) s = s.replace(" ", "T");
-      // ⚠️ DO NOT append 'Z' — treat as local Sydney time
       const d = new Date(s);
       return isNaN(d) ? null : d;
     }
@@ -35,7 +33,7 @@ const CourseOwnerQuestionsPage = () => {
     return isNaN(d) ? null : d;
   };
 
-  // ✅ Format date-time in Sydney timezone
+  //Format date-time in Sydney timezone
   const formatDateTime = (ts) => {
     const date = normalizeToDate(ts);
     if (!date) return "";
@@ -50,7 +48,7 @@ const CourseOwnerQuestionsPage = () => {
     }).format(date);
   };
 
-  // ✅ Fetch owner's courses
+  // Fetch owner's courses
   useEffect(() => {
     let mounted = true;
     fetchAllCourses()
@@ -65,7 +63,7 @@ const CourseOwnerQuestionsPage = () => {
     return () => (mounted = false);
   }, [fetchAllCourses, loggedInUser?.id]);
 
-  // ✅ Fetch all questions for a course
+  // Fetch all questions for a course
   const fetchDms = async (courseId) => {
     try {
       const res = await getAllDmsForCourse(courseId || selectedCourseId);
@@ -98,7 +96,7 @@ const CourseOwnerQuestionsPage = () => {
     try {
       await replyDms(dm.msgID, payload);
 
-      // ✅ Update reply instantly instead of refetching all
+      // Update reply instantly instead of refetching all
       setQuestions((prev) =>
         prev.map((q) =>
           q.msgID === dm.msgID ? { ...q, reply: payload.reply } : q

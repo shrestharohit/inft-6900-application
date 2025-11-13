@@ -73,7 +73,7 @@ export default function QuizManagement() {
   const { registerQuiz, fetchQuizForCourseOwner, updateQuiz } = useQuizApi();
   const { loggedInUser } = useAuth();
 
-  // --- Menu state (for dropdown actions)
+  // Menu state 
   const [menuAnchor, setMenuAnchor] = useState(null);
   const [menuQuiz, setMenuQuiz] = useState(null);
 
@@ -474,7 +474,7 @@ export default function QuizManagement() {
         </Stack>
       </Paper>
 
-      {/* --- Grouped Quizzes with Dropdown Actions --- */}
+      {/*  Grouped Quizzes with Dropdown Actions */}
       <Paper
         sx={{
           borderRadius: 3,

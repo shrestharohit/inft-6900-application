@@ -22,7 +22,7 @@ const CourseOwnerDashboardContent = () => {
 
   const { getCourseOwnerDashboard } = useAnalyticsApi();
 
-  // ✅ Sydney-local date helpers
+  // Sydney-local date helpers
   const normalizeToDate = (ts) => {
     if (!ts) return null;
     if (ts instanceof Date) return ts;
@@ -35,7 +35,6 @@ const CourseOwnerDashboardContent = () => {
     if (typeof ts === "string") {
       let s = ts.trim();
       if (s.includes(" ") && !s.includes("T")) s = s.replace(" ", "T");
-      // ⚠️ Do NOT add "Z" — treat as local Sydney time
       const d = new Date(s);
       return isNaN(d) ? null : d;
     }
@@ -64,7 +63,7 @@ const CourseOwnerDashboardContent = () => {
     getCourseOwnerDashboard(loggedInUser?.id)
       .then((res) => {
         if (mounted) {
-          // ✅ Sort courses by release date (newest first)
+          //Sort courses by release date (newest first)
           if (res?.individualCourseData?.length > 0) {
             res.individualCourseData.sort(
               (a, b) =>

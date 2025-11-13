@@ -1,4 +1,3 @@
-// src/Pages/Admin/AdminLayout.jsx
 import React from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import {
@@ -37,7 +36,6 @@ const NAV_ITEMS = [
     icon: <LibraryBooks />,
   },
   { label: "Profile", to: "/admin/profile", icon: <Settings /> },
-  // { label: "Quiz Approvals", to: "/admin/quiz-approvals", icon: <Quiz /> },
 ];
 
 export default function AdminLayout() {
@@ -46,7 +44,7 @@ export default function AdminLayout() {
   const navigate = useNavigate();
   const { clearUserDataFromState, loggedInUser } = useAuth();
 
-  // Notification toggle state (bootstrap from user if available)
+  // Notification toggle state 
   const [notificationsEnabled, setNotificationsEnabled] = React.useState(false);
   const { updateUserById } = useUserApi();
   const { setUserDataInState } = useAuth();
@@ -99,7 +97,7 @@ export default function AdminLayout() {
 
   return (
     <div className="min-h-screen bg-gray-100 flex">
-      {/* Sidebar (unchanged) */}
+      {/* Sidebar */}
       <aside className="fixed top-0 left-0 bottom-0 w-60 bg-gray-900 text-gray-200 flex flex-col border-r border-white/10">
         <div className="flex items-center gap-3 px-4 py-5 border-b border-white/10">
           <span className="font-bold tracking-wide text-white">

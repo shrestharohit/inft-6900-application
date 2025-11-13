@@ -69,7 +69,7 @@ const Header = () => {
     return () => (mounted = false);
   }, [fetchAllCourses, fetchAllPathways]);
 
-  // ✅ Sync notification state on mount / user change
+  // Sync notification state on mount / user change
   useEffect(() => {
     if (loggedInUser) {
       setNotificationsEnabled(
@@ -119,19 +119,19 @@ const Header = () => {
     }
   };
 
-  // ✅ Refactored notification toggle
+  // Refactored notification toggle
   const handleToggleNotifications = async () => {
     if (!loggedInUser) return;
 
     const newValue = !notificationsEnabled;
 
-    // 1️⃣ Update local state immediately
+    // Update local state immediately
     setNotificationsEnabled(newValue);
 
-    // 2️⃣ Persist to localStorage via AuthContext
+    //  Persist to localStorage via AuthContext
     updateUserField({ notificationEnabled: newValue });
 
-    // 3️⃣ Update backend asynchronously
+    // Update backend asynchronously
     try {
       await updateUserById({
         userID: loggedInUser.id,
@@ -270,7 +270,7 @@ const Header = () => {
           <div className="flex items-center gap-4">
             {isLoggedIn ? (
               <>
-                {/* ✅ Avatar + Logged-in user's name */}
+                {/* Avatar + Logged-in user's name */}
                 <div
                   className="flex items-center gap-2 cursor-pointer"
                   onClick={handleMenuOpen}

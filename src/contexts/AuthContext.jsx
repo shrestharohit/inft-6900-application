@@ -5,15 +5,9 @@ import moment from "moment";
 
 const AuthContext = createContext(null);
 
-// ✅ Global map: pathway → courses
-const pathwayCourseMap = {
-  101: ["1", "2", "3"], // Web Dev Pathway
-  102: ["4", "5", "6"], // Data Analytics Pathway
-  103: ["7", "8", "9"], // Business Skills Pathway
-};
 
 export const AuthProvider = ({ children }) => {
-  // ✅ Restore user instantly from localStorage (prevents undefined on first render)
+  // Restore user instantly from localStorage 
   const [loggedInUser, setLoggedInUser] = useState(() => {
     const storedUser = localStorage.getItem("user");
     return storedUser ? JSON.parse(storedUser) : null;
@@ -60,7 +54,7 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // ✅ Ensure correct redirect after refresh or direct visit
+  // Ensure correct redirect after refresh or direct visit
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
     const parsedUser = storedUser ? JSON.parse(storedUser) : null;
@@ -78,7 +72,7 @@ export const AuthProvider = ({ children }) => {
     }
   }, []);
 
-  // ✅ Persist user in localStorage (optional redirect)
+  // Persist user in localStorage 
   const persistUser = (updatedUser, shouldRedirect = false) => {
     localStorage.setItem("user", JSON.stringify(updatedUser));
     if (updatedUser?.id) {
@@ -86,19 +80,19 @@ export const AuthProvider = ({ children }) => {
     }
     setLoggedInUser(updatedUser);
 
-    // ✅ Redirect only when explicitly requested
+    // Redirect only when explicitly requested
     if (shouldRedirect) {
       redirectBasedOnRole(updatedUser);
     }
   };
 
-  // ✅ Set full user data and redirect (used at login)
+  // Set full user data and redirect 
   const setUserDataInState = (user, shouldRedirect = true) => {
     if (!user) return;
-    persistUser(user, shouldRedirect); // redirect after login only
+    persistUser(user, shouldRedirect); 
   };
 
-  // ✅ Clear user data safely
+  // Clear user data safely
   const clearUserDataFromState = () => {
     localStorage.removeItem("user");
     localStorage.removeItem("userId");
@@ -106,14 +100,14 @@ export const AuthProvider = ({ children }) => {
     window.location.href = "/";
   };
 
-  // ✅ Update specific fields of user and persist (no redirect)
+  // Update specific fields of user and persist 
   const updateUserField = (fields) => {
     if (!loggedInUser) return;
     const updatedUser = { ...loggedInUser, ...fields };
-    persistUser(updatedUser, false); // 🚫 no redirect on minor updates
+    persistUser(updatedUser, false); 
   };
 
-  // ✅ Enroll in a pathway (auto-enroll its courses too)
+  // Enroll in a pathway (auto-enroll its courses too)
   const enrollInPathway = (pathwayId) => {
     if (!loggedInUser) return;
 
@@ -140,7 +134,7 @@ export const AuthProvider = ({ children }) => {
     });
   };
 
-  // ✅ Complete a course → unlock next in pathway
+  // Complete a course → unlock next in pathway
   const completeCourse = (courseId) => {
     if (!loggedInUser) return;
 
@@ -162,7 +156,7 @@ export const AuthProvider = ({ children }) => {
     persistUser({ ...loggedInUser, enrolledCourses });
   };
 
-  // ✅ Disenroll from a pathway (removes non-completed courses)
+  // Disenroll from a pathway
   const disenrollFromPathway = (pathwayId) => {
     if (!loggedInUser) return;
 
@@ -196,7 +190,7 @@ export const AuthProvider = ({ children }) => {
         enrollInPathway,
         completeCourse,
         disenrollFromPathway,
-        updateUserField, // ✅ Now safe, won’t trigger redirects
+        updateUserField, 
       }}
     >
       {children}

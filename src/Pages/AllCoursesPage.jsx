@@ -14,7 +14,7 @@ const AllCoursesPage = () => {
   const { getAllReviewsForCourse } = useReview();
   const { isLoggedIn } = useAuth();
  
-  // ✅ Capitalize helper
+  //Capitalize helper
   const capitalizeFirst = (str) => {
     if (!str) return "";
     return str
@@ -24,7 +24,7 @@ const AllCoursesPage = () => {
       .join(" ");
   };
  
-  // ✅ Sydney-local time format (same as CoursePage)
+  // Sydney-local time format 
   const normalizeToDate = (ts) => {
     if (!ts) return null;
     if (ts instanceof Date) return ts;
@@ -57,7 +57,6 @@ const AllCoursesPage = () => {
 };
  
  
-  // 🧩 Normalize backend course data
   const normalizeCourse = useCallback((c) => {
     const user = c.userDetail || {};
     const ownerFullName =
@@ -92,7 +91,7 @@ const AllCoursesPage = () => {
     };
   }, []);
  
-  // 🛰️ Fetch courses + enrich if missing rating/owner
+  // Fetch courses 
   useEffect(() => {
     let mounted = true;
  
@@ -112,12 +111,12 @@ const AllCoursesPage = () => {
  
         let normalized = list.map(normalizeCourse);
  
-        // Enrich missing data (ratings + owner)
+       
         const enriched = await Promise.all(
           normalized.map(async (course) => {
             let enrichedData = { ...course };
  
-            // 🔹 Rating fix (fetch actual avg rating)
+            // Rating fix 
             if (!course.rating || course.rating === 0) {
               try {
                 const reviewRes = await getAllReviewsForCourse(course.id);
@@ -127,7 +126,7 @@ const AllCoursesPage = () => {
               }
             }
  
-            // 🔹 Owner fallback if Unknown
+            // Owner fallback if Unknown
             if (course.owner === "Unknown") {
               try {
                 const details = await fetchCourse(course.id);
@@ -159,7 +158,6 @@ const AllCoursesPage = () => {
     return () => (mounted = false);
   }, [fetchAllCourses, fetchCourse, getAllReviewsForCourse, normalizeCourse]);
  
-  // 🧮 Filters
   const [filters, setFilters] = useState({
     level: "all",
     category: "all",
@@ -175,7 +173,7 @@ const AllCoursesPage = () => {
       sortBy: "released_desc",
     });
  
-  // 🧮 Dynamic filter options
+ 
   const uniqueLevels = useMemo(() => {
     const levels = Array.from(
       new Set(courses.map((c) => capitalizeFirst(c.level)))
@@ -190,7 +188,7 @@ const AllCoursesPage = () => {
     return cats.length ? cats : ["General"];
   }, [courses]);
  
-  // 🧮 Apply filters + sorting
+  // Apply filters + sorting
   const filteredCourses = useMemo(() => {
     let result = [...courses];
  
@@ -225,7 +223,7 @@ const AllCoursesPage = () => {
     return result;
   }, [courses, filters]);
  
-  // ✅ Render
+  // Render
   return (
     <div className="bg-gray-50 px-6 py-12 min-h-screen">
       <div className="max-w-7xl mx-auto">

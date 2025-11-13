@@ -152,7 +152,6 @@ const SchedulePage = () => {
       return alert("You do not have permission to export sessions.");
     if (!s) return alert("No sessions to export!");
 
-    // TODO@Rohit: Fix Google Calendar export
     setTimeout(() => {
       const start = new Date(`${dateFormatter(s.date)}T${s.startTime}`)
         .toISOString()
@@ -193,7 +192,7 @@ const SchedulePage = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-6xl mx-auto p-6">
-        {/* 🔹 Banner for admins/owners */}
+        {/* Banner for admins/owners */}
         {(isAdmin || isCourseOwner) && (
           <div className="mb-6 bg-yellow-100 border-l-4 border-yellow-500 text-yellow-800 p-3 rounded">
             {isAdmin ? "Admin" : "Course Owner"} Preview Mode — view-only

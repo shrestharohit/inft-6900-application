@@ -1,4 +1,3 @@
-// src/Pages/resetPasswordPage.jsx
 import React, { useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import * as Yup from "yup";
@@ -6,7 +5,7 @@ import registration_image from "../assets/Images/registration_image.png";
 import beforeAuthLayout from "../components/BeforeAuth";
 import useUserApi from "../hooks/useUserApi";
 
-// ✅ Yup validation schema
+// Yup validation schema
 const resetPasswordSchema = Yup.object().shape({
   newPassword: Yup.string()
     .min(8, "Password must be at least 8 characters")
@@ -48,7 +47,7 @@ const ResetPasswordPage = () => {
     setIsSubmitting(true);
 
     try {
-      // ✅ Run Yup validation
+      // Run Yup validation
       await resetPasswordSchema.validate(formData, { abortEarly: false });
 
       await resetPassword({
@@ -83,7 +82,7 @@ const ResetPasswordPage = () => {
       : "border-gray-300"
     }`;
 
-  // ✅ Password validation rules for live feedback
+  // Password validation rules for live feedback
   const passwordValidations = [
     {
       label: "At least 8 characters",
@@ -145,7 +144,7 @@ const ResetPasswordPage = () => {
               {showPassword ? "Hide" : "Show"}
             </button>
 
-            {/* ✅ Password strength guide */}
+            {/* Password strength guide */}
             <div className="bg-gray-50 p-2 rounded-md mt-2 text-xs space-y-1">
               {passwordValidations.map((rule, i) => (
                 <p
@@ -181,7 +180,7 @@ const ResetPasswordPage = () => {
               placeholder="Confirm your new password"
             />
 
-            {/* ✅ Live match indicator */}
+            {/* Live match indicator */}
             {formData.confirmPassword &&
               formData.confirmPassword === formData.newPassword && (
                 <p className="text-green-600 text-xs mt-1">

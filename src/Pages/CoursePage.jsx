@@ -36,7 +36,7 @@ const CoursePage = () => {
     deleteReviewById,
   } = useReview();
 
-  // ✅ Sydney-local time helpers
+  // Sydney-local time helpers
   const normalizeToDate = (ts) => {
     if (!ts) return null;
     if (ts instanceof Date) return ts;
@@ -49,7 +49,6 @@ const CoursePage = () => {
     if (typeof ts === "string") {
       let s = ts.trim();
       if (s.includes(" ") && !s.includes("T")) s = s.replace(" ", "T");
-      // ⚠️ Do NOT add "Z" — treat as local Sydney time
       const d = new Date(s);
       return isNaN(d) ? null : d;
     }
@@ -69,7 +68,7 @@ const CoursePage = () => {
     }).format(date);
   };
 
-  // ✅ Fetch course info
+  //  Fetch course info
   useEffect(() => {
     let mounted = true;
     setLoadingCourse(true);
@@ -116,7 +115,7 @@ const CoursePage = () => {
     return () => (mounted = false);
   }, [getEnrolledCoursesById, loggedInUser, courseId]);
 
-  // ✅ Fetch course reviews
+  // Fetch course reviews
   useEffect(() => {
     let mounted = true;
     getAllReviewsForCourse(courseId)
@@ -146,7 +145,7 @@ const CoursePage = () => {
     return () => (mounted = false);
   }, [getAllReviewsForCourse, courseId, loggedInUser?.id]);
 
-  // ✅ Check if user already enrolled
+  // Check if user already enrolled
   const fetchEnrolledCourses = async () => {
     if (!loggedInUser?.id) return;
     try {
@@ -165,7 +164,7 @@ const CoursePage = () => {
     fetchEnrolledCourses();
   }, [loggedInUser?.id]);
 
-  // ✅ Loading & not found states
+  // Loading & not found states
   if (loadingCourse) {
     return (
       <div className="max-w-7xl mx-auto p-6 animate-pulse">
@@ -184,7 +183,7 @@ const CoursePage = () => {
     );
   }
 
-  // ✅ Enroll / Disenroll
+  // Enroll / Disenroll
   const handleEnroll = async () => {
     if (!isLoggedIn) {
       navigate("/login", { state: { from: `/courses/${courseId}` } });
@@ -209,7 +208,7 @@ const CoursePage = () => {
     }
   };
 
-  // ✅ Review submission
+  // Review submission
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!isLoggedIn) {
@@ -277,7 +276,7 @@ const CoursePage = () => {
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
-      {/* 🔶 Admin Banner */}
+      {/* Admin Banner */}
       {userRole === "admin" && (
         <div className="bg-yellow-100 text-yellow-800 text-center py-2 font-medium rounded-md mb-4">
           You are viewing this course as an <b>Administrator</b>. Enrollment is
@@ -361,7 +360,7 @@ const CoursePage = () => {
           <div className="bg-white p-6 rounded-lg shadow mt-6">
             <h2 className="text-2xl font-bold mb-4">Reviews</h2>
 
-            {/* ✅ Only show review form if user hasn’t posted yet */}
+            {/* Only show review form if user hasn’t posted yet */}
             {isLoggedIn && hasEnrolled && userRole !== "admin" && !reviewId && (
               <form onSubmit={handleSubmit} className="mb-6">
                 <div className="flex gap-2 mb-3">
@@ -412,7 +411,7 @@ const CoursePage = () => {
               </div>
             )}
 
-            {/* ✅ Reviews List */}
+            {/* Reviews List */}
             <div>
               <h3 className="text-xl font-semibold mb-3">Student Reviews</h3>
               {reviews?.reviews?.length === 0 ? (
@@ -449,7 +448,7 @@ const CoursePage = () => {
                             </span>
                           </div>
 
-                          {/* ✅ Edit mode for the user's review */}
+                          {/* Edit mode for the user's review */}
                           {isUserReview && isEditing ? (
                             <>
                               <div className="flex gap-2 mb-2">
@@ -533,7 +532,7 @@ const CoursePage = () => {
 
           {/* Action Buttons */}
           <div className="mt-6 flex flex-col gap-3">
-            {/* 🧑‍🎓 Student Actions */}
+            {/* Student Actions */}
             {userRole !== "admin" && !hasEnrolled && (
               <button
                 onClick={handleEnroll}
@@ -561,7 +560,7 @@ const CoursePage = () => {
               </>
             )}
 
-            {/* 🧑‍💼 Admin Action */}
+            {/* Admin Action */}
             {userRole === "admin" && (
               <button
                 onClick={() => navigate(`/courses/${courseId}/content`)}

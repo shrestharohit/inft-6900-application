@@ -1,4 +1,3 @@
-// src/Pages/CourseOwner/CourseOwnerDiscussionPage.jsx
 import React, { useEffect, useState } from "react";
 import { useAuth } from "../../contexts/AuthContext";
 import useCourseApi from "../../hooks/useCourseApi";
@@ -11,14 +10,14 @@ const CourseOwnerDiscussionPage = () => {
   const [newThread, setNewThread] = useState({ title: "", message: "" });
   const [replyText, setReplyText] = useState({});
   const [editingThreadId, setEditingThreadId] = useState(null);
-  const [editingReply, setEditingReply] = useState(null); // { threadId, replyId }
+  const [editingReply, setEditingReply] = useState(null);
   const [ownerCourses, setOwnerCourses] = useState([]);
 
   const { fetchAllCourses } = useCourseApi();
   const { fetchCoursePosts, createPost, updatePost, deletePost, replyToPost } =
     useDiscussionApi();
 
-  // ✅ Normalize DB timestamps (no manual offset)
+  // Normalize DB timestamps
   const normalizeToDate = (ts) => {
     if (!ts) return null;
     if (ts instanceof Date) return ts;
@@ -31,7 +30,6 @@ const CourseOwnerDiscussionPage = () => {
     if (typeof ts === "string") {
       let s = ts.trim();
       if (s.includes(" ") && !s.includes("T")) s = s.replace(" ", "T");
-      // ⚠️ Do NOT append 'Z' — treat as local Sydney time
       const d = new Date(s);
       return isNaN(d) ? null : d;
     }
@@ -40,7 +38,7 @@ const CourseOwnerDiscussionPage = () => {
     return isNaN(d) ? null : d;
   };
 
-  // ✅ Format time properly in Australia/Sydney
+  // Format time properly in Australia/Sydney
   const formatDateTime = (ts) => {
     const date = normalizeToDate(ts);
     if (!date) return "";
@@ -55,7 +53,7 @@ const CourseOwnerDiscussionPage = () => {
     }).format(date);
   };
 
-  // ✅ Fetch all courses for course owner
+  // Fetch all courses for course owner
   useEffect(() => {
     let mounted = true;
     fetchAllCourses()
@@ -73,7 +71,7 @@ const CourseOwnerDiscussionPage = () => {
     };
   }, [fetchAllCourses, loggedInUser?.id]);
 
-  // ✅ Fetch discussions for selected course
+  // Fetch discussions for selected course
   const fetchDiscussions = async (courseId) => {
     try {
       const res = await fetchCoursePosts(courseId || selectedCourseId);
@@ -100,7 +98,7 @@ const CourseOwnerDiscussionPage = () => {
     }
   };
 
-  // ✅ Create or update a thread
+  // Create or update a thread
   const handleNewThread = async (e) => {
     e.preventDefault();
     if (!newThread.title.trim() || !newThread.message.trim()) return;
@@ -128,7 +126,7 @@ const CourseOwnerDiscussionPage = () => {
     }
   };
 
-  // ✅ Reply to a thread or update reply
+  // Reply to a thread or update reply
   const handleReply = async (thread) => {
     const text = replyText[thread.postID];
     if (!text?.trim()) return;
@@ -320,20 +318,20 @@ const CourseOwnerDiscussionPage = () => {
                           </p>
                         </div>
                         <div className="flex gap-2 text-xs">
-                          {/* <button
+                          <button
                             onClick={() => handleEditReply(thread.postID, r)}
                             className="text-blue-600 hover:underline"
                           >
                             Edit
-                          </button> */}
-                          {/* <button
+                          </button>
+                          <button
                             onClick={() =>
                               handleDeleteReply(thread.postID, r.postID)
                             }
                             className="text-red-500 hover:underline"
                           >
                             Delete
-                          </button> */}
+                          </button>
                         </div>
                       </div>
                     ))}

@@ -1,4 +1,3 @@
-// src/Pages/CourseOwner/PathwayManagement.jsx
 import React, { useState, useEffect, useRef } from "react";
 import {
   Box,
@@ -30,7 +29,7 @@ import MoreVertIcon from "@mui/icons-material/MoreVert";
 import usePathwayApi from "../../hooks/usePathwayApi";
 import { useAuth } from "../../contexts/AuthContext";
 
-// ✅ Status labels for consistent display
+// Status labels for consistent display
 const STATUS_LABEL = {
   draft: "Draft",
   active: "Active",
@@ -55,7 +54,7 @@ export default function PathwayManagement() {
   const [menuAnchor, setMenuAnchor] = useState(null);
   const [menuPathway, setMenuPathway] = useState(null);
 
-  // ---- Load pathways ----
+  //  Load pathways
   useEffect(() => {
     if (!loggedInUser?.id) return;
     let mounted = true;
@@ -72,10 +71,10 @@ export default function PathwayManagement() {
             ...p,
             status: (p.status || "draft").toLowerCase(),
             pathwayID: p.pathwayID || idx + 1,
-            userID: p.userID ?? p.userid ?? p.ownerID ?? null, // normalize possible field names
+            userID: p.userID ?? p.userid ?? p.ownerID ?? null, 
           }));
 
-          // ✅ Strict filter: only show this owner’s pathways
+          // Strict filter: only show this owner’s pathways
           const ownerOnly = normalized.filter(
             (p) => String(p.userID) === String(loggedInUser.id)
           );
@@ -95,7 +94,7 @@ export default function PathwayManagement() {
   }, [fetchUserPathways, loggedInUser]);
 
 
-  // ---- Handlers ----
+  // Handlers
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
@@ -124,7 +123,7 @@ export default function PathwayManagement() {
 
     try {
       if (editingIndex !== null) {
-        // --- UPDATE ---
+        //UPDATE
         const pathwayId = pathways[editingIndex]?.pathwayID;
         if (!pathwayId) return alert("Missing pathway ID");
 
@@ -141,7 +140,7 @@ export default function PathwayManagement() {
         );
         setPathways(updatedList);
       } else {
-        // --- CREATE ---
+        // CREATE 
         const res = await registerPathway(payload);
         const created = res?.pathway || res || payload;
         const normalized = {
@@ -190,7 +189,7 @@ export default function PathwayManagement() {
     }
   };
 
-  // ---- Outline Dialog ----
+  //  Outline Dialog 
   const openOutlineDialog = () => {
     setOutlinedraft(form.outline || "");
     setOutlineDialogOpen(true);
@@ -216,7 +215,7 @@ export default function PathwayManagement() {
     if (!outlineDialogOpen) openOutlineDialog();
   };
 
-  // ---- Dropdown menu ----
+  // Dropdown menu 
   const handleMenuOpen = (event, pathwayWithIndex) => {
     setMenuAnchor(event.currentTarget);
     setMenuPathway(pathwayWithIndex);
@@ -232,7 +231,7 @@ export default function PathwayManagement() {
         Pathway Management
       </Typography>
 
-      {/* --- Form --- */}
+      {/* Form*/}
       <Paper
         sx={{
           padding: "1.5rem",
@@ -280,7 +279,7 @@ export default function PathwayManagement() {
         </form>
       </Paper>
 
-      {/* --- Grouped Accordion Table --- */}
+      {/* Grouped Accordion Table */}
       <Paper
         sx={{
           borderRadius: 3,
@@ -293,13 +292,13 @@ export default function PathwayManagement() {
         </Typography>
 
         {(() => {
-          // ✅ Only the owner's pathways, keep global index
+          // Only the owner's pathways, keep global index
           const ownerPathwaysWithIndex = pathways.map((p, __idx) => ({
             ...p,
             __idx,
           }));
 
-          // ✅ Group by status
+          // Group by status
           const grouped = Object.keys(STATUS_LABEL).reduce((acc, statusKey) => {
             acc[statusKey] = ownerPathwaysWithIndex.filter(
               (p) => (p.status || "draft").toLowerCase() === statusKey

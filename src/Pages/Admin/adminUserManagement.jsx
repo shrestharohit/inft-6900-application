@@ -23,7 +23,7 @@ import {
   CircularProgress,
 } from "@mui/material";
 import { Add, Edit, Delete } from "@mui/icons-material";
-import * as Yup from "yup"; // ✅ Yup for consistent validation
+import * as Yup from "yup"; 
 import useUserApi from "../../hooks/useUserApi";
 
 const ROLES = ["admin", "course_owner"];
@@ -35,7 +35,7 @@ const emptyForm = {
   role: "course_owner",
 };
 
-// ✅ Define Yup schema for consistent validation
+// Define Yup schema for consistent validation
 const userSchema = Yup.object().shape({
   firstName: Yup.string()
     .matches(/^[A-Za-z\s'-]+$/, "First name can only contain letters")
@@ -96,7 +96,7 @@ const AdminUserManagement = () => {
     }
   };
 
-  // ✅ Validate using Yup
+  // Validate using Yup
   const validate = async () => {
     try {
       await userSchema.validate(form, { abortEarly: false });

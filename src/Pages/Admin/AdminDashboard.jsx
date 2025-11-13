@@ -36,7 +36,7 @@ export default function AdminDashboard() {
     newUsers = [],
   } = data || {};
 
-  // ✅ Hooks must always run (even before data is ready)
+  // Hooks must always run 
   const roleData = useMemo(
     () => [
       { name: "Students", value: studentCount },
@@ -72,7 +72,7 @@ export default function AdminDashboard() {
     return () => (mounted = false);
   }, [getAdminDashboard]);
 
-  // ✅ Conditional returns now AFTER hooks
+  // Conditional returns now AFTER hooks
   if (loading) {
     return (
       <div className="p-6 max-w-7xl mx-auto animate-pulse space-y-6">
@@ -125,7 +125,7 @@ export default function AdminDashboard() {
                 innerRadius={50}
                 outerRadius={100}
                 paddingAngle={3}
-                label={({ percent }) => `${(percent * 100).toFixed(0)}%`} // ✅ Only percentage
+                label={({ percent }) => `${(percent * 100).toFixed(0)}%`}
                 labelLine={false}
               >
                 {roleData.map((_, i) => (
@@ -139,7 +139,7 @@ export default function AdminDashboard() {
             </PieChart>
           </ResponsiveContainer>
 
-          {/* ✅ Legend with names + counts */}
+          {/* Legend with names + counts */}
           <div className="flex justify-center gap-6 mt-4 text-sm text-gray-700 flex-wrap">
             {roleData.map((r, i) => (
               <div key={i} className="flex items-center gap-2">
@@ -214,7 +214,7 @@ export default function AdminDashboard() {
                 type="category"
                 tick={{ fontSize: 11 }}
                 tickMargin={4}
-                width={160} // adjust if needed
+                width={160} 
               />
 
 

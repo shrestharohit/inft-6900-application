@@ -1,4 +1,3 @@
-// hooks/usePomodoro.js
 import { useState, useEffect, useRef } from "react";
 
 const usePomodoro = (workMinutes = 25, breakMinutes = 5) => {

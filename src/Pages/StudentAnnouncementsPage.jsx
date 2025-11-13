@@ -13,7 +13,7 @@ const StudentAnnouncementsPageContent = () => {
 
   const course = dummyCourses.find((c) => String(c.id) === String(courseId));
 
-  // ✅ Sydney-local time helpers
+  // Sydney-local time helpers
   const normalizeToDate = (ts) => {
     if (!ts) return null;
     if (ts instanceof Date) return ts;
@@ -26,7 +26,6 @@ const StudentAnnouncementsPageContent = () => {
     if (typeof ts === "string") {
       let s = ts.trim();
       if (s.includes(" ") && !s.includes("T")) s = s.replace(" ", "T");
-      // ⚠️ Do NOT add "Z" — treat as local Sydney time
       const d = new Date(s);
       return isNaN(d) ? null : d;
     }
@@ -49,7 +48,7 @@ const StudentAnnouncementsPageContent = () => {
     }).format(date);
   };
 
-  // 🚫 Role restriction
+  // Role restriction
   if (!canViewAnnouncements) {
     return (
       <div className="p-6 text-center text-red-500 font-semibold">
@@ -80,7 +79,7 @@ const StudentAnnouncementsPageContent = () => {
     fetchAnnouncements();
   }, [getAllAnnouncementsForCourse, courseId]);
 
-  // ✅ Helper to check if announcement is NEW (within last 7 days)
+  // Helper to check if announcement is NEW 
   const isNew = (publishedAt) => {
     const publishedDate = normalizeToDate(publishedAt);
     if (!publishedDate) return false;
@@ -99,7 +98,7 @@ const StudentAnnouncementsPageContent = () => {
 
   return (
     <div className="p-6 max-w-4xl mx-auto">
-      {/* 🔹 Optional admin/owner banner */}
+      {/* Optional admin/owner banner */}
       {isAdmin && (
         <div className="mb-4 bg-yellow-100 border-l-4 border-yellow-500 text-yellow-800 p-3 rounded">
           Admin Preview Mode — view-only access.
