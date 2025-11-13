@@ -149,7 +149,7 @@ function SearchResults() {
             </div>
           ) : (
             <p className="text-gray-500">
-              Loading Courses...
+              No courses found {query && `for "${query}"`}
             </p>
           )}
         </div>
@@ -190,7 +190,7 @@ function SearchResults() {
             </div>
           ) : (
             <p className="text-gray-500">
-              Loading Pathways...
+              No pathway found {query && `for "${query}"`}
             </p>
           )}
         </div>
