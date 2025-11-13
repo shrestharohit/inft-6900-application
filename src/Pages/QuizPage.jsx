@@ -20,6 +20,9 @@ const QuizPage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [triggerKey, setTriggerKey] = useState(0);
 
+  // New states for timer
+  const [timeLeft, setTimeLeft] = useState(null);
+
   const {
     startQuiz,
     submitQuiz,
@@ -129,6 +132,13 @@ const QuizPage = () => {
     setQuizStarted(true);
     const res = await startQuiz(quiz.quizID, { enrolmentID });
     setAttemptID(res.attempt.attemptID);
+
+    let limitInSeconds = 300; 
+    if (quiz?.timeLimit) {
+      const [hours, minutes, seconds] = quiz.timeLimit.split(":").map(Number);
+      limitInSeconds = hours * 3600 + minutes * 60 + seconds;
+    }
+setTimeLeft(limitInSeconds);
   };
 
   const getFeedbackForAttempt = async (attemptID, quizID) => {
@@ -137,9 +147,33 @@ const QuizPage = () => {
     setFeedback(res);
   };
 
+  // Timer countdown effect
+  useEffect(() => {
+    if (!quizStarted || timeLeft === null) return;
+
+    if (timeLeft <= 0) {
+      calculateResult(); // auto submit
+      alert("⏰ Time is up! Your quiz has been submitted automatically.");
+      return;
+    }
+
+    const timer = setInterval(() => {
+      setTimeLeft((prev) => prev - 1);
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [timeLeft, quizStarted]);
+
+  // Format timer display
+  const formatTime = (seconds) => {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m}:${s.toString().padStart(2, "0")}`;
+  };
+
   if (isLoading)
     return (
-      <div div className="h-screen flex items-center justify-center">
+      <div className="h-screen flex items-center justify-center">
         <p>Loading...</p>
       </div>
     );
@@ -147,7 +181,6 @@ const QuizPage = () => {
   return (
     <div className="p-6 min-h-screen bg-gray-50">
       <div className="max-w-5xl mx-auto">
-        {/* Banner for admin/owner */}
         {(isAdmin || isCourseOwner) && (
           <div className="mb-4 bg-yellow-100 border-l-4 border-yellow-500 text-yellow-800 p-3 rounded">
             {isAdmin ? "Admin" : "Course Owner"} Preview Mode — quizzes are
@@ -159,7 +192,6 @@ const QuizPage = () => {
           Module Quiz
         </h1>
 
-        {/* Info before quiz */}
         {!quizStarted && !showResult && !attempts?.length && (
           <div className="bg-white p-10 rounded-2xl shadow-xl border border-gray-200 text-center">
             <h2 className="text-2xl font-bold text-gray-700 mb-4">
@@ -190,9 +222,24 @@ const QuizPage = () => {
           </div>
         )}
 
-        {/* Quiz in progress */}
         {quizStarted && canAttemptQuiz && !showResult && (
           <div className="space-y-6">
+            {/* Timer display */}
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-bold text-gray-800">
+                Quiz in Progress
+              </h2>
+              <div
+                className={`text-lg font-semibold px-4 py-2 rounded-lg shadow ${
+                  timeLeft < 30
+                    ? "bg-red-500 text-white"
+                    : "bg-blue-100 text-blue-700"
+                }`}
+              >
+                Time Left: {formatTime(timeLeft)}
+              </div>
+            </div>
+
             {quiz?.questions?.map((q, idx) => (
               <div
                 key={q.questionID}
@@ -236,7 +283,6 @@ const QuizPage = () => {
           </div>
         )}
 
-        {/* Results */}
         {showResult && attempts && (
           <div className="mt-8">
             <div
@@ -289,7 +335,6 @@ const QuizPage = () => {
               )}
             </div>
 
-            {/* Feedback section */}
             <div className="mt-8">
               <h3 className="text-xl font-semibold text-gray-800 mb-4">
                 Feedback
@@ -311,29 +356,25 @@ const QuizPage = () => {
                   </div>
                 ))
               ) : (
-                <>
-                  <p className="text-gray-600">No feedback available.</p>
-                </>
+                <p className="text-gray-600">No feedback available.</p>
               )}
             </div>
           </div>
         )}
 
-        {/* Previous Attempts */}
         {attempts.length > 0 && (
           <div className="mt-12">
             <h2 className="text-2xl font-bold text-blue-700 mb-4 text-center">
               Previous Attempts
             </h2>
             <div className="space-y-3">
-              {attempts?.map((a, index) => (
+              {attempts?.map((a) => (
                 <div
                   key={a.attemptID}
                   className="flex justify-between items-center p-4 bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition"
                 >
                   <p className="text-gray-700 font-medium">
-                    Attempt # {a.count} — Score: {Math.round(a.score || 0)}%
-                    —{" "}
+                    Attempt # {a.count} — Score: {Math.round(a.score || 0)}% —{" "}
                     {a.passed ? (
                       <span className="text-green-600 font-semibold">
                         Passed ✅

@@ -318,20 +318,20 @@ const CourseOwnerDiscussionPage = () => {
                           </p>
                         </div>
                         <div className="flex gap-2 text-xs">
-                          {/* <button
+                          <button
                             onClick={() => handleEditReply(thread.postID, r)}
                             className="text-blue-600 hover:underline"
                           >
                             Edit
-                          </button> */}
-                          {/* <button
+                          </button>
+                          <button
                             onClick={() =>
                               handleDeleteReply(thread.postID, r.postID)
                             }
                             className="text-red-500 hover:underline"
                           >
                             Delete
-                          </button> */}
+                          </button>
                         </div>
                       </div>
                     ))}
