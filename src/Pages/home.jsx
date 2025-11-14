@@ -61,29 +61,6 @@ function Home() {
     return () => (mounted = false);
   }, [getTop3Reviews]);
 
-  useEffect(() => {
-    let mounted = true;
-    const load = async () => {
-      try {
-        const res = await fetchPopularCoursesAndPathway();
-        console.log("Full API response:", JSON.stringify(res, null, 2));
-        if (!mounted) return;
-        setApiPopularCourses(res?.popularCourses || null);
-        setApiPopularPathways(res?.popularPathways || res?.pathways || null);
-      } catch (e) {
-        console.error("Failed to load popular courses/pathways", e);
-        if (mounted) {
-          setApiPopularCourses(null);
-          setApiPopularPathways(null);
-        }
-      }
-    };
-
-    load();
-    return () => (mounted = false);
-  }, [fetchPopularCoursesAndPathway]);
-
- 
   const popularCourses =
     apiPopularCourses
       ?.map((c, i) => {

@@ -37,20 +37,20 @@ import { TimePicker } from "@mui/x-date-pickers/TimePicker";
 import dayjs from "dayjs";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import Autocomplete from "@mui/material/Autocomplete";
-
+ 
 import useModuleApi from "../../hooks/useModuleApi";
 import useCourseApi from "../../hooks/useCourseApi";
 import { useAuth } from "../../contexts/AuthContext";
-
+ 
 const STATUS_LABEL = {
   wait_for_approval: "Wait For Approval",
   draft: "Draft",
   active: "Active",
   inactive: "Inactive",
 };
-
+ 
 const DEFAULT_STATUS = "draft";
-
+ 
 export default function ModuleManagement() {
   const [modules, setModules] = useState([]);
   const [courses, setCourses] = useState([]);
@@ -60,7 +60,7 @@ export default function ModuleManagement() {
   const { registerModule, updateModule } = useModuleApi();
   const { fetchAllModules, fetchAllCourses } = useCourseApi();
   const { loggedInUser } = useAuth();
-
+ 
   const [moduleForm, setModuleForm] = useState({
     courseID: "",
     title: "",
@@ -71,7 +71,7 @@ export default function ModuleManagement() {
   const [pageForm, setPageForm] = useState({ title: "", content: "" });
   const [editingPageIndex, setEditingPageIndex] = useState(null);
   const [contentDialogOpen, setContentDialogOpen] = useState(false);
-
+ 
   // Dropdown menu for actions
   const [menuAnchor, setMenuAnchor] = useState(null);
   const [menuModule, setMenuModule] = useState(null);
@@ -83,7 +83,7 @@ export default function ModuleManagement() {
     setMenuAnchor(null);
     setMenuModule(null);
   };
-
+ 
   useEffect(() => {
     let mounted = true;
     const loadData = async () => {
@@ -93,14 +93,14 @@ export default function ModuleManagement() {
           fetchAllCourses(),
           fetchAllModules(loggedInUser?.id),
         ]);
-
+ 
         const courseList = Array.isArray(coursesResponse)
           ? coursesResponse
           : coursesResponse?.courses || [];
         const moduleList = Array.isArray(modulesResponse)
           ? modulesResponse
           : modulesResponse?.modules || [];
-
+ 
         if (!mounted) return;
         const filteredCourses = courseList.filter(
           (c) => c.userID === loggedInUser?.id
@@ -117,36 +117,36 @@ export default function ModuleManagement() {
     loadData();
     return () => (mounted = false);
   }, [fetchAllModules, fetchAllCourses, loggedInUser?.id]);
-
+ 
   // Utility
   const toHHMMSS = (hhmm) => {
     if (!hhmm) return null;
     const [hh = "00", mm = "00"] = hhmm.split(":");
     return `${hh.padStart(2, "0")}:${mm.padStart(2, "0")}:00`;
   };
-
+ 
   // Form handlers
   // Safe form change handler
   const handleModuleFormChange = (e) => {
     const { name, value } = e.target;
-
+ 
     setModuleForm((prev) => ({ ...prev, [name]: value }));
   };
-
+ 
   const handleCourseChange = (e) =>
     setModuleForm((prev) => ({ ...prev, courseID: e.target.value }));
-
+ 
   const handlePageFormChange = (e) => {
     const { name, value } = e.target;
     setPageForm((prev) => ({ ...prev, [name]: value }));
   };
-
+ 
   const handleOpenPageDialog = () => setContentDialogOpen(true);
   const handleClosePageDialog = () => {
     setContentDialogOpen(false);
     if (editingPageIndex === null) setPageForm({ title: "", content: "" });
   };
-
+ 
   const handleSavePage = () => {
     const trimmedTitle = pageForm.title.trim();
     const trimmedContent = pageForm.content.trim();
@@ -154,7 +154,7 @@ export default function ModuleManagement() {
       alert("Page title and content are required.");
       return;
     }
-
+ 
     const duplicate = moduleForm.contents.some(
       (p, idx) =>
         idx !== editingPageIndex &&
@@ -164,7 +164,7 @@ export default function ModuleManagement() {
       alert("Duplicate page title in module.");
       return;
     }
-
+ 
     const newPage = {
       title: trimmedTitle,
       content: trimmedContent,
@@ -173,7 +173,7 @@ export default function ModuleManagement() {
           ? editingPageIndex + 1
           : moduleForm.contents.length + 1,
     };
-
+ 
     const updated =
       editingPageIndex !== null
         ? moduleForm.contents.map((p, i) =>
@@ -185,7 +185,7 @@ export default function ModuleManagement() {
     setPageForm({ title: "", content: "" });
     setContentDialogOpen(false);
   };
-
+ 
   const handleEditPage = (idx) => {
     const page = moduleForm.contents[idx];
     setPageForm({
@@ -195,7 +195,7 @@ export default function ModuleManagement() {
     setEditingPageIndex(idx);
     setContentDialogOpen(true);
   };
-
+ 
   const handleRemovePage = (idx) => {
     setModuleForm((prev) => ({
       ...prev,
@@ -204,7 +204,7 @@ export default function ModuleManagement() {
         .map((p, i) => ({ ...p, pageNumber: i + 1 })),
     }));
   };
-
+ 
   const resetForm = () => {
     setModuleForm({
       courseID: "",
@@ -217,20 +217,20 @@ export default function ModuleManagement() {
     setEditingModuleIndex(null);
     setEditingPageIndex(null);
   };
-
+ 
   const handleSubmitModule = async (e) => {
     e.preventDefault();
     if (!moduleForm.courseID) {
       alert("Please select a course.");
       return;
     }
-
+ 
     const payload = {
       ...moduleForm,
       title: moduleForm.title?.trim(),
       description: moduleForm.description?.trim(),
       expectedHours: toHHMMSS(moduleForm.expectedHours),
-      status: moduleForm?.status || DEFAULT_STATUS,
+      status: DEFAULT_STATUS,
       contents: moduleForm.contents.map((x, i) => ({
         ...x,
         description: x.content,
@@ -238,7 +238,7 @@ export default function ModuleManagement() {
         status: moduleForm?.status || DEFAULT_STATUS,
       })),
     };
-
+ 
     try {
       if (editingModuleIndex !== null) {
         await updateModule(editingModuleIndex, payload);
@@ -257,24 +257,24 @@ export default function ModuleManagement() {
       setModules(refreshed);
     }
   };
-
+ 
   const handleEditModule = (mod) => {
     setModuleForm(mod);
     setEditingModuleIndex(mod.moduleID);
   };
-
+ 
   const handleRequestApproval = async (mod) => {
     await updateModule(mod.moduleID, { ...mod, status: "wait_for_approval" });
     const refreshed = await fetchAllModules(loggedInUser?.id);
     setModules(refreshed);
   };
-
+ 
   const handleInactivate = async (mod) => {
     await updateModule(mod.moduleID, { ...mod, status: "inactive" });
     const refreshed = await fetchAllModules(loggedInUser?.id);
     setModules(refreshed);
   };
-
+ 
   if (loading)
     return (
       <Box
@@ -288,19 +288,19 @@ export default function ModuleManagement() {
         <CircularProgress />
       </Box>
     );
-
+ 
   return (
     <Box sx={{ padding: "2rem", maxWidth: 1200, margin: "0 auto" }}>
       <Typography variant="h4" gutterBottom fontWeight={700}>
         Module Management
       </Typography>
-
+ 
       {error && (
         <Alert severity="error" sx={{ mb: 2 }}>
           {error}
         </Alert>
       )}
-
+ 
       {/*Module Form */}
       <Paper
         sx={{
@@ -320,7 +320,7 @@ export default function ModuleManagement() {
             </Button>
           )}
         </Stack>
-
+ 
         <form onSubmit={handleSubmitModule}>
           <Stack spacing={2.5}>
             <FormControl fullWidth required>
@@ -338,7 +338,7 @@ export default function ModuleManagement() {
                 ))}
               </Select>
             </FormControl>
-
+ 
             <Autocomplete
               freeSolo
               options={modules
@@ -352,7 +352,7 @@ export default function ModuleManagement() {
                 <TextField {...params} label="Module Title" required />
               )}
             />
-
+ 
             <TextField
               label="Description"
               name="description"
@@ -362,7 +362,7 @@ export default function ModuleManagement() {
               rows={3}
               fullWidth
             />
-
+ 
             <LocalizationProvider dateAdapter={AdapterDayjs}>
               <TimePicker
                 ampm={false}
@@ -382,9 +382,9 @@ export default function ModuleManagement() {
                 }
               />
             </LocalizationProvider>
-
+ 
             <Divider sx={{ my: 2 }} />
-
+ 
             {/* Pages Section */}
             <Typography variant="h6" gutterBottom>
               Module Pages
@@ -397,7 +397,7 @@ export default function ModuleManagement() {
             >
               Add Page
             </Button>
-
+ 
             {moduleForm.contents.length > 0 ? (
               moduleForm.contents.map((p, i) => (
                 <Card key={i} variant="outlined" sx={{ mb: 1 }}>
@@ -435,7 +435,7 @@ export default function ModuleManagement() {
                 No pages added yet.
               </Typography>
             )}
-
+ 
             <Stack direction="row" spacing={2} sx={{ mt: 3 }}>
               <Button type="submit" variant="contained">
                 {editingModuleIndex !== null
@@ -451,7 +451,7 @@ export default function ModuleManagement() {
           </Stack>
         </form>
       </Paper>
-
+ 
       {/* Grouped Modules */}
       <Paper
         sx={{
@@ -462,7 +462,7 @@ export default function ModuleManagement() {
         <Typography variant="h6" sx={{ p: 2 }}>
           Existing Modules
         </Typography>
-
+ 
         {(() => {
           const grouped = Object.keys(STATUS_LABEL).reduce((acc, k) => {
             acc[k] = modules.filter(
@@ -510,7 +510,7 @@ export default function ModuleManagement() {
                           >
                             {m.description || "-"}
                           </TableCell>
-
+ 
                           <TableCell>{m.contents?.length || 0}</TableCell>
                           <TableCell>{STATUS_LABEL[m.status] || "-"}</TableCell>
                           <TableCell align="right">
@@ -530,7 +530,7 @@ export default function ModuleManagement() {
             </Accordion>
           ));
         })()}
-
+ 
         <Menu
           anchorEl={menuAnchor}
           open={Boolean(menuAnchor)}
@@ -558,7 +558,7 @@ export default function ModuleManagement() {
                   Request Approval
                 </MenuItem>
               )}
-              {String(menuModule.status).toLowerCase() === "active" && (
+              {String(menuModule.status).toLowerCase() !== "inactive" && (
                 <MenuItem
                   onClick={() => {
                     handleInactivate(menuModule);
@@ -572,7 +572,7 @@ export default function ModuleManagement() {
           )}
         </Menu>
       </Paper>
-
+ 
       {/*Page Dialog  */}
       <Dialog
         open={contentDialogOpen}

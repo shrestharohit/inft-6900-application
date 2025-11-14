@@ -24,17 +24,17 @@ import {
   AccordionSummary,
   AccordionDetails,
 } from "@mui/material";
-
+ 
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import Menu from "@mui/material/Menu";
 import IconButton from "@mui/material/IconButton";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
-
+ 
 import useCourseApi from "../../hooks/useCourseApi";
 import usePathwayApi from "../../hooks/usePathwayApi";
 import { useAuth } from "../../contexts/AuthContext";
-
-
+ 
+ 
 const STATUS_LABEL = {
   wait_for_approval: "Wait For Approval",
   draft: "Draft",
@@ -46,12 +46,12 @@ const LEVEL_LABEL = {
   intermediate: "Intermediate",
   advanced: "Advanced",
 };
-
+ 
 export default function CourseManagement() {
   const { loggedInUser } = useAuth();
   const { fetchAllCourses, registerCourse, updateCourse } = useCourseApi();
   const { fetchUserPathways } = usePathwayApi();
-
+ 
   const [courses, setCourses] = useState([]);
   const [pathways, setPathways] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -62,11 +62,11 @@ export default function CourseManagement() {
     level: "",
     pathwayId: "",
   });
-
+ 
   // Dropdown menu state
   const [menuAnchor, setMenuAnchor] = useState(null);
-  const [menuCourse, setMenuCourse] = useState(null); 
-
+  const [menuCourse, setMenuCourse] = useState(null);
+ 
   const handleMenuOpen = (event, courseWithIndex) => {
     setMenuAnchor(event.currentTarget);
     setMenuCourse(courseWithIndex);
@@ -75,19 +75,19 @@ export default function CourseManagement() {
     setMenuAnchor(null);
     setMenuCourse(null);
   };
-
+ 
   const [editingIndex, setEditingIndex] = useState(null);
-
+ 
   // Outline dialog
   const [outlineDialogOpen, setOutlineDialogOpen] = useState(false);
   const [outlinedraft, setOutlinedraft] = useState("");
   const outlineFieldRef = useRef(null);
   const focusGuardRef = useRef(false);
-
-  //  Load courses + pathways 
+ 
+  //  Load courses + pathways
   useEffect(() => {
     let mounted = true;
-
+ 
     const loadData = async () => {
       try {
         //  Load COURSES
@@ -95,7 +95,7 @@ export default function CourseManagement() {
         const listCourses = Array.isArray(resCourses)
           ? resCourses
           : resCourses?.courses || [];
-
+ 
         const normalized = listCourses.map((c, idx) => ({
           ...c,
           level: (c.level || "").toLowerCase(),
@@ -103,7 +103,7 @@ export default function CourseManagement() {
           pathwayID: c.pathwayID?.toString() || "",
           courseID: c.courseID || idx + 1,
         }));
-
+ 
         if (mounted) {
           setCourses(normalized);
           const uniqueCategories = [
@@ -114,14 +114,14 @@ export default function CourseManagement() {
       } catch (err) {
         console.error("❌ Failed to load courses:", err);
       }
-
+ 
       try {
-        // Load PATHWAYS 
+        // Load PATHWAYS
         const resPathways = await fetchUserPathways(loggedInUser?.id);
         const listPathways = Array.isArray(resPathways)
           ? resPathways
           : resPathways?.pathways || [];
-
+ 
         if (mounted) {
           setPathways(
             listPathways.filter((pathway) => pathway.status === "active")
@@ -131,19 +131,19 @@ export default function CourseManagement() {
         console.error("❌ Failed to load pathways:", err);
       }
     };
-
+ 
     loadData();
     return () => {
       mounted = false;
     };
   }, [fetchAllCourses, fetchUserPathways, loggedInUser]);
-
-  //  Helpers 
+ 
+  //  Helpers
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
   };
-
+ 
   const clearForm = () => {
     setForm({
       name: "",
@@ -154,17 +154,17 @@ export default function CourseManagement() {
     });
     setEditingIndex(null);
   };
-
-  // Submit (create/update) 
+ 
+  // Submit (create/update)
   const handleSubmit = async (e) => {
     e.preventDefault();
     const { name, category, outline, level, pathwayId } = form;
-
+ 
     if (!name?.trim() || !category?.trim() || !outline?.trim() || !level) {
       alert("❌ Please fill out all fields.");
       return;
     }
-
+ 
     const duplicate = courses.some(
       (c, idx) =>
         idx !== editingIndex &&
@@ -174,34 +174,34 @@ export default function CourseManagement() {
       alert("❌ A course with this name already exists.");
       return;
     }
-
+ 
     const payload = {
       title: name,
       category,
       level,
       outline,
-      userID: loggedInUser?.id || 1, 
+      userID: loggedInUser?.id || 1,
       pathwayID: pathwayId || null,
       status: "draft",
     };
-
+ 
     try {
       let savedCourse;
       if (editingIndex !== null) {
         // UPDATE
         const courseId = courses[editingIndex]?.courseID;
         if (!courseId) return alert("Missing course ID");
-
+ 
         const res = await updateCourse(courseId, payload);
         savedCourse = res?.course || res || { ...payload, courseID: courseId };
-
+ 
         const normalized = {
           ...savedCourse,
           level: (savedCourse.level || "").toLowerCase(),
           status: (savedCourse.status || "draft").toLowerCase(),
           pathwayID: savedCourse.pathwayID?.toString() || "",
         };
-
+ 
         const updatedCourses = courses.map((c, i) =>
           i === editingIndex ? normalized : c
         );
@@ -210,7 +210,7 @@ export default function CourseManagement() {
         // --- CREATE ---
         const res = await registerCourse(payload);
         savedCourse = res?.course || res || payload;
-
+ 
         const normalized = {
           ...savedCourse,
           level: (savedCourse.level || "").toLowerCase(),
@@ -219,18 +219,18 @@ export default function CourseManagement() {
         };
         setCourses((prev) => [...prev, normalized]);
       }
-
+ 
       if (category && !categories.includes(category)) {
         setCategories((prev) => [...prev, category]);
       }
-
+ 
       clearForm();
     } catch (err) {
       console.error("❌ Failed to save course:", err);
       alert("Failed to save course");
     }
   };
-
+ 
   const handleEdit = (index) => {
     const c = courses[index];
     setForm({
@@ -242,7 +242,7 @@ export default function CourseManagement() {
     });
     setEditingIndex(index);
   };
-
+ 
   const handleInactivate = async (index) => {
     const target = courses[index];
     const courseId = target?.courseID;
@@ -265,7 +265,7 @@ export default function CourseManagement() {
       alert("Failed to inactivate course");
     }
   };
-
+ 
   const handleRequestApproval = async (index) => {
     const target = courses[index];
     const courseId = target?.courseID;
@@ -292,8 +292,8 @@ export default function CourseManagement() {
       alert("Failed to request approval");
     }
   };
-
-  // Outline Dialog 
+ 
+  // Outline Dialog
   const openOutlineDialog = () => {
     setOutlinedraft(form.outline || "");
     setOutlineDialogOpen(true);
@@ -318,13 +318,13 @@ export default function CourseManagement() {
     if (focusGuardRef.current) return;
     if (!outlineDialogOpen) openOutlineDialog();
   };
-
+ 
   return (
     <Box sx={{ padding: "2rem", maxWidth: 1100, margin: "0 auto" }}>
       <Typography variant="h4" gutterBottom fontWeight={700}>
         Course Management
       </Typography>
-
+ 
       {/*Form */}
       <Paper
         sx={{
@@ -343,7 +343,7 @@ export default function CourseManagement() {
               onChange={handleChange}
               required
             />
-
+ 
             <Autocomplete
               freeSolo
               options={categories}
@@ -359,7 +359,7 @@ export default function CourseManagement() {
                 <TextField {...params} label="Category" required />
               )}
             />
-
+ 
             <FormControl fullWidth>
               <InputLabel>Pathway</InputLabel>
               <Select
@@ -375,7 +375,7 @@ export default function CourseManagement() {
                 ))}
               </Select>
             </FormControl>
-
+ 
             <TextField
               label="Course Outline"
               name="outline"
@@ -390,7 +390,7 @@ export default function CourseManagement() {
               required
               helperText="Click to open the full editor"
             />
-
+ 
             <FormControl fullWidth required>
               <InputLabel>Level</InputLabel>
               <Select
@@ -404,7 +404,7 @@ export default function CourseManagement() {
                 <MenuItem value="advanced">Advanced</MenuItem>
               </Select>
             </FormControl>
-
+ 
             <Stack direction="row" spacing={2}>
               <Button type="submit" variant="contained">
                 {editingIndex !== null ? "Update Course" : "Add Course"}
@@ -418,7 +418,7 @@ export default function CourseManagement() {
           </Stack>
         </form>
       </Paper>
-
+ 
       {/*  Grouped (collapsible) table with dropdown actions */}
       <Paper
         sx={{
@@ -430,13 +430,13 @@ export default function CourseManagement() {
         <Typography variant="h6" sx={{ padding: "1rem" }}>
           Existing Courses
         </Typography>
-
+ 
         {(() => {
           // Only the logged-in owner's courses, and keep their original index
           const ownerCoursesWithIndex = courses
             .map((c, __idx) => ({ ...c, __idx }))
             .filter((c) => c.userID === loggedInUser?.id);
-
+ 
           // Group by status, ensure all statuses appear even if empty
           const grouped = Object.keys(STATUS_LABEL).reduce((acc, statusKey) => {
             acc[statusKey] = ownerCoursesWithIndex.filter(
@@ -444,7 +444,7 @@ export default function CourseManagement() {
             );
             return acc;
           }, {});
-
+ 
           return Object.entries(grouped).map(([statusKey, groupCourses]) => (
             <Accordion key={statusKey} defaultExpanded>
               <AccordionSummary expandIcon={<ExpandMoreIcon />}>
@@ -517,7 +517,7 @@ export default function CourseManagement() {
             </Accordion>
           ));
         })()}
-
+ 
         {/* Shared actions menu  */}
         <Menu
           anchorEl={menuAnchor}
@@ -536,7 +536,7 @@ export default function CourseManagement() {
               >
                 Edit
               </MenuItem>
-
+ 
               {String(menuCourse.status).toLowerCase() === "draft" && (
                 <MenuItem
                   onClick={() => {
@@ -547,8 +547,8 @@ export default function CourseManagement() {
                   Request for Approval
                 </MenuItem>
               )}
-
-              {String(menuCourse.status).toLowerCase() === "active" && (
+ 
+              {String(menuCourse.status).toLowerCase() !== "inactive" && (
                 <MenuItem
                   onClick={() => {
                     handleInactivate(menuCourse.__idx);
@@ -562,7 +562,7 @@ export default function CourseManagement() {
           )}
         </Menu>
       </Paper>
-
+ 
       {/* Outline Dialog */}
       <Dialog
         open={outlineDialogOpen}
