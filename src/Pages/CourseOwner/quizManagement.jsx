@@ -38,14 +38,14 @@ import useCourseApi from "../../hooks/useCourseApi";
 import useModuleApi from "../../hooks/useModuleApi";
 import useQuizApi from "../../hooks/useQuizApi";
 import { useAuth } from "../../contexts/AuthContext";
-
+ 
 const STATUS_LABEL = {
   wait_for_approval: "Wait For Approval",
   draft: "Draft",
   active: "Active",
   inactive: "Inactive",
 };
-
+ 
 export default function QuizManagement() {
   const [quizzes, setQuizzes] = useState([]);
   const [allModules, setAllModules] = useState([]);
@@ -67,16 +67,16 @@ export default function QuizManagement() {
       { optionText: "", isCorrect: false, feedbackText: "" },
     ],
   });
-
+ 
   const { fetchAllCourses } = useCourseApi();
   const { fetchAllModulesInACourse } = useModuleApi();
   const { registerQuiz, fetchQuizForCourseOwner, updateQuiz } = useQuizApi();
   const { loggedInUser } = useAuth();
-
-  // Menu state 
+ 
+  // Menu state
   const [menuAnchor, setMenuAnchor] = useState(null);
   const [menuQuiz, setMenuQuiz] = useState(null);
-
+ 
   const handleMenuOpen = (event, quizWithIndex) => {
     setMenuAnchor(event.currentTarget);
     setMenuQuiz(quizWithIndex);
@@ -85,7 +85,7 @@ export default function QuizManagement() {
     setMenuAnchor(null);
     setMenuQuiz(null);
   };
-
+ 
   const normalizeToDayjs = (value) => {
     if (value == null) return null;
     if (typeof value === "object" && typeof value.isValid === "function")
@@ -96,11 +96,11 @@ export default function QuizManagement() {
     }
     return null;
   };
-
+ 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
-
+ 
     if (name === "courseID") {
       (async () => {
         setForm((prev) => ({ ...prev, moduleID: "" }));
@@ -118,12 +118,12 @@ export default function QuizManagement() {
       })();
     }
   };
-
+ 
   const handleQuestionChange = (e) => {
     const { name, value } = e.target;
     setQuestionForm((prev) => ({ ...prev, [name]: value }));
   };
-
+ 
   const handleOptionChange = (index, field, value) => {
     let newOptions = [...questionForm.options];
     if (field === "isCorrect" && value === true) {
@@ -136,7 +136,7 @@ export default function QuizManagement() {
     }
     setQuestionForm({ ...questionForm, options: newOptions });
   };
-
+ 
   const addOption = () => {
     if (questionForm.options.length >= 4) {
       alert("⚠️ You cannot add more than 4 options.");
@@ -150,7 +150,7 @@ export default function QuizManagement() {
       ],
     }));
   };
-
+ 
   const deleteOption = (index) => {
     if (questionForm.options.length <= 2) {
       alert("⚠️ A question must have at least 2 options.");
@@ -161,7 +161,7 @@ export default function QuizManagement() {
       options: questionForm.options.filter((_, i) => i !== index),
     });
   };
-
+ 
   const addQuestion = () => {
     if (!questionForm.questionText || questionForm.options.length < 2) {
       alert("⚠️ A question must have text and at least 2 options.");
@@ -175,7 +175,7 @@ export default function QuizManagement() {
       alert("⚠️ At least one option must be marked correct.");
       return;
     }
-
+ 
     const updated = [...questions];
     if (editingIndex !== null) {
       updated[editingIndex] = { ...questionForm };
@@ -190,53 +190,66 @@ export default function QuizManagement() {
     });
     setEditingIndex(null);
   };
-
+ 
   const deleteQuestion = (index) => {
     setQuestions(questions.filter((_, i) => i !== index));
   };
-
+ 
   const handleEditQuestion = (index) => {
     setQuestionForm({ ...questions[index] });
     setEditingIndex(index);
   };
+ 
+const handleSaveQuiz = async () => {
+  // Validation
+  if (!form.courseID || !form.moduleID || !form.title) {
+    alert("⚠️ Please fill all quiz fields.");
+    return;
+  }
+  if (questions.length === 0) {
+    alert("⚠️ Add at least one question.");
+    return;
+  }
 
-  const handleSaveQuiz = () => {
-    if (!form.courseID || !form.moduleID || !form.title) {
-      alert("⚠️ Please fill all quiz fields.");
-      return;
-    }
-    if (questions.length === 0) {
-      alert("⚠️ Add at least one question.");
-      return;
-    }
-
-    const updatedQuestions = questions.map((q, i) => ({
+  // Prepare payload
+  const payload = {
+    ...form,
+    title: form.title?.trim(),
+    timeLimit: normalizeToDayjs(form.timeLimit)?.format("HH:mm:ss") || form.timeLimit,
+    status: "draft",
+    questions: questions.map((q, i) => ({
       ...q,
       questionNumber: i + 1,
       status: "active",
-    }));
-
-    const normalized = normalizeToDayjs(form.timeLimit);
-    const payload = {
-      ...form,
-      timeLimit:
-        normalized && normalized.isValid()
-          ? normalized.format("HH:mm:ss")
-          : form.timeLimit,
-      questions: updatedQuestions,
-    };
-
-    const newQuiz = {
-      ...payload,
-      status: quizId ? "wait_for_approval" : "draft",
-    };
-
-    if (quizId) updateQuiz(quizId, newQuiz);
-    else registerQuiz(newQuiz);
-
-    clearFields();
+      questionText: q.questionText?.trim(),
+      options: q.options.map((opt) => ({
+        ...opt,
+        optionText: opt.optionText?.trim(),
+        feedbackText: opt.feedbackText?.trim(),
+      })),
+    })),
   };
 
+  try {
+    if (quizId) {
+      await updateQuiz(quizId, payload);
+      alert("✅ Quiz updated successfully!");
+    } else {
+      payload.quizID = Math.floor(100000 + Math.random() * 900000); // optional unique ID
+      await registerQuiz(payload);
+      alert("✅ Quiz created successfully!");
+    }
+  } catch (err) {
+    console.error("❌ Failed to save quiz:", err);
+    alert("❌ Failed to save quiz. Please try again.");
+  } finally {
+    clearFields();
+    const refreshed = await fetchQuizForCourseOwner(loggedInUser?.id);
+    setQuizzes(refreshed);
+  }
+};
+
+ 
   const clearFields = () => {
     setForm({ courseID: "", moduleID: "", title: "", timeLimit: null });
     setQuestions([]);
@@ -244,13 +257,15 @@ export default function QuizManagement() {
     setEditingIndex(null);
     setEditingQuizIndex(null);
   };
-
+ 
   const handleEditQuiz = async (index, quizID) => {
-    const quiz = quizzes[index];
+    const quiz = quizzes.find(q => q.quizID === quizID);
+    if (!quizID) return;
+ 
     setQuizId(quizID);
     const modules = await fetchAllModulesInACourse(quiz.courseID);
     setAllModules(modules);
-
+ 
     setForm({
       courseID: quiz.courseID,
       moduleID: quiz.moduleID,
@@ -258,16 +273,16 @@ export default function QuizManagement() {
       timeLimit: normalizeToDayjs(quiz.timeLimit),
     });
     setQuestions(quiz.questions);
-    setEditingQuizIndex(index);
+    setEditingQuizIndex(quizID);
     setEditingIndex(null);
   };
-
+ 
   const handleStatusChange = async (quiz, status) => {
     await updateQuiz(quiz.quizID, { ...quiz, status });
     const res = await fetchQuizForCourseOwner(loggedInUser?.id);
     setQuizzes(res);
   };
-
+ 
   useEffect(() => {
     let mounted = true;
     const loadData = async () => {
@@ -276,13 +291,13 @@ export default function QuizManagement() {
           fetchQuizForCourseOwner(loggedInUser?.id),
           fetchAllCourses(),
         ]);
-
+ 
         if (!mounted) return;
         const courses = courseRes || [];
         const filteredCourses = courses.filter(
           (c) => c.userID === loggedInUser?.id
         );
-
+ 
         // attach readable titles
         const withTitles = quizRes.map((q, idx) => {
           const c = courses.find((x) => x.courseID === q.courseID);
@@ -296,7 +311,7 @@ export default function QuizManagement() {
             moduleTitle: m?.title || q.moduleID || "-",
           };
         });
-
+ 
         setAllCourses(filteredCourses);
         setQuizzes(withTitles);
       } catch (err) {
@@ -306,13 +321,13 @@ export default function QuizManagement() {
     loadData();
     return () => (mounted = false);
   }, [fetchQuizForCourseOwner, fetchAllCourses, loggedInUser]);
-
+ 
   return (
     <Box sx={{ padding: "2rem", maxWidth: "1200px", margin: "0 auto" }}>
       <Typography variant="h4" gutterBottom fontWeight="bold">
         Quiz Management
       </Typography>
-
+ 
       {/* Quiz Form */}
       <Paper
         sx={{
@@ -338,7 +353,7 @@ export default function QuizManagement() {
               ))}
             </Select>
           </FormControl>
-
+ 
           <FormControl fullWidth size="small" disabled={!form.courseID}>
             <InputLabel>Module Title</InputLabel>
             <Select
@@ -354,7 +369,7 @@ export default function QuizManagement() {
               ))}
             </Select>
           </FormControl>
-
+ 
           <Grid container spacing={2}>
             <Grid item xs={12} md={8}>
               <TextField
@@ -366,7 +381,7 @@ export default function QuizManagement() {
                 size="small"
               />
             </Grid>
-
+ 
             <Grid item xs={12} md={4}>
               <LocalizationProvider dateAdapter={AdapterDayjs}>
                 <TimePicker
@@ -385,7 +400,7 @@ export default function QuizManagement() {
               </LocalizationProvider>
             </Grid>
           </Grid>
-
+ 
           {/* Add/Edit Questions */}
           <Card sx={{ mt: 2, p: 2, backgroundColor: "#f9f9f9" }}>
             <CardContent>
@@ -440,7 +455,7 @@ export default function QuizManagement() {
                   </Stack>
                 ))}
               </Stack>
-
+ 
               <Stack direction="row" spacing={2} mt={2}>
                 <Button
                   startIcon={<AddCircleOutlineIcon />}
@@ -451,7 +466,7 @@ export default function QuizManagement() {
                   Add Option
                 </Button>
               </Stack>
-
+ 
               <Button
                 variant="contained"
                 color="primary"
@@ -462,7 +477,75 @@ export default function QuizManagement() {
               </Button>
             </CardContent>
           </Card>
-
+         
+          {/* Questions Preview */}
+          {questions.length > 0 && (
+            <Paper sx={{ mt: 3, p: 2 }}>
+              <Typography variant="h6" gutterBottom>
+                Questions Preview
+              </Typography>
+              <Divider sx={{ mb: 2 }} />
+              <Table>
+                <TableHead>
+                  <TableRow>
+                    <TableCell>#</TableCell>
+                    <TableCell>Question</TableCell>
+                    <TableCell>Options</TableCell>
+                    <TableCell>Correct</TableCell>
+                    <TableCell>Feedback</TableCell>
+                    <TableCell>Actions</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {questions.map((q, idx) => (
+                    <TableRow key={idx}>
+                      <TableCell>{idx + 1}</TableCell>
+                      <TableCell>{q.questionText}</TableCell>
+                      <TableCell>
+                        {q.options.map((o, i) => (
+                          <div key={i}>
+                            {i + 1}. {o.optionText}
+                          </div>
+                        ))}
+                      </TableCell>
+                      <TableCell>
+                        {q.options
+                          .map((o, i) =>
+                            o.isCorrect ? `Option ${i + 1}` : null
+                          )
+                          .filter(Boolean)
+                          .join(", ")}
+                      </TableCell>
+                      <TableCell>
+                        {q.options.map((o, i) => (
+                          <div key={i}>
+                            {i + 1}. {o.feedbackText}
+                          </div>
+                        ))}
+                      </TableCell>
+                      <TableCell>
+                        <Stack direction="row" spacing={1}>
+                          <Button
+                            size="small"
+                            onClick={() => handleEditQuestion(idx)}
+                          >
+                            Edit
+                          </Button>
+                          <IconButton
+                            color="error"
+                            onClick={() => deleteQuestion(idx)}
+                          >
+                            <DeleteOutlineIcon />
+                          </IconButton>
+                        </Stack>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </Paper>
+          )}
+ 
           <Button
             variant="contained"
             color="primary"
@@ -473,7 +556,7 @@ export default function QuizManagement() {
           </Button>
         </Stack>
       </Paper>
-
+ 
       {/*  Grouped Quizzes with Dropdown Actions */}
       <Paper
         sx={{
@@ -485,7 +568,7 @@ export default function QuizManagement() {
         <Typography variant="h6" sx={{ padding: "1rem" }}>
           Existing Quizzes
         </Typography>
-
+ 
         {(() => {
           const grouped = Object.keys(STATUS_LABEL).reduce((acc, key) => {
             acc[key] = quizzes.filter(
@@ -493,7 +576,7 @@ export default function QuizManagement() {
             );
             return acc;
           }, {});
-
+ 
           return Object.entries(grouped).map(([statusKey, groupQuizzes]) => (
             <Accordion key={statusKey} defaultExpanded>
               <AccordionSummary expandIcon={<ExpandMoreIcon />}>
@@ -550,7 +633,7 @@ export default function QuizManagement() {
             </Accordion>
           ));
         })()}
-
+ 
         {/* Shared Dropdown Menu */}
         <Menu
           anchorEl={menuAnchor}
@@ -569,7 +652,7 @@ export default function QuizManagement() {
               >
                 Edit
               </MenuItem>
-
+ 
               {String(menuQuiz.status).toLowerCase() === "draft" && (
                 <MenuItem
                   onClick={() => {
@@ -580,8 +663,8 @@ export default function QuizManagement() {
                   Request for Approval
                 </MenuItem>
               )}
-
-              {String(menuQuiz.status).toLowerCase() === "active" && (
+ 
+              {String(menuQuiz.status).toLowerCase() !== "inactive" && (
                 <MenuItem
                   onClick={() => {
                     handleStatusChange(menuQuiz, "inactive");

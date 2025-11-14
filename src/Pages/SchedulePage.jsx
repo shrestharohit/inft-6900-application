@@ -31,6 +31,44 @@ const SchedulePage = () => {
   });
   const [editID, setEditID] = useState(null);
 
+  useEffect(() => {
+    if ("Notification" in window) {
+      Notification.requestPermission();
+    }
+  }, []);
+
+-
+  useEffect(() => {
+    if (!schedules?.length) return;
+
+    const interval = setInterval(() => {
+      const now = new Date();
+
+      schedules.forEach((session) => {
+        if (session._notified) return; 
+
+        const start = new Date(
+          `${moment(session.date).format("YYYY-MM-DD")}T${session.startTime}`
+        );
+
+        const diffMinutes = (start - now) / 1000 / 60;
+
+        // Notify exactly 5 minutes before session
+        if (diffMinutes > 4 && diffMinutes < 6) {
+          if (Notification.permission === "granted") {
+            new Notification("Upcoming Study Session", {
+              body: `${session.moduleTitle} starts at ${session.startTime}`,
+              icon: "/favicon.ico",
+            });
+          }
+          session._notified = true;
+        }
+      });
+    }, 60000); 
+
+    return () => clearInterval(interval);
+  }, [schedules]);
+
   if (!canViewCourses) {
     return (
       <div className="p-6 text-center text-red-500 font-semibold">
@@ -89,13 +127,10 @@ const SchedulePage = () => {
     if (hours > 0) result += `${hours} hr `;
     if (minutes > 0) result += `${minutes} min`;
 
-    // fallback if both are 0
     if (!hours && !minutes) result = `${seconds || 0} sec`;
-
     return result.trim();
   }
 
-  // Add/Edit session (no restriction on hours)
   const handleAddOrEditSession = async () => {
     if (!canSchedule)
       return alert("You do not have permission to modify schedule.");
@@ -153,13 +188,15 @@ const SchedulePage = () => {
     if (!s) return alert("No sessions to export!");
 
     setTimeout(() => {
-      const start = new Date(`${dateFormatter(s.date)}T${s.startTime}`)
+      const start = new
+        Date(`${dateFormatter(s.date)}T${s.startTime}`)
         .toISOString()
         .replace(/[-:]|\.\d{3}/g, "");
-      const end = new Date(`${dateFormatter(s.date)}T${s.endTime}`)
+      const end = new
+        Date(`${dateFormatter(s.date)}T${s.endTime}`)
         .toISOString()
         .replace(/[-:]|\.\d{3}/g, "");
-      console.log(start, end);
+
       const url = `https://www.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(
         s.moduleTitle
       )}&dates=${start}/${end}&details=${encodeURIComponent(
@@ -192,7 +229,6 @@ const SchedulePage = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-6xl mx-auto p-6">
-        {/* Banner for admins/owners */}
         {(isAdmin || isCourseOwner) && (
           <div className="mb-6 bg-yellow-100 border-l-4 border-yellow-500 text-yellow-800 p-3 rounded">
             {isAdmin ? "Admin" : "Course Owner"} Preview Mode — view-only
@@ -244,7 +280,7 @@ const SchedulePage = () => {
                     onChange={(e) =>
                       setNewSession({ ...newSession, date: e.target.value })
                     }
-                    min={new Date().toISOString().split("T")[0]} // ⬅️ Blocks past dates
+                    min={new Date().toISOString().split("T")[0]}
                     className="border border-gray-300 rounded-lg px-3 py-2 w-full focus:ring-2 focus:ring-blue-400"
                   />
                 </div>
